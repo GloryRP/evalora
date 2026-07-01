@@ -1,122 +1,125 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+/**
+ * Main App Component
+ * Sets up routing, authentication context, and React Query
+ * Includes toast notifications
+ */
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from 'react-hot-toast';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Pages
+import Login from './pages/Login';
+import PlaceholderDashboard from './pages/PlaceholderDashboard';
+
+// Admin
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Students from './pages/admin/Students';
+import Faculty from './pages/admin/Faculty';
+import Subjects from './pages/admin/Subjects';
+import Departments from './pages/admin/Departments';
+
+// Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="students" element={<Students />} />
+              <Route path="faculty" element={<Faculty />} />
+              <Route path="subjects" element={<Subjects />} />
+              <Route path="departments" element={<Departments />} />
+            </Route>
 
-      <div className="ticks"></div>
+            {/* Placeholder Routes for Other Roles (Phase 2+) */}
+            <Route
+              path="/examcell/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['examcell']}>
+                  <PlaceholderDashboard roleTitle="Exam Cell" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faculty/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['faculty']}>
+                  <PlaceholderDashboard roleTitle="Faculty" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <PlaceholderDashboard roleTitle="Student" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hod/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['hod']}>
+                  <PlaceholderDashboard roleTitle="Head of Department" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/principal/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['principal']}>
+                  <PlaceholderDashboard roleTitle="Principal" />
+                </ProtectedRoute>
+              }
+            />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            
+            {/* 404 - Redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+        
+        {/* Toast notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              borderRadius: '0.75rem',
+              fontFamily: 'Inter, sans-serif',
+            },
+          }}
+        />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
 }
 
-export default App
+export default App;
