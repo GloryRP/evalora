@@ -6,6 +6,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const examcellRoutes = require('./routes/examcell');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/examcell', examcellRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {
