@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examination Timetable</title>
+  <style>
+    @page {
+      size: {{PAGE_FORMAT}};
+      margin-top: {{MARGIN_TOP}};
+      margin-bottom: {{MARGIN_BOTTOM}};
+      margin-left: {{MARGIN_LEFT}};
+      margin-right: {{MARGIN_RIGHT}};
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .page {
+      page-break-after: always;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background-color: {{HEADER_BG_COLOR}};
+      color: {{HEADER_TEXT_COLOR}};
+      padding: 20px;
+      text-align: center;
+      border-bottom: 3px solid {{SECONDARY_COLOR}};
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: {{PRIMARY_COLOR}};
+      font-size: 12px;
+    }
+
+    .institution-info h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .institution-info p {
+      font-size: 12px;
+      margin: 2px 0;
+    }
+
+    .seal {
+      width: 60px;
+      height: 60px;
+      background: {{PRIMARY_COLOR}};
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .header-bottom {
+      border-top: 1px solid rgba(255,255,255,0.3);
+      padding-top: 10px;
+    }
+
+    .header-bottom h2 {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+
+    .header-bottom p {
+      font-size: 11px;
+    }
+
+    /* Content */
+    .content {
+      flex: 1;
+      padding: 20px 0;
+    }
+
+    .exam-info {
+      background-color: {{SECONDARY_COLOR}};
+      color: white;
+      padding: 10px 20px;
+      margin-bottom: 15px;
+      font-size: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .exam-info-item {
+      text-align: center;
+    }
+
+    .exam-info-label {
+      font-weight: bold;
+      font-size: 10px;
+      opacity: 0.9;
+    }
+
+    .exam-info-value {
+      font-size: 14px;
+      margin-top: 3px;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      border: 1px solid {{BORDER_COLOR}};
+    }
+
+    thead tr {
+      background-color: {{HEADER_BG_COLOR_TABLE}};
+      color: #000;
+    }
+
+    th {
+      border: 1px solid {{BORDER_COLOR}};
+      padding: 10px;
+      text-align: left;
+      font-weight: bold;
+      font-size: {{TABLE_FONT_SIZE}};
+    }
+
+    td {
+      border: 1px solid {{BORDER_COLOR}};
+      padding: 8px 10px;
+      font-size: {{TABLE_FONT_SIZE}};
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: {{ROW_BG_COLOR}};
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: {{ALTERNATE_ROW_BG_COLOR}};
+    }
+
+    tbody tr:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 2px solid {{PRIMARY_COLOR}};
+      padding-top: 20px;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .footer-section {
+      min-height: 60px;
+    }
+
+    .footer-line {
+      border-top: 1px solid #000;
+      margin-top: 40px;
+      padding-top: 5px;
+      font-weight: bold;
+    }
+
+    .footer-label {
+      font-size: 10px;
+      color: #666;
+      margin-top: 3px;
+    }
+
+    .footer-text {
+      font-size: 10px;
+      color: #666;
+      margin-top: 20px;
+      text-align: center;
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+    }
+
+    /* Utilities */
+    .text-center {
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">{{ABBREVIATION}}</div>
+        <div class="institution-info">
+          <h1>{{INSTITUTION_NAME}}</h1>
+          <p>{{ADDRESS}}</p>
+          <p>{{PHONE}} | {{EMAIL}} | {{WEBSITE}}</p>
+        </div>
+        <div class="seal"></div>
+      </div>
+      <div class="header-bottom">
+        <h2>EXAMINATION TIMETABLE</h2>
+        <p>{{EXAM_TITLE}}</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Exam Info Bar -->
+      <div class="exam-info">
+        <div class="exam-info-item">
+          <div class="exam-info-label">ACADEMIC YEAR</div>
+          <div class="exam-info-value">{{ACADEMIC_YEAR}}</div>
+        </div>
+        <div class="exam-info-item">
+          <div class="exam-info-label">EXAMINATION PERIOD</div>
+          <div class="exam-info-value">{{EXAM_DATE_RANGE}}</div>
+        </div>
+        <div class="exam-info-item">
+          <div class="exam-info-label">GENERATED ON</div>
+          <div class="exam-info-value">{{GENERATED_DATE}}</div>
+        </div>
+      </div>
+
+      <!-- Timetable -->
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            {{COLUMN_BRANCH}}
+            <th>Subject Code</th>
+            <th>Subject Name</th>
+            {{COLUMN_ROOM}}
+            {{COLUMN_SEMESTER}}
+          </tr>
+        </thead>
+        <tbody>
+          {{EXAM_ROWS}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-section"></div>
+      <div class="footer-section">
+        <div class="footer-line"></div>
+        <div class="footer-label">{{SIGNATURE_LABEL}}</div>
+        <div class="footer-label">{{SIGNATURE_DESIGNATION}}</div>
+      </div>
+      <div class="footer-section"></div>
+    </div>
+
+    <div class="footer-text">
+      {{FOOTER_TEXT}}
+    </div>
+  </div>
+</body>
+</html>

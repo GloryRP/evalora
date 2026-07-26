@@ -5,12 +5,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useInstitution } from '../contexts/InstitutionContext';
 import { GraduationCap, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const institution = useInstitution();
 
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,7 @@ const Login = () => {
             letterSpacing: '-0.01em',
           }}
         >
-          Vidyā
+          Evalora
         </span>
       </div>
 
@@ -302,7 +304,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* ── Bottom institution credit ── */}
+      {/* ── Bottom tagline ── */}
       <div
         style={{
           position: 'fixed',
@@ -310,15 +312,15 @@ const Login = () => {
           left: 0,
           right: 0,
           textAlign: 'center',
-          fontSize: '0.62rem',
-          letterSpacing: '0.14em',
+          fontSize: '0.72rem',
+          letterSpacing: '0.18em',
           textTransform: 'uppercase',
           color: '#BBBBBB',
           fontFamily: 'var(--font-body)',
           pointerEvents: 'none',
         }}
       >
-        PES Institute of Technology and Management
+        Automate. Evaluate. Accelerate.
       </div>
 
       {/* Fade-up animation */}

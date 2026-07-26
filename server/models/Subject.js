@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
  * subjectCode: Unique identifier for the subject (e.g., "CS101")
  * semester: Which semester this subject is taught in
  * credits: Academic credits for the subject
+ * subjectType: theory | lab | integrated (theory + lab)
+ * examConfig: Defines which exams this subject requires
  */
 const subjectSchema = new mongoose.Schema({
   subjectCode: {
@@ -35,6 +37,17 @@ const subjectSchema = new mongoose.Schema({
     required: [true, 'Credits are required'],
     min: [1, 'Credits must be at least 1'],
     max: [6, 'Credits cannot exceed 6'],
+  },
+  subjectType: {
+    type: String,
+    enum: ['theory', 'lab', 'integrated'],
+    default: 'theory',
+  },
+  examConfig: {
+    theoryInternals: { type: Number, default: 2, min: 0, max: 2 },
+    theoryExternal: { type: Boolean, default: true },
+    labInternals: { type: Number, default: 0, min: 0, max: 2 },
+    labExternal: { type: Boolean, default: false },
   },
 }, {
   timestamps: true,

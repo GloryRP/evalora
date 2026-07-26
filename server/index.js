@@ -1,18 +1,28 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 // Import routes
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const examcellRoutes = require('./routes/examcell');
+const institutionRoutes = require('./routes/institution');
+const timetableRoutes = require('./routes/timetable');
+const notificationsRoutes = require('./routes/notifications');
+const studentRoutes = require('./routes/student');
+const facultyRoutes = require('./routes/faculty');
+const hodRoutes = require('./routes/hod');
+const resultsRoutes = require('./routes/results');
+const principalRoutes = require('./routes/principal');
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Root endpoint for health check
 app.get('/', (req, res) => {
@@ -23,6 +33,14 @@ app.get('/', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/examcell', examcellRoutes);
+app.use('/api/v1/institution', institutionRoutes);
+app.use('/api/v1/timetable', timetableRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/student', studentRoutes);
+app.use('/api/v1/faculty', facultyRoutes);
+app.use('/api/v1/hod', hodRoutes);
+app.use('/api/v1/results', resultsRoutes);
+app.use('/api/v1/principal', principalRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

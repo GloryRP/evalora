@@ -9,6 +9,8 @@ from agents.orchestrator import Orchestrator
 from agents.scheduling_agent import SchedulingAgent
 from agents.hall_allocation_agent import HallAllocationAgent
 from agents.invigilator_agent import InvigilatorAgent
+from agents.gpa_agent import GPAAgent
+from agents.analytics_agent import AnalyticsAgent
 
 app = FastAPI(title="Exam Automation AI Service", version="1.0.0")
 
@@ -21,10 +23,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class USNExtractInput(BaseModel):
+    fileName: str
+
+@app.post("/agents/extract-usn")
+def extract_usn_from_script(data: USNExtractInput):
+    """
+    Extracts student USN from the answer script filename/content
+    """
+    import re
+    match = re.search(r'(\d[a-zA-Z]{2}\d{2}[a-zA-Z]{2}\d{3})', data.fileName)
+    if match:
+        return {
+            "success": True,
+            "usn": match.group(1).upper(),
+            "extractedBy": "AI-OCR Regex Model"
+        }
+    return {
+        "success": False,
+        "message": "No valid USN found in filename"
+    }
+
+
 # Initialize agents
 scheduling_agent = SchedulingAgent()
 hall_allocation_agent = HallAllocationAgent()
 invigilator_agent = InvigilatorAgent()
+gpa_agent = GPAAgent()
+analytics_agent = AnalyticsAgent()
 orchestrator = Orchestrator(scheduling_agent, hall_allocation_agent, invigilator_agent)
 
 # Pydantic models for request/response
@@ -35,6 +61,8 @@ class SubjectInput(BaseModel):
     department: str
     semester: int
     credits: int
+    subjectType: Optional[str] = "theory"
+    examConfig: Optional[Dict[str, Any]] = None
 
 class StudentInput(BaseModel):
     _id: str
@@ -49,6 +77,7 @@ class FacultyInput(BaseModel):
     name: str
     department: str
     designation: str
+    subjectsAssigned: Optional[List[str]] = []
 
 class HallInput(BaseModel):
     _id: str
@@ -64,6 +93,9 @@ class PipelineInput(BaseModel):
 
 class ScheduleInput(BaseModel):
     subjects: List[SubjectInput]
+    start_date: str
+    exam_category: str
+    component: str
     constraints: Optional[Dict[str, Any]] = {}
 
 class HallAllocationInput(BaseModel):
@@ -75,6 +107,7 @@ class HallAllocationInput(BaseModel):
 class InvigilatorInput(BaseModel):
     exams: List[Dict[str, Any]]
     faculty: List[FacultyInput]
+    hall_allocations: Optional[List[Dict[str, Any]]] = None
     constraints: Optional[Dict[str, Any]] = {}
 
 @app.get("/")
@@ -104,7 +137,13 @@ def schedule_exams(data: ScheduleInput):
     """
     try:
         subjects_dict = [subject.dict() for subject in data.subjects]
-        result = scheduling_agent.run(subjects_dict, data.constraints)
+        result = scheduling_agent.run(
+            subjects=subjects_dict,
+            start_date=data.start_date,
+            exam_category=data.exam_category,
+            component=data.component,
+            constraints=data.constraints
+        )
         
         return {
             "success": True,
@@ -167,6 +206,7 @@ def assign_invigilators(data: InvigilatorInput):
         result = invigilator_agent.run(
             data.exams,
             faculty_dict,
+            data.hall_allocations,
             data.constraints
         )
         
@@ -186,6 +226,87 @@ def assign_invigilators(data: InvigilatorInput):
             }
         )
 
+@app.post("/agents/compute-gpa")
+def compute_gpa(data: Dict[str, Any]):
+    """
+    Run the GPA calculation agent
+    """
+    try:
+        result = gpa_agent.run(data)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "agent": "gpa"
+            }
+        )
+
+@app.post("/agents/analytics")
+def run_analytics(data: Dict[str, Any]):
+    """
+    Run statistical analysis and slow learner prediction
+    """
+    try:
+        result = analytics_agent.run(data)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "agent": "analytics"
+            }
+        )
+
+@app.post("/agents/slow-learners")
+def run_slow_learners(data: Dict[str, Any]):
+    """
+    Get slow learners only
+    """
+    try:
+        result = analytics_agent.run(data)
+        if result.get("status") == "SUCCESS":
+            return {
+                "status": "SUCCESS",
+                "slowLearners": result.get("slowLearners", []),
+                "modelInfo": result.get("modelInfo", {})
+            }
+        else:
+            return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "agent": "slow_learners"
+            }
+        )
+
+@app.get("/agents/analytics/health")
+def analytics_health():
+    """
+    Health check for ML model and scikit-learn
+    """
+    try:
+        import sklearn
+        analytics_agent._ensure_model_trained()
+        return {
+            "status": "ok",
+            "mlModel": "loaded" if analytics_agent.model is not None else "not_loaded",
+            "scikitLearnVersion": sklearn.__version__
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 @app.post("/agents/run-pipeline")
 def run_full_pipeline(data: PipelineInput):
     """
@@ -200,6 +321,12 @@ def run_full_pipeline(data: PipelineInput):
         students_dict = [student.dict() for student in data.students]
         faculty_dict = [faculty.dict() for faculty in data.faculty]
         halls_dict = [hall.dict() for hall in data.halls]
+        
+        # Debug: Print first subject to see what we're getting
+        if subjects_dict:
+            print(f"DEBUG: First subject keys: {list(subjects_dict[0].keys())}")
+            print(f"DEBUG: First subject _id value: {subjects_dict[0].get('_id', 'NOT FOUND')}")
+            print(f"DEBUG: First subject full: {subjects_dict[0]}")
         
         # Run orchestrator
         result = orchestrator.run_pipeline(
@@ -217,6 +344,15 @@ def run_full_pipeline(data: PipelineInput):
             "result": result
         }
     except Exception as e:
+        import sys
+        import traceback
+        # Print full traceback to console for debugging
+        print(f"\n{'='*60}")
+        print("ERROR in run_full_pipeline:")
+        print(f"{'='*60}")
+        traceback.print_exc()
+        print(f"{'='*60}\n")
+        
         raise HTTPException(
             status_code=500,
             detail={

@@ -1,193 +1,213 @@
 /**
- * Invigilator Assignments Page
- * View faculty invigilation duties
+ * Invigilator Assignments Page — Decoupled & Enhanced
+ * View faculty duties, print schedules, and run the Invigilator Assignment Agent separately.
  */
-import { useState, useEffect } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ClipboardList, Calendar, Clock, User, Landmark, Shield, Printer, Loader, Play } from 'lucide-react';
 import api from '../../lib/api';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
+import Button from '../../components/ui/Button';
+import toast from 'react-hot-toast';
 
 const InvigilatorAssignments = () => {
   const [assignments, setAssignments] = useState([]);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedExam, setSelectedExam] = useState('all');
+  const [selectedSemester, setSelectedSemester] = useState('5');
+  const [runningAgent, setRunningAgent] = useState(false);
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedExam !== 'all') {
-      fetchAssignments(selectedExam);
-    } else {
-      fetchAssignments();
-    }
-  }, [selectedExam]);
+  }, [selectedSemester]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const examsRes = await api.get('/examcell/exams?status=scheduled');
-      setExams(examsRes.data.data);
-      await fetchAssignments();
+      // Fetch exams for the selected semester
+      const examsRes = await api.get(`/examcell/exams?semester=${selectedSemester}&status=scheduled`);
+      const semesterExams = examsRes.data.data;
+      setExams(semesterExams);
+      
+      // Fetch assignments
+      const response = await api.get('/examcell/invigilator-assignments');
+      // Filter assignments to only show those for this semester's exams
+      const filteredAssignments = response.data.data.filter(assign => 
+        assign.examId && semesterExams.some(e => e._id === (assign.examId._id || assign.examId))
+      );
+      setAssignments(filteredAssignments);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching invigilation duties:', error);
+      toast.error('Failed to load invigilator schedules');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAssignments = async (examId = null) => {
+  const handleRunInvigilatorAssignment = async () => {
+    if (exams.length === 0) {
+      toast.error('No scheduled exams found for this semester to assign invigilators!');
+      return;
+    }
+
     try {
-      const params = examId ? { examId } : {};
-      const response = await api.get('/examcell/invigilator-assignments', { params });
-      setAssignments(response.data.data);
-    } catch (error) {
-      console.error('Error fetching assignments:', error);
+      setRunningAgent(true);
+      const examIds = exams.map(e => e._id);
+      
+      const response = await api.post('/examcell/invigilator-assignments/generate', {
+        examIds,
+        constraints: {}
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        await fetchData();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate invigilator duties');
+    } finally {
+      setRunningAgent(false);
     }
   };
 
   // Group by exam
-  const groupedAssignments = assignments.reduce((acc, assignment) => {
-    const examKey = assignment.examId._id;
-    if (!acc[examKey]) acc[examKey] = { exam: assignment.examId, assignments: [] };
-    acc[examKey].assignments.push(assignment);
-    return acc;
-  }, {});
+  const groupedAssignments = useMemo(() => {
+    return assignments.reduce((acc, assignment) => {
+      if (!assignment.examId) return acc;
+      const examKey = assignment.examId._id?.toString() || assignment.examId?.toString();
+      if (!examKey) return acc;
+
+      if (!acc[examKey]) {
+        acc[examKey] = { exam: assignment.examId, assignments: [] };
+      }
+      acc[examKey].assignments.push(assignment);
+      return acc;
+    }, {});
+  }, [assignments]);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem' }}>
-        <LoadingSkeleton count={5} />
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <LoadingSkeleton count={4} />
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Header (Hidden during print) */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 print:hidden">
         <div>
-          <h1 style={{ 
-            fontFamily: 'var(--font-display)', 
-            fontSize: '2rem', 
-            fontWeight: '700', 
-            color: 'var(--color-navy)',
-            marginBottom: '0.5rem'
-          }}>
+          <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1">
             Invigilator Assignments
           </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
-            Faculty invigilation duties by exam
+          <p className="text-[#5C5C5C] text-sm font-medium">
+            Faculty invigilation duties and hall supervisors.
           </p>
         </div>
 
-        <select 
-          value={selectedExam}
-          onChange={(e) => setSelectedExam(e.target.value)}
-          style={{ 
-            padding: '0.75rem 1rem', 
-            border: '1px solid #E5E5E5', 
-            borderRadius: '6px', 
-            fontSize: '0.95rem',
-            background: 'white'
-          }}
-        >
-          <option value="all">All Exams</option>
-          {exams.map(exam => (
-            <option key={exam._id} value={exam._id}>
-              {exam.subjectId.subjectName} - {new Date(exam.examDate).toLocaleDateString()}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Semester Selector */}
+          <select value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value)}
+            className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm bg-white font-semibold">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+              <option key={sem} value={sem}>Semester {sem}</option>
+            ))}
+          </select>
+
+          <Button onClick={handlePrint} variant="ghost" className="flex items-center gap-2 border border-gray-300 text-xs">
+            <Printer size={14} /> Print Duties
+          </Button>
+
+          {/* Decoupled Run Invigilator Agent Button */}
+          <Button onClick={handleRunInvigilatorAssignment} disabled={runningAgent || exams.length === 0} variant="gold" className="flex items-center gap-1.5 font-bold">
+            {runningAgent ? <Loader className="animate-spin" size={16} /> : <Play size={16} />}
+            Generate Invigilator Duties
+          </Button>
+        </div>
       </div>
 
-      {/* Assignments */}
+      {/* Main Content Area */}
       {Object.keys(groupedAssignments).length === 0 ? (
-        <div style={{
-          background: 'white',
-          borderRadius: '8px',
-          padding: '3rem',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <ClipboardList size={48} color="var(--color-text-secondary)" style={{ marginBottom: '1rem' }} />
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem' }}>
-            No invigilator assignments found. Run the AI pipeline to generate assignments.
-          </p>
+        <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 shadow-sm print:hidden">
+          <ClipboardList size={48} className="text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-[#1A1A1A] mb-1">No duties assigned</h3>
+          <p className="text-[#5C5C5C] text-sm mb-6">Make sure seating allocations are generated, then run the invigilator agent separately.</p>
+          <Button onClick={handleRunInvigilatorAssignment} variant="gold"><Play size={16} className="inline mr-1.5" />Generate Invigilator Duties</Button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {Object.values(groupedAssignments).map(({ exam, assignments: examAssignments }) => (
-            <div key={exam._id} style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              border: '1px solid #E5E5E5'
-            }}>
-              <h2 style={{ 
-                fontFamily: 'var(--font-display)', 
-                fontSize: '1.25rem', 
-                fontWeight: '600', 
-                color: 'var(--color-navy)',
-                marginBottom: '0.5rem'
-              }}>
-                {exam.subjectId.subjectName}
-              </h2>
-              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                {new Date(exam.examDate).toLocaleDateString()} • {exam.startTime} - {exam.endTime}
-              </p>
+        <div className="space-y-8">
+          
+          {/* Institution Header for Printing */}
+          <div className="hidden print:block text-center mb-8 border-b-2 border-[#1E3A5F] pb-4">
+            <h2 className="text-2xl font-bold font-display text-[#1E3A5F] uppercase">PES Institute of Technology & Management</h2>
+            <p className="text-xs font-semibold text-[#5C5C5C] tracking-wide">NH-206, SAGAR ROAD, SHIVAMOGGA - 577204</p>
+            <h3 className="text-sm font-bold text-[#C9A227] uppercase tracking-wider mt-2">Invigilation Duty Allocation Sheet</h3>
+            <p className="text-xs font-semibold text-gray-500 mt-1">Semester {selectedSemester} Exams</p>
+          </div>
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #E5E5E5' }}>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Hall</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Faculty</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Employee ID</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Department</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Role</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Time</th>
+          {Object.values(groupedAssignments).map(({ exam, assignments: examAssignments }) => (
+            <div key={exam._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 print:border-none print:shadow-none print:p-0 print:mb-8">
+              <div className="border-b border-gray-100 pb-4 mb-6">
+                <h2 className="font-display font-bold text-xl text-[#1E3A5F]">{exam.subjectId?.subjectName || 'Subject'}</h2>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-[#5C5C5C] font-semibold">
+                  <span className="flex items-center gap-1"><Calendar size={13} className="text-[#C9A227]" /> {new Date(exam.examDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                  <span>•</span>
+                  <span>{exam.startTime} - {exam.endTime}</span>
+                  <span>•</span>
+                  <span className="capitalize">{exam.examType || 'Regular'}</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-gray-100 rounded-xl print:border-none print:rounded-none">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-gray-50 border-b border-gray-100 print:bg-white print:border-b-2 print:border-gray-300">
+                    <tr>
+                      <th className="border-b border-gray-100 print:border-b-2 print:border-gray-300 px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Hall</th>
+                      <th className="border-b border-gray-100 print:border-b-2 print:border-gray-300 px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Invigilator / Faculty</th>
+                      <th className="border-b border-gray-100 print:border-b-2 print:border-gray-300 px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Employee ID</th>
+                      <th className="border-b border-gray-100 print:border-b-2 print:border-gray-300 px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Department</th>
+                      <th className="border-b border-gray-100 print:border-b-2 print:border-gray-300 px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Role</th>
+                      <th className="border-b border-gray-100 print:border-b-2 print:border-gray-300 px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Duty Slot</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100 print:divide-y print:divide-gray-300">
                     {examAssignments
-                      .sort((a, b) => a.hallId.hallName.localeCompare(b.hallId.hallName))
-                      .map((assignment, idx) => (
-                        <tr key={assignment._id} style={{ 
-                          borderBottom: '1px solid #F0F0F0',
-                          background: idx % 2 === 0 ? 'transparent' : '#FAFAF8'
-                        }}>
-                          <td style={{ padding: '0.75rem', fontSize: '0.95rem', fontWeight: '600', color: 'var(--color-navy)' }}>
-                            {assignment.hallId.hallName}
+                      .sort((a, b) => {
+                        const hallA = a.hallId?.hallName || '';
+                        const hallB = b.hallId?.hallName || '';
+                        return hallA.localeCompare(hallB);
+                      })
+                      .map((assignment) => (
+                        <tr key={assignment._id} className="hover:bg-gray-50/50 transition">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Landmark size={14} className="text-gray-400 print:hidden" />
+                              <span className="font-bold text-[#1E3A5F]">{assignment.hallId?.hallName || '—'}</span>
+                            </div>
                           </td>
-                          <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text)' }}>
-                            {assignment.facultyId.name}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-amber-50 text-[#C9A227] flex items-center justify-center text-[10px] font-bold print:hidden">
+                                {assignment.facultyId?.name ? assignment.facultyId.name[0] : '?'}
+                              </div>
+                              <span className="font-semibold text-[#1A1A1A]">{assignment.facultyId?.name || '—'}</span>
+                            </div>
                           </td>
-                          <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
-                            {assignment.facultyId.employeeId}
-                          </td>
-                          <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                            {assignment.facultyId.department}
-                          </td>
-                          <td style={{ padding: '0.75rem' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '0.25rem 0.75rem',
-                              borderRadius: '12px',
-                              fontSize: '0.8rem',
-                              fontWeight: '500',
-                              background: assignment.role === 'chief' ? '#C9A22720' : '#1E3A5F20',
-                              color: assignment.role === 'chief' ? '#C9A227' : '#1E3A5F',
-                              textTransform: 'capitalize'
-                            }}>
+                          <td className="px-6 py-4 whitespace-nowrap font-mono text-xs text-[#5B21B6]">{assignment.facultyId?.employeeId || '—'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-[#5C5C5C]">{assignment.facultyId?.department || '—'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize bg-indigo-50 text-indigo-700 border border-indigo-100 print:bg-white print:border-none print:p-0 print:font-bold">
                               {assignment.role}
                             </span>
                           </td>
-                          <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                            {assignment.startTime} - {assignment.endTime}
+                          <td className="px-6 py-4 whitespace-nowrap text-xs text-[#5C5C5C] font-medium">
+                            <span className="flex items-center gap-1.5">
+                              <Clock size={12} className="text-gray-400 print:hidden" /> {assignment.startTime || '—'} - {assignment.endTime || '—'}
+                            </span>
                           </td>
                         </tr>
                       ))}

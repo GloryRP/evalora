@@ -1,69 +1,58 @@
 /**
- * Run Agents Page - AI Pipeline Wizard
- * Multi-step interface for running the exam automation pipeline
+ * Run Agents Page — Streamlined Configuration Interface
+ * Allows exam cell to select semester, exam category, component, start date, and constraints.
  */
-import { useState, useEffect } from 'react';
-import { Play, CheckCircle, XCircle, Loader, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Play, CheckCircle, XCircle, Loader, ChevronRight, ChevronLeft, Sparkles, Settings, Calendar, Shield } from 'lucide-react';
 import api from '../../lib/api';
 import Button from '../../components/ui/Button';
-import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 
 const RunAgents = () => {
-  const [step, setStep] = useState(1);
-  const [subjects, setSubjects] = useState([]);
-  const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [step, setStep] = useState(1); // 1: Configure & Constraints, 2: Review & Run, 3: Results
+  const [wizardParams, setWizardParams] = useState({
+    semester: '5',
+    examCategory: 'internal1',
+    component: 'theory',
+    startDate: new Date().toISOString().split('T')[0],
+    internalDuration: '1.5',
+    externalDuration: '3.0',
+    theoryStartTime: '09:00',
+    labStartTime: '13:30',
+    labDuration: '3.0',
+  });
   const [constraints, setConstraints] = useState({
     minGapBetweenExams: 1,
     maxExamsPerDay: 3,
     fillPercentage: 70,
   });
+  
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchSubjects();
-  }, []);
-
-  const fetchSubjects = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/admin/subjects');
-      setSubjects(response.data.data);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleSubject = (subjectId) => {
-    setSelectedSubjects(prev => 
-      prev.includes(subjectId) 
-        ? prev.filter(id => id !== subjectId)
-        : [...prev, subjectId]
-    );
-  };
 
   const handleRunPipeline = async () => {
-    if (selectedSubjects.length === 0) {
-      alert('Please select at least one subject');
-      return;
-    }
-
     setRunning(true);
     setError(null);
     setResult(null);
 
     try {
       const response = await api.post('/examcell/agents/run-pipeline', {
-        subjectIds: selectedSubjects,
-        constraints,
+        semester: parseInt(wizardParams.semester),
+        examCategory: wizardParams.examCategory,
+        component: wizardParams.component,
+        startDate: wizardParams.startDate,
+        constraints: {
+          ...constraints,
+          internalDuration: parseFloat(wizardParams.internalDuration),
+          externalDuration: parseFloat(wizardParams.externalDuration),
+          theoryStartTime: wizardParams.theoryStartTime,
+          labStartTime: wizardParams.labStartTime,
+          labDuration: parseFloat(wizardParams.labDuration),
+        },
       });
 
       setResult(response.data);
-      setStep(4); // Move to results step
+      setStep(3); // Move to results step
     } catch (error) {
       console.error('Error running pipeline:', error);
       setError(error.response?.data?.message || 'Failed to run pipeline');
@@ -74,304 +63,252 @@ const RunAgents = () => {
 
   const handleReset = () => {
     setStep(1);
-    setSelectedSubjects([]);
     setResult(null);
     setError(null);
   };
 
   const steps = [
-    { num: 1, label: 'Select Subjects' },
-    { num: 2, label: 'Configure' },
-    { num: 3, label: 'Review & Run' },
-    { num: 4, label: 'Results' },
+    { num: 1, label: 'Configure & Constraints' },
+    { num: 2, label: 'Review & Run' },
+    { num: 3, label: 'Results' },
   ];
 
-  if (loading) {
-    return (
-      <div style={{ padding: '2rem' }}>
-        <LoadingSkeleton count={5} />
-      </div>
-    );
-  }
+  const getExamCategoryLabel = (cat) => {
+    switch (cat) {
+      case 'internal1': return 'Internal 1 (CIE)';
+      case 'internal2': return 'Internal 2 (CIE)';
+      case 'external': return 'External SEE';
+      default: return cat;
+    }
+  };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '40px 48px', maxWidth: '1000px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ 
-          fontFamily: 'var(--font-display)', 
-          fontSize: '2rem', 
-          fontWeight: '700', 
-          color: 'var(--color-navy)',
-          marginBottom: '0.5rem'
-        }}>
-          Run AI Pipeline
+      <div style={{ marginBottom: '36px' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px', lineHeight: 1.2 }}>
+          Run AI Automation Pipeline
         </h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
-          Automate exam scheduling, hall allocation, and invigilator assignment
+        <p style={{ color: '#5C5C5C', fontSize: '0.95rem', lineHeight: 1.6 }}>
+          Select parameters to schedule exams, allocate seats, and assign invigilators in a single operation.
         </p>
       </div>
 
-      {/* Step Indicator */}
-      <div style={{ 
-        marginBottom: '2rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
+      {/* Step Indicators */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white', padding: '24px 28px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: '1px solid #E5E5E5', marginBottom: '32px' }}>
         {steps.map((s, idx) => (
           <div key={s.num} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: step >= s.num ? 'var(--color-navy)' : '#E5E5E5',
-                color: step >= s.num ? 'white' : 'var(--color-text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '600',
-                fontSize: '1rem'
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ 
+                width: '36px', 
+                height: '36px', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '0.875rem', 
+                fontWeight: 700,
+                backgroundColor: step >= s.num ? '#1E3A5F' : '#F0F0F0',
+                color: step >= s.num ? 'white' : '#9CA3AF',
+                boxShadow: step >= s.num ? '0 2px 4px rgba(30,58,95,0.2)' : 'none',
+                transition: 'all 200ms ease'
               }}>
-                {step > s.num ? <CheckCircle size={20} /> : s.num}
+                {step > s.num ? <CheckCircle size={18} style={{ color: '#10B981' }} /> : s.num}
               </div>
-              <span style={{ 
-                fontSize: '0.9rem', 
-                fontWeight: step === s.num ? '600' : '400',
-                color: step >= s.num ? 'var(--color-navy)' : 'var(--color-text-secondary)'
-              }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: step === s.num ? '#1E3A5F' : '#9CA3AF' }}>
                 {s.label}
               </span>
             </div>
             {idx < steps.length - 1 && (
-              <div style={{ 
-                flex: 1, 
-                height: '2px', 
-                background: step > s.num ? 'var(--color-navy)' : '#E5E5E5',
-                marginLeft: '1rem'
-              }} />
+              <div style={{ flex: 1, height: '2px', marginLeft: '16px', marginRight: '16px', backgroundColor: step > s.num ? '#1E3A5F' : '#E5E5E5', transition: 'all 200ms ease' }} />
             )}
           </div>
         ))}
       </div>
 
-      {/* Step Content */}
-      <div style={{
-        background: 'white',
-        borderRadius: '8px',
-        padding: '2rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        minHeight: '400px'
-      }}>
-        {/* Step 1: Select Subjects */}
+      {/* Step Card Content */}
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '40px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: '1px solid #E5E5E5', minHeight: '400px' }}>
+        {/* Step 1: Configure & Constraints */}
         {step === 1 && (
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: '600', color: 'var(--color-navy)', marginBottom: '1rem' }}>
-              Select Subjects for Exam
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
-              Choose the subjects that need to be scheduled for examination
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-              {subjects.map(subject => (
-                <div 
-                  key={subject._id}
-                  onClick={() => toggleSubject(subject._id)}
-                  style={{
-                    padding: '1rem',
-                    border: selectedSubjects.includes(subject._id) ? '2px solid var(--color-gold)' : '1px solid #E5E5E5',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    background: selectedSubjects.includes(subject._id) ? 'var(--color-gold)10' : 'transparent',
-                    transition: 'all 150ms'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text)', marginBottom: '0.25rem' }}>
-                      {subject.subjectCode}
-                    </h3>
-                    {selectedSubjects.includes(subject._id) && (
-                      <CheckCircle size={20} color="var(--color-gold)" />
-                    )}
-                  </div>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-                    {subject.subjectName}
-                  </p>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                    Sem {subject.semester} • {subject.department}
-                  </div>
-                </div>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            <div style={{ borderLeft: '4px solid #C9A227', backgroundColor: 'rgba(201,162,39,0.05)', padding: '20px', borderRadius: '0 10px 10px 0' }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={16} style={{ color: '#C9A227' }} /> Pipeline Configuration
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: '#5C5C5C', lineHeight: 1.6 }}>
+                Running the pipeline automatically processes subject scheduling, seating (2 per bench), and subject-aware invigilator loading for the selected semester.
+              </p>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button onClick={() => setStep(2)} disabled={selectedSubjects.length === 0}>
-                Next <ChevronRight size={20} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5C5C5C', marginBottom: '10px' }}>Semester</label>
+                <select value={wizardParams.semester} onChange={e => setWizardParams({ ...wizardParams, semester: e.target.value })}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '0.95rem', backgroundColor: 'white', outline: 'none', transition: 'border-color 200ms ease' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Semester {s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5C5C5C', marginBottom: '10px' }}>Exam Category</label>
+                <select value={wizardParams.examCategory} onChange={e => setWizardParams({ ...wizardParams, examCategory: e.target.value })}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '0.95rem', backgroundColor: 'white', outline: 'none', transition: 'border-color 200ms ease' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}>
+                  <option value="internal1">Internal 1 (CIE)</option>
+                  <option value="internal2">Internal 2 (CIE)</option>
+                  <option value="external">External (SEE)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5C5C5C', marginBottom: '10px' }}>Component Type</label>
+                <select value={wizardParams.component} onChange={e => setWizardParams({ ...wizardParams, component: e.target.value })}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '0.95rem', backgroundColor: 'white', outline: 'none', transition: 'border-color 200ms ease' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}>
+                  <option value="theory">Theory Only</option>
+                  <option value="lab">Lab Only</option>
+                  <option value="both">Both (theory & lab separate)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5C5C5C', marginBottom: '10px' }}>Start Date</label>
+                <input type="date" value={wizardParams.startDate} onChange={e => setWizardParams({ ...wizardParams, startDate: e.target.value })}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '0.95rem', backgroundColor: 'white', outline: 'none', transition: 'border-color 200ms ease' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5C5C5C', marginBottom: '10px' }}>Morning Start Time</label>
+                <input type="time" value={wizardParams.theoryStartTime} onChange={e => setWizardParams({ ...wizardParams, theoryStartTime: e.target.value })}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '0.95rem', outline: 'none', transition: 'border-color 200ms ease' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5C5C5C', marginBottom: '10px' }}>Afternoon Start Time</label>
+                <input type="time" value={wizardParams.labStartTime} onChange={e => setWizardParams({ ...wizardParams, labStartTime: e.target.value })}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '0.95rem', outline: 'none', transition: 'border-color 200ms ease' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', backgroundColor: '#F9FAFB', padding: '24px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6B7280', marginBottom: '10px' }}>Internal Slot (hrs)</label>
+                <input type="number" step="0.5" value={wizardParams.internalDuration} onChange={e => setWizardParams({ ...wizardParams, internalDuration: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6B7280', marginBottom: '10px' }}>External Slot (hrs)</label>
+                <input type="number" step="0.5" value={wizardParams.externalDuration} onChange={e => setWizardParams({ ...wizardParams, externalDuration: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6B7280', marginBottom: '10px' }}>Lab Slot (hrs)</label>
+                <input type="number" step="0.5" value={wizardParams.labDuration} onChange={e => setWizardParams({ ...wizardParams, labDuration: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} />
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1A1A1A', borderBottom: '1px solid #E5E5E5', paddingBottom: '12px', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Settings size={16} style={{ color: '#C9A227' }} /> Constraints & Rule Controls
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', backgroundColor: '#F9FAFB', padding: '24px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6B7280', marginBottom: '10px' }}>Min Prep Gap (days)</label>
+                <input type="number" value={constraints.minGapBetweenExams} onChange={e => setConstraints({ ...constraints, minGapBetweenExams: parseInt(e.target.value) || 0 })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} min="0" max="7" />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6B7280', marginBottom: '10px' }}>Max Exams/Day</label>
+                <input type="number" value={constraints.maxExamsPerDay} onChange={e => setConstraints({ ...constraints, maxExamsPerDay: parseInt(e.target.value) || 1 })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} min="1" max="4" />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6B7280', marginBottom: '10px' }}>Hall Fill %</label>
+                <input type="number" value={constraints.fillPercentage} onChange={e => setConstraints({ ...constraints, fillPercentage: parseInt(e.target.value) || 70 })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#C9A227'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'} min="50" max="100" />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
+              <Button onClick={() => setStep(2)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Review & Confirm <ChevronRight size={16} />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 2: Configure Constraints */}
+        {/* Step 2: Review & Run */}
         {step === 2 && (
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: '600', color: 'var(--color-navy)', marginBottom: '1rem' }}>
-              Configure Pipeline
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-[#1E3A5F] flex items-center gap-2">
+              <Play size={18} className="text-[#C9A227]" /> Review Parameters Before Launch
             </h2>
-            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
-              Set constraints for exam scheduling and hall allocation
+            <p className="text-xs text-[#5C5C5C]">
+              Please double check the scheduled configuration details. Click 'Run Pipeline' to trigger AI agents.
             </p>
 
-            <div style={{ maxWidth: '600px' }}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.95rem', fontWeight: '500', color: 'var(--color-text)' }}>
-                  Minimum Gap Between Exams (days)
-                </label>
-                <input 
-                  type="number" 
-                  value={constraints.minGapBetweenExams}
-                  onChange={(e) => setConstraints({ ...constraints, minGapBetweenExams: parseInt(e.target.value) })}
-                  min="0"
-                  max="7"
-                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #E5E5E5', borderRadius: '4px', fontSize: '0.95rem' }}
-                />
-                <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-                  Recommended: 1-2 days for student preparation
-                </small>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.95rem', fontWeight: '500', color: 'var(--color-text)' }}>
-                  Maximum Exams Per Day
-                </label>
-                <input 
-                  type="number" 
-                  value={constraints.maxExamsPerDay}
-                  onChange={(e) => setConstraints({ ...constraints, maxExamsPerDay: parseInt(e.target.value) })}
-                  min="1"
-                  max="6"
-                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #E5E5E5', borderRadius: '4px', fontSize: '0.95rem' }}
-                />
-                <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-                  Recommended: 2-3 exams per day
-                </small>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.95rem', fontWeight: '500', color: 'var(--color-text)' }}>
-                  Hall Fill Percentage (%)
-                </label>
-                <input 
-                  type="number" 
-                  value={constraints.fillPercentage}
-                  onChange={(e) => setConstraints({ ...constraints, fillPercentage: parseInt(e.target.value) })}
-                  min="50"
-                  max="100"
-                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #E5E5E5', borderRadius: '4px', fontSize: '0.95rem' }}
-                />
-                <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-                  Lower percentage = more spacing between students (anti-malpractice). Recommended: 70%
-                </small>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <Button variant="outline" onClick={() => setStep(1)}>
-                <ChevronLeft size={20} /> Back
-              </Button>
-              <Button onClick={() => setStep(3)}>
-                Next <ChevronRight size={20} />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Review & Run */}
-        {step === 3 && (
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: '600', color: 'var(--color-navy)', marginBottom: '1rem' }}>
-              Review & Run Pipeline
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
-              Review your selections and start the AI automation pipeline
-            </p>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--color-bg)', borderRadius: '8px' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--color-text)', marginBottom: '0.75rem' }}>
-                  Selected Subjects ({selectedSubjects.length})
-                </h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {subjects.filter(s => selectedSubjects.includes(s._id)).map(subject => (
-                    <span key={subject._id} style={{
-                      padding: '0.5rem 1rem',
-                      background: 'white',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem',
-                      color: 'var(--color-text)',
-                      border: '1px solid #E5E5E5'
-                    }}>
-                      {subject.subjectCode} - {subject.subjectName}
-                    </span>
-                  ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Schedule Scope</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Semester:</span> <span className="font-bold text-[#1A1A1A]">Semester {wizardParams.semester}</span></div>
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Exam Category:</span> <span className="font-bold text-[#1A1A1A]">{getExamCategoryLabel(wizardParams.examCategory)}</span></div>
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Component Type:</span> <span className="font-bold text-[#1A1A1A] capitalize">{wizardParams.component}</span></div>
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Start Date:</span> <span className="font-bold text-[#1A1A1A]">{wizardParams.startDate}</span></div>
                 </div>
               </div>
 
-              <div style={{ padding: '1rem', background: 'var(--color-bg)', borderRadius: '8px' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--color-text)', marginBottom: '0.75rem' }}>
-                  Configuration
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Min Gap</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--color-navy)' }}>{constraints.minGapBetweenExams} days</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Max Exams/Day</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--color-navy)' }}>{constraints.maxExamsPerDay}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Hall Fill</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--color-navy)' }}>{constraints.fillPercentage}%</div>
-                  </div>
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Applied Constraints</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Min Gap:</span> <span className="font-bold text-[#1A1A1A]">{constraints.minGapBetweenExams} days</span></div>
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Max Exams Per Day:</span> <span className="font-bold text-[#1A1A1A]">{constraints.maxExamsPerDay}</span></div>
+                  <div className="flex justify-between"><span className="text-[#5C5C5C]">Hall Fill Percentage:</span> <span className="font-bold text-[#1A1A1A]">{constraints.fillPercentage}%</span></div>
                 </div>
               </div>
             </div>
 
             {error && (
-              <div style={{ 
-                padding: '1rem', 
-                background: '#B3413E20', 
-                border: '1px solid #B3413E',
-                borderRadius: '8px', 
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}>
-                <XCircle size={20} color="#B3413E" />
-                <span style={{ color: '#B3413E', fontSize: '0.95rem' }}>{error}</span>
+              <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 text-[#B3413E] rounded-xl text-xs font-semibold">
+                <XCircle size={16} />
+                <span>{error}</span>
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <Button variant="outline" onClick={() => setStep(2)} disabled={running}>
-                <ChevronLeft size={20} /> Back
-              </Button>
-              <Button onClick={handleRunPipeline} disabled={running}>
+            <div className="flex justify-between pt-6 border-t border-gray-100">
+              <Button variant="ghost" onClick={() => setStep(1)} disabled={running}>&lt; Back</Button>
+              <Button onClick={handleRunPipeline} disabled={running} variant="primary" className="flex items-center gap-1.5 font-bold">
                 {running ? (
                   <>
-                    <Loader size={20} className="animate-spin" /> Running Pipeline...
+                    <Loader size={16} className="animate-spin" /> Orchestrating Pipeline...
                   </>
                 ) : (
                   <>
-                    <Play size={20} /> Run Pipeline
+                    <Play size={16} /> Run Full Pipeline
                   </>
                 )}
               </Button>
@@ -379,55 +316,35 @@ const RunAgents = () => {
           </div>
         )}
 
-        {/* Step 4: Results */}
-        {step === 4 && result && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-              <CheckCircle size={40} color="var(--color-success)" />
+        {/* Step 3: Results */}
+        {step === 3 && result && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <CheckCircle size={36} className="text-emerald-500" />
               <div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: '600', color: 'var(--color-navy)', marginBottom: '0.25rem' }}>
-                  Pipeline Completed Successfully
-                </h2>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
-                  Exams scheduled, halls allocated, and invigilators assigned
-                </p>
+                <h2 className="text-lg font-bold text-[#1A1A1A]">Pipeline Executed Successfully</h2>
+                <p className="text-xs text-[#5C5C5C]">The AI Orchestrator scheduled all subjects, paired seat positions, and loaded balanced invigilators.</p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ padding: '1.5rem', background: 'var(--color-bg)', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--color-navy)', marginBottom: '0.5rem' }}>
-                  {result.data?.examsCreated || 0}
-                </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Exams Scheduled
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 bg-gray-50 border border-gray-100 rounded-2xl text-center">
+                <div className="text-3xl font-display font-bold text-[#1E3A5F] mb-1">{result.data?.examsCreated || 0}</div>
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Exams Scheduled</div>
               </div>
-              <div style={{ padding: '1.5rem', background: 'var(--color-bg)', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--color-gold)', marginBottom: '0.5rem' }}>
-                  {result.data?.allocationsCreated || 0}
-                </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Hall Allocations
-                </div>
+              <div className="p-5 bg-gray-50 border border-gray-100 rounded-2xl text-center">
+                <div className="text-3xl font-display font-bold text-[#C9A227] mb-1">{result.data?.allocationsCreated || 0}</div>
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Hall Seating Paired</div>
               </div>
-              <div style={{ padding: '1.5rem', background: 'var(--color-bg)', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--color-success)', marginBottom: '0.5rem' }}>
-                  {result.data?.assignmentsCreated || 0}
-                </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Invigilators Assigned
-                </div>
+              <div className="p-5 bg-gray-50 border border-gray-100 rounded-2xl text-center">
+                <div className="text-3xl font-display font-bold text-emerald-600 mb-1">{result.data?.assignmentsCreated || 0}</div>
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Invigilators Assigned</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <Button onClick={handleReset} style={{ flex: 1 }}>
-                Run New Pipeline
-              </Button>
-              <Button variant="outline" onClick={() => window.location.href = '/examcell/timetable'} style={{ flex: 1 }}>
-                View Timetable
-              </Button>
+            <div className="flex gap-3 pt-6 border-t border-gray-100">
+              <Button onClick={handleReset} variant="ghost" className="flex-1">Run New Pipeline</Button>
+              <Button onClick={() => window.location.href = '/examcell/timetable'} variant="gold" className="flex-1">Go to Timetable</Button>
             </div>
           </div>
         )}

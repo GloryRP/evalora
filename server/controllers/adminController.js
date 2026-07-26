@@ -5,16 +5,91 @@ const Faculty = require('../models/Faculty');
 const Subject = require('../models/Subject');
 const Department = require('../models/Department');
 
+const deriveBatchFromUsn = (usn) => {
+  if (!usn) return '';
+  const match = usn.match(/^[a-zA-Z0-9]{3}(\d{2})[a-zA-Z]{2}\d{3}$/i);
+  if (match) {
+    const year = parseInt(match[1]);
+    if (!isNaN(year)) {
+      const start = 2000 + year;
+      const end = start + 4;
+      return `${start}-${end}`;
+    }
+  }
+  const fallbackMatch = usn.match(/\D(\d{2})[a-zA-Z]/);
+  if (fallbackMatch) {
+    const year = parseInt(fallbackMatch[1]);
+    if (!isNaN(year)) {
+      const start = 2000 + year;
+      const end = start + 4;
+      return `${start}-${end}`;
+    }
+  }
+  return '';
+};
+
+// ==================== ADMIN STATS ====================
+
+/**
+ * getAdminStats - Returns dashboard statistics
+ * GET /api/v1/admin/stats
+ */
+const getAdminStats = async (req, res) => {
+  try {
+    const Exam = require('../models/Exam');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [studentCount, facultyCount, departmentCount, departments, studentsByDept, upcomingExams, facultyByDept] = await Promise.all([
+      Student.countDocuments(),
+      Faculty.countDocuments(),
+      Department.countDocuments(),
+      Department.find({}, 'departmentName departmentCode').sort({ departmentCode: 1 }),
+      Student.aggregate([
+        { $group: { _id: '$department', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      Exam.find({ examDate: { $gte: today }, status: { $in: ['scheduled', 'draft'] } })
+        .populate('subjectId', 'subjectName subjectCode department')
+        .sort({ examDate: 1 })
+        .limit(5),
+      Faculty.aggregate([
+        { $group: { _id: '$department', count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const studentsByDepartment = studentsByDept.map((d) => ({
+      department: d._id,
+      count: d.count,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        studentCount,
+        facultyCount,
+        departmentCount,
+        studentsByDepartment,
+        upcomingExams,
+        facultyByDept,
+      },
+    });
+  } catch (error) {
+    console.error('Get admin stats error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stats' });
+  }
+};
+
 // ==================== STUDENT CRUD ====================
 
 /**
  * createStudent - Creates a new student and their User account
  * POST /api/v1/admin/students
- * Body: { usn, name, department, semester, email, phone, password }
+ * Body: { usn, name, department, semester, email, phone, password, batch }
  */
 const createStudent = async (req, res) => {
   try {
-    const { usn, name, department, semester, email, phone, password } = req.body;
+    const { usn, name, department, semester, email, phone, password, batch } = req.body;
 
     // Check if user with this USN already exists
     const existingUser = await User.findOne({ username: usn.toUpperCase() });
@@ -35,6 +110,7 @@ const createStudent = async (req, res) => {
       role: 'student',
       name,
       department,
+      email, // Save email to User model too
     });
 
     // Create Student profile record
@@ -45,6 +121,7 @@ const createStudent = async (req, res) => {
       semester,
       email,
       phone,
+      batch: batch || deriveBatchFromUsn(usn),
     });
 
     res.status(201).json({
@@ -73,16 +150,17 @@ const createStudent = async (req, res) => {
 
 /**
  * getStudents - Returns list of all students with optional filters
- * GET /api/v1/admin/students?department=CSE&semester=5
+ * GET /api/v1/admin/students?department=CSE&semester=5&batch=2021-2025
  */
 const getStudents = async (req, res) => {
   try {
-    const { department, semester } = req.query;
+    const { department, semester, batch } = req.query;
 
     // Build filter object based on query params
     const filter = {};
     if (department) filter.department = department;
     if (semester) filter.semester = parseInt(semester);
+    if (batch) filter.batch = batch;
 
     const students = await Student.find(filter).sort({ usn: 1 });
 
@@ -107,11 +185,20 @@ const getStudents = async (req, res) => {
 const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, department, semester, email, phone } = req.body;
+    const { name, department, semester, email, phone, batch, password } = req.body;
+
+    const studentBefore = await Student.findById(id);
+    if (!studentBefore) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found.',
+      });
+    }
+    const finalBatch = batch || studentBefore.batch || deriveBatchFromUsn(studentBefore.usn);
 
     const student = await Student.findByIdAndUpdate(
       id,
-      { name, department, semester, email, phone },
+      { name, department, semester, email, phone, batch: finalBatch },
       { new: true, runValidators: true }
     );
 
@@ -122,10 +209,15 @@ const updateStudent = async (req, res) => {
       });
     }
 
-    // Also update the User record if name or department changed
+    // Update User record
+    const userUpdate = { name, department, email };
+    if (password && password.trim().length >= 6) {
+      userUpdate.passwordHash = await bcrypt.hash(password.toString(), 10);
+    }
+
     await User.findOneAndUpdate(
       { username: student.usn },
-      { name, department }
+      userUpdate
     );
 
     res.json({
@@ -206,6 +298,7 @@ const createFaculty = async (req, res) => {
       role: 'faculty',
       name,
       department,
+      email, // Save email to User model too
     });
 
     // Create Faculty profile record
@@ -278,7 +371,7 @@ const getFaculty = async (req, res) => {
 const updateFaculty = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, department, designation, subjectsAssigned, email, phone } = req.body;
+    const { name, department, designation, subjectsAssigned, email, phone, password } = req.body;
 
     const faculty = await Faculty.findByIdAndUpdate(
       id,
@@ -294,9 +387,14 @@ const updateFaculty = async (req, res) => {
     }
 
     // Update User record
+    const userUpdate = { name, department, email };
+    if (password && password.trim().length >= 6) {
+      userUpdate.passwordHash = await bcrypt.hash(password.toString(), 10);
+    }
+
     await User.findOneAndUpdate(
       { username: faculty.employeeId },
-      { name, department }
+      userUpdate
     );
 
     res.json({
@@ -356,7 +454,7 @@ const deleteFaculty = async (req, res) => {
  */
 const createSubject = async (req, res) => {
   try {
-    const { subjectCode, subjectName, department, semester, credits } = req.body;
+    const { subjectCode, subjectName, department, semester, credits, subjectType, examConfig } = req.body;
 
     const subject = await Subject.create({
       subjectCode: subjectCode.toUpperCase(),
@@ -364,6 +462,8 @@ const createSubject = async (req, res) => {
       department,
       semester,
       credits,
+      subjectType: subjectType || 'theory',
+      examConfig: examConfig || undefined,
     });
 
     res.status(201).json({
@@ -424,11 +524,15 @@ const getSubjects = async (req, res) => {
 const updateSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { subjectName, department, semester, credits } = req.body;
+    const { subjectName, department, semester, credits, subjectType, examConfig } = req.body;
+
+    const updateData = { subjectName, department, semester, credits };
+    if (subjectType) updateData.subjectType = subjectType;
+    if (examConfig) updateData.examConfig = examConfig;
 
     const subject = await Subject.findByIdAndUpdate(
       id,
-      { subjectName, department, semester, credits },
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -610,25 +714,182 @@ const deleteDepartment = async (req, res) => {
   }
 };
 
+// ==================== BULK CREATE ====================
+
+/**
+ * bulkCreateStudents - Creates multiple students from parsed Excel/CSV data
+ * POST /api/v1/admin/students/bulk
+ * Body: { records: [{ usn, name, department, semester, email, phone, password }] }
+ */
+const bulkCreateStudents = async (req, res) => {
+  const { records } = req.body;
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ success: false, message: 'No records provided' });
+  }
+
+  let created = 0, skipped = 0;
+  const errors = [];
+
+  for (const record of records) {
+    try {
+      const { usn, name, department, semester, email, phone, password, batch } = record;
+      if (!usn || !name || !department || !semester || !password) {
+        errors.push({ usn: usn || '?', reason: 'Missing required fields (usn, name, department, semester, password)' });
+        skipped++;
+        continue;
+      }
+      const existing = await User.findOne({ username: usn.toString().toUpperCase() });
+      if (existing) { skipped++; errors.push({ usn, reason: 'Already exists' }); continue; }
+      const passwordHash = await bcrypt.hash(password.toString(), 10);
+      await User.create({ username: usn.toString().toUpperCase(), passwordHash, role: 'student', name, department, email });
+      await Student.create({
+        usn: usn.toString().toUpperCase(),
+        name,
+        department,
+        semester: parseInt(semester),
+        email,
+        phone,
+        batch: batch || deriveBatchFromUsn(usn.toString()),
+      });
+      created++;
+    } catch (err) {
+      skipped++;
+      errors.push({ usn: record.usn || '?', reason: err.code === 11000 ? 'Already exists' : err.message });
+    }
+  }
+  res.json({ success: true, data: { created, skipped, errors } });
+};
+
+/**
+ * bulkCreateFaculty - Creates multiple faculty from parsed Excel/CSV data
+ * POST /api/v1/admin/faculty/bulk
+ */
+const bulkCreateFaculty = async (req, res) => {
+  const { records } = req.body;
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ success: false, message: 'No records provided' });
+  }
+
+  let created = 0, skipped = 0;
+  const errors = [];
+
+  for (const record of records) {
+    try {
+      const { employeeId, name, department, designation, email, phone, password } = record;
+      if (!employeeId || !name || !department || !designation || !password) {
+        errors.push({ employeeId: employeeId || '?', reason: 'Missing required fields (employeeId, name, department, designation, password)' });
+        skipped++;
+        continue;
+      }
+      const existing = await User.findOne({ username: employeeId.toString().toUpperCase() });
+      if (existing) { skipped++; errors.push({ employeeId, reason: 'Already exists' }); continue; }
+      const passwordHash = await bcrypt.hash(password.toString(), 10);
+      await User.create({ username: employeeId.toString().toUpperCase(), passwordHash, role: 'faculty', name, department, email });
+      await Faculty.create({ employeeId: employeeId.toString().toUpperCase(), name, department, designation, email, phone });
+      created++;
+    } catch (err) {
+      skipped++;
+      errors.push({ employeeId: record.employeeId || '?', reason: err.code === 11000 ? 'Already exists' : err.message });
+    }
+  }
+  res.json({ success: true, data: { created, skipped, errors } });
+};
+
+/**
+ * bulkCreateDepartments - Creates multiple departments from parsed Excel/CSV data
+ * POST /api/v1/admin/departments/bulk
+ */
+const bulkCreateDepartments = async (req, res) => {
+  const { records } = req.body;
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ success: false, message: 'No records provided' });
+  }
+
+  let created = 0, skipped = 0;
+  const errors = [];
+
+  for (const record of records) {
+    try {
+      const { departmentCode, departmentName } = record;
+      if (!departmentCode || !departmentName) {
+        errors.push({ departmentCode: departmentCode || '?', reason: 'Missing required fields (departmentCode, departmentName)' });
+        skipped++;
+        continue;
+      }
+      await Department.create({ departmentCode: departmentCode.toString().toUpperCase(), departmentName });
+      created++;
+    } catch (err) {
+      skipped++;
+      errors.push({ departmentCode: record.departmentCode || '?', reason: err.code === 11000 ? 'Already exists' : err.message });
+    }
+  }
+  res.json({ success: true, data: { created, skipped, errors } });
+};
+
+/**
+ * bulkCreateSubjects - Creates multiple subjects from parsed Excel/CSV data
+ * POST /api/v1/admin/subjects/bulk
+ */
+const bulkCreateSubjects = async (req, res) => {
+  const { records } = req.body;
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ success: false, message: 'No records provided' });
+  }
+
+  let created = 0, skipped = 0;
+  const errors = [];
+
+  for (const record of records) {
+    try {
+      const { subjectCode, subjectName, department, semester, credits, subjectType, examConfig } = record;
+      if (!subjectCode || !subjectName || !department || !semester || !credits) {
+        errors.push({ subjectCode: subjectCode || '?', reason: 'Missing required fields (subjectCode, subjectName, department, semester, credits)' });
+        skipped++;
+        continue;
+      }
+      await Subject.create({
+        subjectCode: subjectCode.toString().toUpperCase(),
+        subjectName,
+        department,
+        semester: parseInt(semester),
+        credits: parseInt(credits),
+        subjectType: subjectType || 'theory',
+        examConfig: examConfig || undefined,
+      });
+      created++;
+    } catch (err) {
+      skipped++;
+      errors.push({ subjectCode: record.subjectCode || '?', reason: err.code === 11000 ? 'Already exists' : err.message });
+    }
+  }
+  res.json({ success: true, data: { created, skipped, errors } });
+};
+
 module.exports = {
+  // Stats
+  getAdminStats,
   // Student CRUD
   createStudent,
   getStudents,
   updateStudent,
   deleteStudent,
+  bulkCreateStudents,
   // Faculty CRUD
   createFaculty,
   getFaculty,
   updateFaculty,
   deleteFaculty,
+  bulkCreateFaculty,
   // Subject CRUD
   createSubject,
   getSubjects,
   updateSubject,
   deleteSubject,
+  bulkCreateSubjects,
   // Department CRUD
   createDepartment,
   getDepartments,
   updateDepartment,
   deleteDepartment,
+  bulkCreateDepartments,
 };

@@ -36,6 +36,18 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Department is required'],
     trim: true,
   },
+  email: {
+    type: String,
+    sparse: true, // Allows multiple null values
+    trim: true,
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+  },
+  phone: {
+    type: String,
+    sparse: true,
+    trim: true,
+  },
   isActive: {
     type: Boolean,
     default: true,

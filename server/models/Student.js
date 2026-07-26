@@ -41,6 +41,10 @@ const studentSchema = new mongoose.Schema({
     trim: true,
     match: [/^[0-9]{10}$/, 'Please provide a valid 10-digit phone number'],
   },
+  batch: {
+    type: String,
+    trim: true,
+  },
 }, {
   timestamps: true,
 });

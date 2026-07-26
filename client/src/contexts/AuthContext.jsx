@@ -16,17 +16,40 @@ export const AuthProvider = ({ children }) => {
   /**
    * Initialize auth state on app load
    * Try to restore session from sessionStorage (survives page refresh within same tab)
+   * Validates the stored token by calling /auth/me - clears stale sessions
    */
   useEffect(() => {
-    const storedToken = sessionStorage.getItem('token');
-    const storedUser = sessionStorage.getItem('user');
+    const initAuth = async () => {
+      const storedToken = sessionStorage.getItem('token');
+      const storedUser = sessionStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setAuthToken(storedToken);
-    }
-    setLoading(false);
+      if (storedToken && storedUser) {
+        setAuthToken(storedToken);
+        try {
+          // Validate the token is still valid
+          const response = await apiClient.get('/auth/me');
+          if (response.data?.success) {
+            setToken(storedToken);
+            setUser(response.data.user);
+            // Update stored user with fresh data
+            sessionStorage.setItem('user', JSON.stringify(response.data.user));
+          } else {
+            throw new Error('Invalid token');
+          }
+        } catch {
+          // Token is expired or invalid - clear stale session
+          console.warn('Stored token is invalid, clearing session');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
+          setAuthToken(null);
+          setToken(null);
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   /**

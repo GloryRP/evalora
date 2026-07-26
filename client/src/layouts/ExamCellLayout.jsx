@@ -4,6 +4,7 @@
  */
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import NotificationBell from '../components/NotificationBell';
 import {
   LayoutDashboard,
   GraduationCap,
@@ -16,9 +17,10 @@ import {
   LogOut,
   Menu,
   X,
+  Send,
+  BarChart2,
 } from 'lucide-react';
 import { useState } from 'react';
-import Badge from '../components/ui/Badge';
 
 const ExamCellLayout = () => {
   const { user, logout } = useAuth();
@@ -34,55 +36,83 @@ const ExamCellLayout = () => {
   const navItems = [
     { path: '/examcell/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/examcell/exams', label: 'Exams', icon: FileText },
-    { path: '/examcell/halls', label: 'Halls', icon: Building2 },
     { path: '/examcell/run-agents', label: 'Run Agents', icon: Play },
     { path: '/examcell/timetable', label: 'Timetable', icon: Calendar },
     { path: '/examcell/hall-allocations', label: 'Hall Allocations', icon: Users },
     { path: '/examcell/invigilator-assignments', label: 'Invigilators', icon: ClipboardList },
+    { path: '/examcell/question-papers', label: 'Question Papers', icon: FileText },
+    { path: '/examcell/answer-scripts', label: 'Answer Scripts & Marks', icon: FileText },
     { path: '/examcell/agent-logs', label: 'Agent Logs', icon: FileText },
   ];
 
   const SidebarContent = () => (
     <>
       {/* Logo/Header */}
-      <div className="p-6 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <GraduationCap size={32} className="text-[#C9A227]" />
-          <div>
-            <h1 className="text-xl font-display font-bold text-white">Vidyā</h1>
-            <p className="text-xs text-gray-400">Exam Cell</p>
-          </div>
+      <div style={{ padding: '24px 20px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: 0, position: 'relative' }}>
+        {/* Bell fixed top-right of sidebar */}
+        <div style={{ position: 'absolute', top: '20px', right: '16px' }}>
+          <NotificationBell />
+        </div>
+
+        {/* Logo row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', paddingRight: '32px' }}>
+          <GraduationCap size={18} style={{ color: 'var(--color-gold)', flexShrink: 0 }} strokeWidth={2} />
+          <span style={{ fontFamily: 'var(--font-display)', color: 'white', fontSize: '1.2rem', fontWeight: 700 }}>Evalora</span>
+        </div>
+
+        {/* User info */}
+        <div>
+          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'white', marginBottom: '3px', lineHeight: 1.3 }}>{user?.name}</div>
+          <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>{user?.username}</div>
+          <span style={{ display: 'inline-block', padding: '3px 10px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', borderRadius: '4px' }}>
+            EXAM CELL
+          </span>
         </div>
       </div>
 
-      {/* User Info */}
-      <div className="p-4 mx-4 mt-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
-        <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-        <p className="text-xs text-gray-400 truncate">{user?.username}</p>
-        <Badge variant="gold" className="mt-2">
-          EXAM CELL
-        </Badge>
-      </div>
-
       {/* Navigation */}
-      <nav className="flex-1 p-4 mt-4 overflow-y-auto">
-        <ul className="space-y-2">
+      <nav style={{ padding: '16px 12px', flex: 1, overflowY: 'auto' }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
             return (
-              <li key={item.path}>
+              <li key={item.path} style={{ marginBottom: '4px' }}>
                 <Link
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? 'bg-[#C9A227]/10 text-[#C9A227] border-l-4 border-[#C9A227] font-medium'
-                      : 'text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent'
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: isActive ? '10px 9px 10px 9px' : '10px 12px',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    color: isActive ? 'white' : 'rgba(255,255,255,0.7)',
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                    borderLeft: isActive ? '3px solid var(--color-gold)' : '3px solid transparent',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
+                    textDecoration: 'none',
+                    transition: 'all 150ms ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)';
+                      e.currentTarget.style.color = 'rgba(255,255,255,0.9)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                    }
+                  }}
                 >
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                  <span className="text-sm">{item.label}</span>
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -91,12 +121,33 @@ const ExamCellLayout = () => {
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-white/10">
+      <div style={{ padding: '16px 12px', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 'auto' }}>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-900/20 text-red-300 rounded-lg hover:bg-red-900/30 transition font-medium"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            width: '100%',
+            border: 'none',
+            background: 'transparent',
+            color: 'rgba(255,255,255,0.6)',
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            transition: 'all 150ms ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.backgroundColor = 'rgba(255,0,0,0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
         >
-          <LogOut size={20} />
+          <LogOut size={18} style={{ flexShrink: 0 }} />
           <span>Logout</span>
         </button>
       </div>
@@ -108,19 +159,36 @@ const ExamCellLayout = () => {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#1E3A5F] border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <GraduationCap size={24} className="text-[#C9A227]" />
-          <span className="text-white font-display font-bold">Vidyā</span>
+          <GraduationCap size={20} className="text-[#C9A227]" />
+          <span className="text-white font-display font-bold text-lg">Evalora</span>
         </div>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-white p-2 hover:bg-white/10 rounded-lg"
-        >
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-white p-2 hover:bg-white/10 rounded-lg"
+          >
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex lg:w-72 bg-[#1E3A5F] shadow-2xl flex-col">
+      <aside style={{ 
+        width: '260px',
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        backgroundColor: 'var(--color-navy)',
+        overflowY: 'auto',
+        overflowX: 'visible',
+        zIndex: 100,
+        boxShadow: '2px 0 12px rgba(0,0,0,0.15)'
+      }} className="hidden lg:flex">
         <SidebarContent />
       </aside>
 
@@ -131,14 +199,27 @@ const ExamCellLayout = () => {
             className="lg:hidden fixed inset-0 bg-black/50 z-40"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="lg:hidden fixed top-0 left-0 bottom-0 w-72 bg-[#1E3A5F] shadow-2xl flex flex-col z-50">
+          <aside style={{ 
+            width: '260px',
+            padding: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            backgroundColor: 'var(--color-navy)',
+            overflowY: 'auto',
+            overflowX: 'visible',
+            zIndex: 50
+          }} className="lg:hidden">
             <SidebarContent />
           </aside>
         </>
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-auto pt-16 lg:pt-0">
+      <main style={{ marginLeft: '260px', minHeight: 'calc(100vh - 0px)', backgroundColor: 'var(--color-bg)', padding: '36px 40px 24px 40px' }} className="flex-1 overflow-auto pt-16 lg:pt-0 lg:ml-[260px] ml-0">
         <Outlet />
       </main>
     </div>
