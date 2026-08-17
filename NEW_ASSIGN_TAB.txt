@@ -1,0 +1,106 @@
+// ─── Assign to Faculty Tab (AUTO-GENERATE SYSTEM) ─────────────────────────────
+const AssignToFacultyTab = ({ exams, getExamTypeLabel }) => {
+  const [form, setForm] = useState({ semester: '', examType: '', deadline: '' });
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState(null);
+  const [overview, setOverview] = useState([]);
+  const [overviewFilters, setOverviewFilters] = useState({ semester: '', examType: '' });
+  const [loadingOverview, setLoadingOverview] = useState(false);
+  const [expandedSubjects, setExpandedSubjects] = useState([]);
+
+  useEffect(() => {
+    if (overviewFilters.semester && overviewFilters.examType) {
+      loadOverview();
+    }
+  }, [overviewFilters]);
+
+  const loadOverview = async () => {
+    try {
+      setLoadingOverview(true);
+      const res = await api.get(`/api/v1/qp-submissions/overview?semester=${overviewFilters.semester}&examType=${overviewFilters.examType}`);
+      setOverview(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load overview:', err);
+      setOverview([]);
+    } finally {
+      setLoadingOverview(false);
+    }
+  };
+
+  const handleAutoGenerate = async () => {
+    if (!form.semester || !form.examType || !form.deadline) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    setGenerating(true);
+    setResult(null);
+
+    try {
+      const res = await api.post('/api/v1/qp-submissions/auto-assign', {
+        semester: parseInt(form.semester),
+        examType: form.examType,
+        deadline: form.deadline,
+      });
+
+      setResult(res.data?.summary);
+      toast.success('Assignments created successfully!');
+      
+      // Refresh overview
+      setOverviewFilters({ semester: form.semester, examType: form.examType });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate assignments');
+      console.error(err);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSendReminder = async (subjectId = null) => {
+    try {
+      await api.post('/api/v1/qp-submissions/send-reminder', {
+        examSeriesId: null,
+        subjectId,
+      });
+      toast.success('Reminders sent successfully');
+    } catch (err) {
+      toast.error('Failed to send reminders');
+    }
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+  const toggleSubject = (subjectId) => {
+    setExpandedSubjects(prev =>
+      prev.includes(subjectId)
+        ? prev.filter(id => id !== subjectId)
+        : [...prev, subjectId]
+    );
+  };
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      assigned: { bg: '#F3F4F6', color: '#6B7280', label: 'Awaiting' },
+      draft: { bg: '#FEF3C7', color: '#92400E', label: 'In Progress' },
+      submitted: { bg: '#DBEAFE', color: '#1E40AF', label: 'Submitted' },
+      revision_requested: { bg: '#FED7AA', color: '#C2410C', label: 'Revision Sent' },
+      selected: { bg: '#D1FAE5', color: '#065F46', label: '✓ Selected' },
+      archived: { bg: '#F3F4F6', color: '#9CA3AF', label: 'Archived' },
+    };
+
+    const badge = badges[status] || { bg: '#F3F4F6', color: '#6B7280', label: status };
+
+    return (
+      <span style={{
+        backgroundColor: badge.bg,
+        color: badge.color,
+        padding: '3px 10px',
+        borderRadius: '12px',
+        fontSize: '0.72rem',
+        fontWeight: 600,
+      }}>
+        {badge.label}
+      </span>
+    );
+  };

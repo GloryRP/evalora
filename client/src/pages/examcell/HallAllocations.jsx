@@ -9,6 +9,7 @@ import api from '../../lib/api';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
+import { useAcademicYear } from '../../contexts/InstitutionContext';
 
 const getBranchCode = (dept) => {
   if (!dept) return '—';
@@ -27,6 +28,7 @@ const getBranchCode = (dept) => {
 };
 
 const HallAllocations = () => {
+  const { currentAcademicYear } = useAcademicYear();
   const [allocations, setAllocations] = useState([]);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -188,31 +190,34 @@ const HallAllocations = () => {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header (Hidden during print) */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 print:hidden">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1">
+      <div style={{ marginBottom: '20px' }} className="print:hidden">
+        {/* ROW 1: Title + Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
             Seating & Hall Allotments
           </h1>
-          <p className="text-[#5C5C5C] text-sm">
-            Seat layouts and student classroom allocations matching VTU assessment sheets.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Semester Selector */}
-          <select value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm bg-white font-semibold">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-              <option key={sem} value={sem}>Semester {sem}</option>
-            ))}
-          </select>
-
-          {/* Decoupled Run Seating Allocation Agent Button */}
-          <Button onClick={() => setShowAgentModal(true)} disabled={runningAgent || exams.length === 0} variant="gold" className="flex items-center gap-1.5 font-bold">
+          <button onClick={() => setShowAgentModal(true)} disabled={runningAgent || exams.length === 0} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: runningAgent || exams.length === 0 ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: runningAgent || exams.length === 0 ? 0.6 : 1 }}
+            onMouseEnter={(e) => { if (!runningAgent && exams.length > 0) e.currentTarget.style.backgroundColor = '#B8911F'; }}
+            onMouseLeave={(e) => { if (!runningAgent && exams.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-gold)'; }}>
             {runningAgent ? <Loader className="animate-spin" size={16} /> : <Play size={16} />}
             Generate Seating Allotments
-          </Button>
+          </button>
         </div>
+
+        {/* ROW 2: Description */}
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
+          Seat layouts and student classroom allocations matching VTU assessment sheets.
+        </p>
+
+        {/* ROW 3: Semester Filter */}
+        <select value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value)}
+          style={{ width: '180px', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', appearance: 'none', backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C5C5C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px', transition: 'border-color 200ms ease' }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+            <option key={sem} value={sem}>Semester {sem}</option>
+          ))}
+        </select>
       </div>
 
       {/* Main Content Area */}
@@ -271,7 +276,7 @@ const HallAllocations = () => {
                 <h3 className="text-sm font-bold text-[#C9A227] uppercase tracking-wider mt-2">Centralized IA Examination Seating</h3>
                 
                 <div className="flex justify-center flex-wrap gap-4 text-xs font-bold text-gray-500 mt-2">
-                  <span>Academic Year: 2025-26</span>
+                  <span>Academic Year: {currentAcademicYear}</span>
                   <span>•</span>
                   <span>Test: IA - II</span>
                   <span>•</span>
@@ -437,7 +442,7 @@ const HallAllocations = () => {
             </div>
             <div className="p-6 space-y-4">
               <p className="text-xs text-[#5C5C5C]">
-                Running this seating agent maps students from scheduled exams for **Semester {selectedSemester}** into physical rooms.
+                Running this seating agent maps students from scheduled exams for <strong>Semester {selectedSemester}</strong> into physical rooms.
               </p>
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Hall Fill Capacity Limit (%)</label>
@@ -454,9 +459,14 @@ const HallAllocations = () => {
 
               <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <Button onClick={() => setShowAgentModal(false)} variant="ghost" className="flex-1">Cancel</Button>
-                <Button onClick={handleRunSeatingAllocation} variant="gold" className="flex-1 font-bold">
+                <button
+                  onClick={handleRunSeatingAllocation}
+                  style={{ flex: 1, padding: '10px 20px', backgroundColor: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#152B45'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-navy)'; }}
+                >
                   Run Seating Agent
-                </Button>
+                </button>
               </div>
             </div>
           </div>

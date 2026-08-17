@@ -57,13 +57,7 @@ const Subjects = () => {
     department: '',
     semester: '',
     credits: '',
-    subjectType: 'theory',
-    examConfig: {
-      theoryInternals: 2,
-      theoryExternal: true,
-      labInternals: 0,
-      labExternal: false
-    }
+    subjectType: 'theory'
   });
 
   const { data: subjectsData, isLoading } = useQuery({
@@ -101,20 +95,6 @@ const Subjects = () => {
     onError: (e) => toast.error(e.response?.data?.message || 'Failed to delete subject'),
   });
 
-  const handleTypeChange = (type) => {
-    let defaults = { theoryInternals: 2, theoryExternal: true, labInternals: 0, labExternal: false };
-    if (type === 'lab') {
-      defaults = { theoryInternals: 0, theoryExternal: false, labInternals: 2, labExternal: true };
-    } else if (type === 'integrated') {
-      defaults = { theoryInternals: 2, theoryExternal: true, labInternals: 2, labExternal: true };
-    }
-    setFormData(prev => ({
-      ...prev,
-      subjectType: type,
-      examConfig: defaults
-    }));
-  };
-
   const openModal = (subject = null) => {
     if (subject) {
       setEditingSubject(subject);
@@ -124,13 +104,7 @@ const Subjects = () => {
         department: subject.department,
         semester: subject.semester,
         credits: subject.credits,
-        subjectType: subject.subjectType || 'theory',
-        examConfig: subject.examConfig || {
-          theoryInternals: 2,
-          theoryExternal: true,
-          labInternals: 0,
-          labExternal: false
-        }
+        subjectType: subject.subjectType || 'theory'
       });
     } else {
       setEditingSubject(null);
@@ -140,13 +114,7 @@ const Subjects = () => {
         department: '',
         semester: '',
         credits: '',
-        subjectType: 'theory',
-        examConfig: {
-          theoryInternals: 2,
-          theoryExternal: true,
-          labInternals: 0,
-          labExternal: false
-        }
+        subjectType: 'theory'
       });
     }
     setIsModalOpen(true);
@@ -168,49 +136,59 @@ const Subjects = () => {
   return (
     <div className="p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div>
-              <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1">Subjects</h1>
-              <p className="text-[#5C5C5C]">{filtered.length} subject{filtered.length !== 1 ? 's' : ''}{search ? ' found' : ' total'}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button onClick={() => setIsExportModalOpen(true)} variant="ghost" className="flex items-center gap-2 whitespace-nowrap border border-gray-300 hover:border-green-500 hover:text-green-600">
+        <div style={{ marginBottom: '20px' }}>
+          {/* ROW 1: Title + Action Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
+              Subjects
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button onClick={() => setIsExportModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: 'var(--color-text)', border: '1.5px solid #E0E0E0', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
                 <Download size={17} /> Export Excel
-              </Button>
-              <Button onClick={() => setIsBulkModalOpen(true)} variant="ghost" className="flex items-center gap-2 whitespace-nowrap border border-gray-300 hover:border-[#1E3A5F]">
+              </button>
+              <button onClick={() => setIsBulkModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: 'var(--color-text)', border: '1.5px solid #E0E0E0', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
                 <Upload size={17} /> Import CSV/Excel
-              </Button>
-              <Button onClick={() => openModal()} variant="gold" className="flex items-center gap-2 whitespace-nowrap">
+              </button>
+              <button onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#B8911F'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gold)'; }}>
                 <Plus size={20} /> Add Subject
-              </Button>
+              </button>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={17} />
-                <input type="text" placeholder="Search by subject name, code or department…" value={search}
-                  onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm" />
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                <input type="text" placeholder="Department…" value={filters.department}
-                  onChange={e => { setFilters({ ...filters, department: e.target.value }); setPage(1); }}
-                  className="pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm" />
-              </div>
-              <select value={filters.semester} onChange={e => { setFilters({ ...filters, semester: e.target.value }); setPage(1); }}
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm">
-                <option value="">All Semesters</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Semester {s}</option>)}
-              </select>
-            </div>
+          {/* ROW 2: Record count */}
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
+            {filtered.length} subject{filtered.length !== 1 ? 's' : ''}{search ? ' found' : ' total'}
+          </p>
+
+          {/* ROW 3: Search + Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <input type="text" placeholder="Search by subject name, code or department…" value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              style={{ flex: 1, minWidth: '200px', padding: '10px 16px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }} />
+            <input type="text" placeholder="Department…" value={filters.department}
+              onChange={e => { setFilters({ ...filters, department: e.target.value }); setPage(1); }}
+              style={{ width: '180px', flexShrink: 0, padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }} />
+            <select value={filters.semester} onChange={e => { setFilters({ ...filters, semester: e.target.value }); setPage(1); }}
+              style={{ width: '150px', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', appearance: 'none', backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C5C5C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px', transition: 'border-color 200ms ease' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}>
+              <option value="">All Semesters</option>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Semester {s}</option>)}
+            </select>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #F0F0F0', overflow: 'hidden' }}>
           {isLoading ? (
             <div className="p-6"><LoadingSkeleton rows={5} columns={5} /></div>
           ) : paginated.length === 0 ? (
@@ -222,22 +200,24 @@ const Subjects = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ backgroundColor: 'var(--color-navy)' }}>
                     <tr>
-                      <th className="px-6 py-3.5 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Subject Code</th>
-                      <th className="px-6 py-3.5 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Subject Name</th>
-                      <th className="px-6 py-3.5 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Department</th>
-                      <th className="px-6 py-3.5 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Semester</th>
-                      <th className="px-6 py-3.5 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Type & Config</th>
-                      <th className="px-6 py-3.5 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Credits</th>
-                      <th className="px-6 py-3.5 text-right text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Actions</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Subject Code</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Subject Name</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Department</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Semester</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Type</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Credits</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
+                  <tbody>
                     {paginated.map((subject) => (
-                      <tr key={subject._id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={subject._id} style={{ borderBottom: '1px solid #F5F5F5', transition: 'background-color 150ms ease' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
                         <td className="px-6 py-3.5 whitespace-nowrap">
                           <span className="text-xs font-mono font-bold text-[#1E3A5F] bg-blue-50 px-2.5 py-1 rounded-md">{subject.subjectCode}</span>
                         </td>
@@ -252,24 +232,13 @@ const Subjects = () => {
                         <td className="px-6 py-3.5 whitespace-nowrap"><span className="text-sm text-[#5C5C5C]">{subject.department}</span></td>
                         <td className="px-6 py-3.5 whitespace-nowrap"><Badge variant="navy">Sem {subject.semester}</Badge></td>
                         <td className="px-6 py-3.5 whitespace-nowrap">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-semibold capitalize text-[#1A1A1A]">{subject.subjectType || 'theory'}</span>
-                            <span className="text-[10px] text-[#5C5C5C] font-mono">
-                              {subject.subjectType === 'lab' ? (
-                                `Lab: ${subject.examConfig?.labInternals || 0}I + ${subject.examConfig?.labExternal ? 'E' : 'NoE'}`
-                              ) : subject.subjectType === 'integrated' ? (
-                                `Th: ${subject.examConfig?.theoryInternals || 0}I+${subject.examConfig?.theoryExternal ? 'E' : 'NoE'} | Lb: ${subject.examConfig?.labInternals || 0}I+${subject.examConfig?.labExternal ? 'E' : 'NoE'}`
-                              ) : (
-                                `Th: ${subject.examConfig?.theoryInternals || 0}I + ${subject.examConfig?.theoryExternal ? 'E' : 'NoE'}`
-                              )}
-                            </span>
-                          </div>
+                          <span className="text-xs font-semibold capitalize" style={{ color: 'var(--color-navy)' }}>
+                            {subject.subjectType === 'integrated' ? 'Theory + Lab' : subject.subjectType === 'lab' ? 'Lab' : 'Theory'}
+                          </span>
                         </td>
                         <td className="px-6 py-3.5 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-                            style={{ background: `${creditColors[subject.credits] || '#6B7280'}18`, color: creditColors[subject.credits] || '#6B7280' }}>
-                            {subject.credits} cr
-                          </span>
+                          <span style={{ fontWeight: 700, color: 'var(--color-navy)', fontSize: '1rem' }}>{subject.credits}</span>
+                          <span style={{ color: '#9CA3AF', fontSize: '0.75rem', marginLeft: '2px' }}>cr</span>
                         </td>
                         <td className="px-6 py-3.5 whitespace-nowrap text-right">
                           <button onClick={() => openModal(subject)} className="text-[#1E3A5F] hover:text-[#152B45] mr-3 p-1.5 rounded-lg hover:bg-blue-50 transition"><Edit2 size={15} /></button>
@@ -280,118 +249,189 @@ const Subjects = () => {
                   </tbody>
                 </table>
               </div>
-              {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '0 4px' }}>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--color-text-secondary)' }}>Page {page} of {totalPages}</p>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button onClick={() => setPage(page - 1)} disabled={page <= 1}
+                      style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1.5px solid #E0E0E0', backgroundColor: 'white', fontSize: '0.875rem', cursor: page <= 1 ? 'not-allowed' : 'pointer', color: 'var(--color-text)', transition: 'all 150ms ease', opacity: page <= 1 ? 0.4 : 1 }}
+                      onMouseEnter={(e) => { if (page > 1) { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; } }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
+                      <ChevronLeft size={14} />
+                    </button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                      return p <= totalPages ? (
+                        <button key={p} onClick={() => setPage(p)}
+                          style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: p === page ? 'none' : '1.5px solid #E0E0E0', backgroundColor: p === page ? 'var(--color-navy)' : 'white', color: p === page ? 'white' : 'var(--color-text)', fontSize: '0.875rem', cursor: 'pointer', transition: 'all 150ms ease' }}
+                          onMouseEnter={(e) => { if (p !== page) { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; } }}
+                          onMouseLeave={(e) => { if (p !== page) { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; } }}>
+                          {p}
+                        </button>
+                      ) : null;
+                    })}
+                    <button onClick={() => setPage(page + 1)} disabled={page >= totalPages}
+                      style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1.5px solid #E0E0E0', backgroundColor: 'white', fontSize: '0.875rem', cursor: page >= totalPages ? 'not-allowed' : 'pointer', color: 'var(--color-text)', transition: 'all 150ms ease', opacity: page >= totalPages ? 0.4 : 1 }}
+                      onMouseEnter={(e) => { if (page < totalPages) { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; } }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-bold text-[#1A1A1A]">{editingSubject ? 'Edit Subject' : 'Add New Subject'}</h2>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '88vh', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column' }}>
+            {/* Navy Header */}
+            <div style={{ backgroundColor: 'var(--color-navy)', padding: '18px 24px', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: 'white', margin: 0 }}>
+                {editingSubject ? 'Edit Subject' : 'Add New Subject'}
+              </h2>
+              <button onClick={closeModal} type="button" style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ×
+              </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">Subject Code <span className="text-[#B3413E]">*</span></label>
-                <input type="text" value={formData.subjectCode} onChange={e => setFormData({ ...formData, subjectCode: e.target.value })}
-                  disabled={!!editingSubject} required placeholder="e.g., CS601"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none disabled:bg-gray-100 font-mono text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">Subject Name <span className="text-[#B3413E]">*</span></label>
-                <input type="text" value={formData.subjectName} onChange={e => setFormData({ ...formData, subjectName: e.target.value })}
-                  required placeholder="e.g., Machine Learning"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">Department <span className="text-[#B3413E]">*</span></label>
-                <input type="text" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })}
-                  required placeholder="e.g., Computer Science"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">Semester <span className="text-[#B3413E]">*</span></label>
-                  <select value={formData.semester} onChange={e => setFormData({ ...formData, semester: e.target.value })} required
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm">
-                    <option value="">Select</option>
-                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+
+            {/* Scrollable Body */}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+                {/* Row 1: Subject Code */}
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
+                    Subject Code <span style={{ color: 'var(--color-error)', marginLeft: '2px' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.subjectCode}
+                    onChange={e => setFormData({ ...formData, subjectCode: e.target.value })}
+                    disabled={!!editingSubject}
+                    required
+                    placeholder="e.g., CS601"
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: editingSubject ? '#F5F5F5' : 'white', outline: 'none', fontFamily: 'monospace', fontWeight: 600, boxSizing: 'border-box', transition: 'border-color 200ms ease' }}
+                    onFocus={(e) => { if (!editingSubject) { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; } }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                  />
+                </div>
+
+                {/* Row 2: Subject Name */}
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
+                    Subject Name <span style={{ color: 'var(--color-error)', marginLeft: '2px' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.subjectName}
+                    onChange={e => setFormData({ ...formData, subjectName: e.target.value })}
+                    required
+                    placeholder="e.g., Machine Learning"
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 200ms ease' }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                  />
+                </div>
+
+                {/* Row 3: Department (SELECT dropdown) */}
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
+                    Department <span style={{ color: 'var(--color-error)', marginLeft: '2px' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={e => setFormData({ ...formData, department: e.target.value })}
+                    required
+                    placeholder="e.g., Computer Science"
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 200ms ease' }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                  />
+                </div>
+
+                {/* Row 4: Semester + Credits (two columns) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
+                      Semester <span style={{ color: 'var(--color-error)', marginLeft: '2px' }}>*</span>
+                    </label>
+                    <select
+                      value={formData.semester}
+                      onChange={e => setFormData({ ...formData, semester: e.target.value })}
+                      required
+                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer', transition: 'border-color 200ms ease' }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                    >
+                      <option value="">Select</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                        <option key={s} value={s}>Semester {s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
+                      Credits <span style={{ color: 'var(--color-error)', marginLeft: '2px' }}>*</span>
+                    </label>
+                    <select
+                      value={formData.credits}
+                      onChange={e => setFormData({ ...formData, credits: e.target.value })}
+                      required
+                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer', transition: 'border-color 200ms ease' }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                    >
+                      <option value="">Select</option>
+                      {[1, 2, 3, 4, 5].map(c => (
+                        <option key={c} value={c}>{c} Credit{c > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 5: Subject Type */}
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
+                    Subject Type <span style={{ color: 'var(--color-error)', marginLeft: '2px' }}>*</span>
+                  </label>
+                  <select
+                    value={formData.subjectType}
+                    onChange={e => setFormData({ ...formData, subjectType: e.target.value })}
+                    required
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer', transition: 'border-color 200ms ease' }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <option value="theory">Theory Only</option>
+                    <option value="lab">Lab Only</option>
+                    <option value="integrated">Theory + Lab</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">Credits <span className="text-[#B3413E]">*</span></label>
-                  <select value={formData.credits} onChange={e => setFormData({ ...formData, credits: e.target.value })} required
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm">
-                    <option value="">Select</option>
-                    {[1,2,3,4,5,6].map(c => <option key={c} value={c}>{c} Credit{c > 1 ? 's' : ''}</option>)}
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">Subject Type <span className="text-[#B3413E]">*</span></label>
-                <select value={formData.subjectType} onChange={e => handleTypeChange(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm">
-                  <option value="theory">Theory Only</option>
-                  <option value="lab">Lab Only</option>
-                  <option value="integrated">Integrated (Theory + Lab)</option>
-                </select>
               </div>
 
-              {/* Exam Config Panel */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#5C5C5C]">Exam Configuration</h4>
-                
-                {formData.subjectType !== 'lab' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-[#1A1A1A]">Theory Internals Count</label>
-                      <select value={formData.examConfig?.theoryInternals ?? 2}
-                        onChange={e => setFormData({ ...formData, examConfig: { ...formData.examConfig, theoryInternals: parseInt(e.target.value) } })}
-                        className="px-2 py-1 border border-gray-300 rounded-md text-xs">
-                        <option value={0}>0</option>
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-[#1A1A1A]">Theory External Exam</label>
-                      <input type="checkbox" checked={formData.examConfig?.theoryExternal ?? true}
-                        onChange={e => setFormData({ ...formData, examConfig: { ...formData.examConfig, theoryExternal: e.target.checked } })}
-                        className="rounded border-gray-300 text-[#1E3A5F] focus:ring-[#C9A227] h-4 w-4" />
-                    </div>
-                  </div>
-                )}
-
-                {formData.subjectType !== 'theory' && (
-                  <div className="space-y-3 pt-2 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-[#1A1A1A]">Lab Internals Count</label>
-                      <select value={formData.examConfig?.labInternals ?? 0}
-                        onChange={e => setFormData({ ...formData, examConfig: { ...formData.examConfig, labInternals: parseInt(e.target.value) } })}
-                        className="px-2 py-1 border border-gray-300 rounded-md text-xs">
-                        <option value={0}>0</option>
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-[#1A1A1A]">Lab External Exam</label>
-                      <input type="checkbox" checked={formData.examConfig?.labExternal ?? false}
-                        onChange={e => setFormData({ ...formData, examConfig: { ...formData.examConfig, labExternal: e.target.checked } })}
-                        className="rounded border-gray-300 text-[#1E3A5F] focus:ring-[#C9A227] h-4 w-4" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button type="button" onClick={closeModal} variant="ghost" className="flex-1">Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} variant="primary" className="flex-1">
-                  {editingSubject ? 'Update' : 'Create'}
-                </Button>
+              {/* Sticky Footer */}
+              <div style={{ padding: '16px 24px', borderTop: '1px solid #F0F0F0', display: 'flex', gap: '12px', justifyContent: 'flex-end', flexShrink: 0, backgroundColor: 'white', borderRadius: '0 0 12px 12px' }}>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  style={{ padding: '10px 20px', border: '1.5px solid #E0E0E0', borderRadius: '8px', backgroundColor: 'white', color: 'var(--color-text-secondary)', fontSize: '0.875rem', cursor: 'pointer', transition: 'all 150ms' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F5F5F5'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  style={{ padding: '10px 24px', backgroundColor: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: createMutation.isPending || updateMutation.isPending ? 'not-allowed' : 'pointer', opacity: createMutation.isPending || updateMutation.isPending ? 0.6 : 1, transition: 'all 150ms' }}
+                  onMouseEnter={(e) => { if (!createMutation.isPending && !updateMutation.isPending) e.currentTarget.style.backgroundColor = '#152B45'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-navy)'; }}
+                >
+                  {editingSubject ? 'Update Subject' : 'Create Subject'}
+                </button>
               </div>
             </form>
           </div>

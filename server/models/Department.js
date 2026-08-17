@@ -24,6 +24,15 @@ const departmentSchema = new mongoose.Schema({
     ref: 'User',
     default: null, // HOD can be assigned later
   },
+  hodUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  hodName: {
+    type: String,
+    default: '',
+  },
 }, {
   timestamps: true,
 });

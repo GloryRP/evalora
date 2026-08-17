@@ -19,6 +19,7 @@ import {
   X,
   Send,
   BarChart2,
+  User,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -43,6 +44,7 @@ const ExamCellLayout = () => {
     { path: '/examcell/question-papers', label: 'Question Papers', icon: FileText },
     { path: '/examcell/answer-scripts', label: 'Answer Scripts & Marks', icon: FileText },
     { path: '/examcell/agent-logs', label: 'Agent Logs', icon: FileText },
+    { path: '/profile', label: 'Profile', icon: User },
   ];
 
   const SidebarContent = () => (

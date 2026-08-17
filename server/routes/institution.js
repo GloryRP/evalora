@@ -17,4 +17,12 @@ router.put('/config', verifyToken, authorize('admin', 'examcell'), institutionCo
 // Get timetable-specific config
 router.get('/timetable-config', institutionController.getTimetableConfig);
 
+// Academic Year Management Routes (PUBLIC - no auth)
+router.get('/current', institutionController.getCurrent);
+router.get('/academic-years', institutionController.getAcademicYears);
+
+// Academic Year Management Routes (ADMIN only)
+router.post('/academic-years', verifyToken, authorize('admin'), institutionController.addAcademicYear);
+router.put('/academic-years/current', verifyToken, authorize('admin'), institutionController.updateCurrent);
+
 module.exports = router;

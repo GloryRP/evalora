@@ -16,6 +16,7 @@ const facultyRoutes = require('./routes/faculty');
 const hodRoutes = require('./routes/hod');
 const resultsRoutes = require('./routes/results');
 const principalRoutes = require('./routes/principal');
+const qpSubmissionRoutes = require('./routes/qpSubmission');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/api/v1/faculty', facultyRoutes);
 app.use('/api/v1/hod', hodRoutes);
 app.use('/api/v1/results', resultsRoutes);
 app.use('/api/v1/principal', principalRoutes);
+app.use('/api/v1/qp-submissions', qpSubmissionRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

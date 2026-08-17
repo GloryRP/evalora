@@ -56,9 +56,10 @@ export const AuthProvider = ({ children }) => {
    * login - Authenticates user and stores token + user info
    * @param {string} username - USN or Employee ID
    * @param {string} password - User's password
+   * @param {Function} navigate - React Router navigate function
    * @returns {Promise} - Resolves with user data or rejects with error
    */
-  const login = async (username, password) => {
+  const login = async (username, password, navigate) => {
     try {
       const response = await apiClient.post('/auth/login', { username, password });
       const { token: newToken, user: userData } = response.data;
@@ -73,6 +74,23 @@ export const AuthProvider = ({ children }) => {
       // Store in sessionStorage to survive page refresh
       sessionStorage.setItem('token', newToken);
       sessionStorage.setItem('user', JSON.stringify(userData));
+
+      // Handle first login redirect
+      if (navigate) {
+        if (userData.isFirstLogin) {
+          navigate('/change-password', { replace: true });
+        } else {
+          const roleRoutes = {
+            admin: '/admin/dashboard',
+            examcell: '/examcell/dashboard',
+            faculty: '/faculty/dashboard',
+            student: '/student/dashboard',
+            hod: '/hod/dashboard',
+            principal: '/principal/dashboard'
+          };
+          navigate(roleRoutes[userData.role] || '/', { replace: true });
+        }
+      }
 
       return userData;
     } catch (error) {
@@ -112,6 +130,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     token,
     loading,
     login,

@@ -246,6 +246,8 @@ const NotificationBell = () => {
                   }}
                   style={{
                     padding: '12px 20px',
+                    borderTop: 'none',
+                    borderRight: 'none',
                     borderBottom: '1px solid #F8F8F8',
                     borderLeft: notif.isRead ? '3px solid transparent' : '3px solid var(--color-gold)',
                     background: notif.isRead ? 'white' : '#FFFBF0',

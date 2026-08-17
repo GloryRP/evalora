@@ -8,8 +8,10 @@ import Button from '../../components/ui/Button';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import Badge from '../../components/ui/Badge';
 import toast from 'react-hot-toast';
+import { useAcademicYear } from '../../contexts/InstitutionContext';
 
 const AnswerScripts = () => {
+  const { currentAcademicYear } = useAcademicYear();
   const [activeTab, setActiveTab] = useState('upload');
   const [students, setStudents] = useState([]);
   const [exams, setExams] = useState([]);
@@ -56,6 +58,8 @@ const AnswerScripts = () => {
   // Publish state
   const [publishSemester, setPublishSemester] = useState('5');
   const [publishing, setPublishing] = useState(false);
+  const [showPublishPreview, setShowPublishPreview] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   // Evaluation Agent states
   const [agentRunning, setAgentRunning] = useState(false);
@@ -358,15 +362,20 @@ const AnswerScripts = () => {
     <div style={{ minHeight: 'calc(100vh - 280px)' }}>
       
       {/* Page header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: '6px' }}>
-          Answer Scripts & Marks Dashboard
-        </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
+      <div style={{ marginBottom: '20px' }}>
+        {/* ROW 1: Title */}
+        <div style={{ marginBottom: '4px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
+            Answer Scripts & Marks Dashboard
+          </h1>
+        </div>
+
+        {/* ROW 2: Description */}
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
           Register student answer books, distribute scripts in bundles to faculty evaluators, run AI checks, and publish sem results.
         </p>
 
-        {/* Tabs row */}
+        {/* ROW 3: Tabs */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #EEEEEE', marginBottom: '28px' }}>
           {[
             { id: 'upload', label: 'Upload Scripts', icon: Upload },
@@ -962,31 +971,475 @@ const AnswerScripts = () => {
 
         {/* TAB 4: PUBLISH RESULTS */}
         {activeTab === 'publish' && (
-          <div className="max-w-xl mx-auto space-y-6">
-            <h2 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2 border-b border-gray-100 pb-3">
-              <Send size={20} className="text-[#C9A227]" /> Publish Semester Results
-            </h2>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Publishing the scores will release the result cards to the student portals and trigger personalized email grade sheets automatically.
-            </p>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            {/* ── SECTION 1: CONFIGURE ── */}
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              border: '1px solid #F0F0F0',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: 'var(--color-navy)',
+                marginBottom: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Send size={20} style={{ color: 'var(--color-gold)' }} />
+                Publish Semester Results
+              </h2>
+              <p style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-secondary)',
+                marginBottom: '20px',
+                lineHeight: 1.5
+              }}>
+                Publishing releases result cards to student portals and sends personalized email grade sheets automatically.
+              </p>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider mb-1.5">Select Semester</label>
-                <select
-                  value={publishSemester}
-                  onChange={(e) => setPublishSemester(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                    <option key={sem} value={sem.toString()}>Semester {sem}</option>
-                  ))}
-                </select>
+              {/* Three filter fields */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '16px',
+                marginBottom: '16px'
+              }}>
+                {/* Semester */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: '8px'
+                  }}>
+                    Semester
+                  </label>
+                  <select
+                    value={publishSemester}
+                    onChange={(e) => setPublishSemester(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1.5px solid #E0E0E0',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-body)',
+                      transition: 'border-color 200ms ease'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = 'var(--color-gold)'}
+                    onBlur={(e) => e.target.style.borderColor = '#E0E0E0'}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                      <option key={sem} value={sem.toString()}>Semester {sem}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Academic Year */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: '8px'
+                  }}>
+                    Academic Year
+                  </label>
+                  <input
+                    type="text"
+                    value={currentAcademicYear}
+                    readOnly
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1.5px solid #E0E0E0',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      backgroundColor: '#F9FAFB',
+                      outline: 'none',
+                      fontFamily: 'var(--font-body)'
+                    }}
+                  />
+                </div>
+
+                {/* Department */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: '8px'
+                  }}>
+                    Department
+                  </label>
+                  <select
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1.5px solid #E0E0E0',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-body)',
+                      transition: 'border-color 200ms ease'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = 'var(--color-gold)'}
+                    onBlur={(e) => e.target.style.borderColor = '#E0E0E0'}
+                  >
+                    <option value="all">All Departments</option>
+                    <option value="cse">Computer Science</option>
+                    <option value="ece">Electronics</option>
+                    <option value="ds">Data Science</option>
+                  </select>
+                </div>
               </div>
 
-              <Button onClick={handlePublishResults} disabled={publishing} variant="outline" className="border-2 border-[#C9A227] text-[#C9A227] hover:bg-amber-50 font-bold w-full py-2.5">
-                {publishing ? 'Publishing...' : 'Release Marks & Email Students'}
-              </Button>
+              {/* Preview Button */}
+              <button
+                onClick={() => setShowPublishPreview(true)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-navy)',
+                  border: '1.5px solid var(--color-navy)',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 150ms ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#EEF2FF';
+                  e.currentTarget.style.borderColor = '#2A4A70';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = 'var(--color-navy)';
+                }}
+              >
+                Preview what will be published →
+              </button>
+            </div>
+
+            {/* ── SECTION 2: PREVIEW (Conditional) ── */}
+            {showPublishPreview && (
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '12px',
+                padding: '24px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                border: '3px solid var(--color-navy)',
+                marginBottom: '20px'
+              }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    color: 'var(--color-navy)',
+                    marginBottom: '16px'
+                  }}>
+                    Publication Preview
+                  </h3>
+
+                  {/* Summary Stats */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '12px',
+                    marginBottom: '20px'
+                  }}>
+                    {[
+                      { label: 'Students to Notify', value: 156, color: '#2563EB' },
+                      { label: 'Already Published', value: 12, color: '#059669' },
+                      { label: 'Pass', value: 140, color: '#059669' },
+                      { label: 'Fail', value: 16, color: '#DC2626' }
+                    ].map((stat, i) => (
+                      <div key={i} style={{
+                        backgroundColor: '#F9FAFB',
+                        border: '1px solid #EEEEEE',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          color: 'var(--color-text-secondary)',
+                          marginBottom: '6px'
+                        }}>
+                          {stat.label}
+                        </p>
+                        <p style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 700,
+                          color: stat.color
+                        }}>
+                          {stat.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Warning if failures */}
+                  <div style={{
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FECACA',
+                    borderRadius: '8px',
+                    padding: '14px 16px',
+                    marginBottom: '16px',
+                    fontSize: '0.875rem',
+                    color: '#991B1B',
+                    display: 'flex',
+                    gap: '10px',
+                    alignItems: 'flex-start'
+                  }}>
+                    <span style={{ fontSize: '1.2rem', marginTop: '-2px' }}>⚠</span>
+                    <span>16 students have failed one or more subjects. Please verify results before publishing.</span>
+                  </div>
+
+                  {/* Results Table */}
+                  <div style={{
+                    border: '1px solid #EEEEEE',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: '0.875rem'
+                    }}>
+                      <thead style={{ backgroundColor: 'var(--color-navy)', position: 'sticky', top: 0 }}>
+                        <tr>
+                          {['USN', 'Name', 'Department', 'Semester', 'SGPA', 'Result', 'Status'].map(h => (
+                            <th key={h} style={{
+                              padding: '12px',
+                              textAlign: 'left',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              letterSpacing: '0.05em',
+                              textTransform: 'uppercase',
+                              color: 'white',
+                              borderRight: '1px solid rgba(255,255,255,0.1)'
+                            }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { usn: '1SD21CS001', name: 'Alice Smith', dept: 'CSE', sem: 4, sgpa: 8.5, result: 'PASS', status: 'Will Publish' },
+                          { usn: '1SD21CS002', name: 'Bob Johnson', dept: 'CSE', sem: 4, sgpa: 7.2, result: 'PASS', status: 'Already Published' },
+                          { usn: '1SD21CS003', name: 'Charlie Brown', dept: 'CSE', sem: 4, sgpa: 4.2, result: 'FAIL', status: 'Will Publish' },
+                          { usn: '1SD21CS004', name: 'Diana Prince', dept: 'CSE', sem: 4, sgpa: 9.1, result: 'PASS', status: 'Will Publish' },
+                          { usn: '1SD21CS005', name: 'Eve Wilson', dept: 'CSE', sem: 4, sgpa: 6.8, result: 'PASS', status: 'Will Publish' }
+                        ].map((row, i) => (
+                          <tr key={i} style={{
+                            borderBottom: '1px solid #F5F5F5',
+                            backgroundColor: i % 2 === 0 ? 'transparent' : '#F9FAFB'
+                          }}>
+                            <td style={{ padding: '10px 12px' }}><span style={{ fontFamily: 'monospace', fontWeight: 500, color: 'var(--color-navy)' }}>{row.usn}</span></td>
+                            <td style={{ padding: '10px 12px' }}>{row.name}</td>
+                            <td style={{ padding: '10px 12px' }}>{row.dept}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>{row.sem}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--color-navy)' }}>{row.sgpa}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: row.result === 'PASS' ? '#059669' : '#DC2626' }}>{row.result}</td>
+                            <td style={{ padding: '10px 12px' }}>
+                              <span style={{
+                                display: 'inline-block',
+                                padding: '3px 10px',
+                                borderRadius: '10px',
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                backgroundColor: row.status === 'Will Publish' ? '#DBEAFE' : '#DCFCE7',
+                                color: row.status === 'Will Publish' ? '#1E40AF' : '#065F46'
+                              }}>
+                                {row.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Publish Action */}
+                <button
+                  onClick={() => setShowPublishConfirm(true)}
+                  disabled={publishing}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    backgroundColor: 'var(--color-navy)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    cursor: publishing ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    opacity: publishing ? 0.6 : 1,
+                    transition: 'all 150ms ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!publishing) e.currentTarget.style.backgroundColor = '#2A4A70';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!publishing) e.currentTarget.style.backgroundColor = 'var(--color-navy)';
+                  }}
+                >
+                  <Send size={18} />
+                  {publishing ? 'Publishing...' : 'Publish All Results'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── CONFIRMATION MODAL ── */}
+        {showPublishConfirm && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            padding: '16px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 20px 25px rgba(0,0,0,0.15)',
+              width: '100%',
+              maxWidth: '450px',
+              padding: '24px'
+            }}>
+              <h3 style={{
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--color-navy)',
+                marginBottom: '12px'
+              }}>
+                Confirm Publication
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text)',
+                marginBottom: '16px',
+                lineHeight: 1.6
+              }}>
+                You are about to publish results for <strong>156 students</strong> in <strong>Semester 4</strong>.
+              </p>
+              <div style={{
+                backgroundColor: '#F9FAFB',
+                border: '1px solid #EEEEEE',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '16px',
+                fontSize: '0.85rem',
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.6
+              }}>
+                <p style={{ marginBottom: '6px', fontWeight: 600, color: 'var(--color-text)' }}>This will:</p>
+                <ul style={{ margin: 0, paddingLeft: '20px', listStyle: 'none' }}>
+                  <li>✓ Release results to student portals</li>
+                  <li>✓ Send email grade sheets to all students</li>
+                  <li>✓ Notify HOD with department summary</li>
+                </ul>
+              </div>
+              <p style={{
+                fontSize: '0.8rem',
+                color: '#DC2626',
+                fontWeight: 600,
+                marginBottom: '16px'
+              }}>
+                ⚠ This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => setShowPublishConfirm(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: 'white',
+                    color: 'var(--color-navy)',
+                    border: '1.5px solid var(--color-navy)',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EEF2FF'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handlePublishResults();
+                    setShowPublishConfirm(false);
+                  }}
+                  disabled={publishing}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: 'var(--color-navy)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: publishing ? 'not-allowed' : 'pointer',
+                    opacity: publishing ? 0.6 : 1,
+                    transition: 'all 150ms ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!publishing) e.currentTarget.style.backgroundColor = '#2A4A70';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!publishing) e.currentTarget.style.backgroundColor = 'var(--color-navy)';
+                  }}
+                >
+                  {publishing ? 'Publishing...' : 'Confirm & Publish'}
+                </button>
+              </div>
             </div>
           </div>
         )}

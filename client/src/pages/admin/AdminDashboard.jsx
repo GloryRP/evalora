@@ -7,45 +7,28 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../lib/api';
 import {
   GraduationCap, Users, Building2, BookOpen,
-  TrendingUp, ArrowRight, LayoutDashboard, RefreshCw
+  TrendingUp, ArrowRight, RefreshCw
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-// Greeting based on time
-const getGreeting = () => {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good Morning';
-  if (h < 17) return 'Good Afternoon';
-  return 'Good Evening';
-};
-
 // Animated count display
-const StatCard = ({ icon: Icon, label, value, color, gradient, link, navigate }) => (
+const StatCard = ({ icon: Icon, label, value, link, navigate }) => (
   <div
     onClick={() => link && navigate(link)}
-    className={`relative overflow-hidden rounded-2xl p-6 cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${link ? 'cursor-pointer' : ''}`}
-    style={{ background: gradient }}
+    style={{ backgroundColor: 'white', borderRadius: '10px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: '16px', cursor: link ? 'pointer' : 'default' }}
+    className={link ? 'hover:-translate-y-0.5 hover:shadow-md transition-all' : ''}
   >
-    {/* Background decoration */}
-    <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10 bg-white" />
-    <div className="absolute -right-2 -bottom-6 w-16 h-16 rounded-full opacity-10 bg-white" />
-
-    <div className="relative z-10">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-          <Icon size={24} className="text-white" />
-        </div>
-        {link && (
-          <div className="w-8 h-8 rounded-lg bg-white/10 group-hover:bg-white/20 flex items-center justify-center transition">
-            <ArrowRight size={16} className="text-white" />
-          </div>
-        )}
-      </div>
-      <p className="text-white/70 text-sm font-medium mb-1">{label}</p>
-      <p className="text-4xl font-bold text-white">
+    <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <Icon size={20} color="var(--color-navy)" />
+    </div>
+    <div>
+      <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
+        {label}
+      </p>
+      <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-navy)', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
         {value !== undefined ? value.toLocaleString() : '—'}
       </p>
     </div>
@@ -64,8 +47,6 @@ const CustomTooltip = ({ active, payload, label }) => {
   }
   return null;
 };
-
-const BAR_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#EC4899', '#14B8A6'];
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -88,21 +69,18 @@ const AdminDashboard = () => {
       icon: GraduationCap,
       label: 'Total Students',
       value: stats?.studentCount,
-      gradient: 'linear-gradient(135deg, #1E3A5F 0%, #2D5A8E 100%)',
       link: '/admin/students',
     },
     {
       icon: Users,
       label: 'Total Faculty',
       value: stats?.facultyCount,
-      gradient: 'linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%)',
       link: '/admin/faculty',
     },
     {
       icon: Building2,
       label: 'Departments',
       value: stats?.departmentCount,
-      gradient: 'linear-gradient(135deg, #92400E 0%, #D97706 100%)',
       link: '/admin/departments',
     },
   ];
@@ -119,62 +97,31 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* ── Hero Header ── */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-8 text-white"
-          style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #162D4A 50%, #0F1E30 100%)' }}
-        >
-          {/* Decorations */}
-          <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-5" style={{ background: 'radial-gradient(circle, #C9A227, transparent)', transform: 'translate(30%, -30%)' }} />
-          <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-5" style={{ background: 'radial-gradient(circle, #3B82F6, transparent)', transform: 'translate(-20%, 30%)' }} />
-
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                  <LayoutDashboard size={18} className="text-[#C9A227]" />
-                </div>
-                <span className="text-blue-300 text-sm font-medium">Admin Dashboard</span>
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-2">
-                {getGreeting()}, {user?.name?.split(' ')[0] || 'Admin'} 👋
-              </h1>
-              <p className="text-blue-200 text-sm">
-                {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:items-end gap-2">
-              <button
-                onClick={() => refetch()}
-                disabled={isFetching}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm text-white font-medium transition disabled:opacity-50"
-              >
-                <RefreshCw size={15} className={isFetching ? 'animate-spin' : ''} />
-                Refresh
-              </button>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="bg-white/10 rounded-xl px-3 py-2">
-                  <p className="text-xs text-blue-300">Username</p>
-                  <p className="text-sm font-semibold">{user?.username}</p>
-                </div>
-                <div className="bg-white/10 rounded-xl px-3 py-2">
-                  <p className="text-xs text-blue-300">Role</p>
-                  <p className="text-sm font-semibold">Administrator</p>
-                </div>
-                <div className="bg-white/10 rounded-xl px-3 py-2">
-                  <p className="text-xs text-blue-300">Access</p>
-                  <p className="text-sm font-semibold text-[#C9A227]">Full</p>
-                </div>
-              </div>
-            </div>
+        <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: '6px' }}>
+              Admin Dashboard
+            </h1>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — Administrator
+            </p>
           </div>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #E5E5E5', backgroundColor: 'white', color: 'var(--color-navy)', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}
+            className="hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+            Refresh
+          </button>
         </div>
 
-        {/* ── Stat Cards ── (Changed to 3 cols grid) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        {/* ── Stat Cards ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
           {isLoading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-40 rounded-2xl bg-gray-200 animate-pulse" />
+                <div key={i} className="h-24 rounded-2xl bg-gray-200 animate-pulse" />
               ))
             : statCards.map((card) => (
                 <StatCard key={card.label} {...card} navigate={navigate} />
@@ -205,11 +152,7 @@ const AdminDashboard = () => {
                   <XAxis dataKey="department" tick={{ fontSize: 12, fill: '#5C5C5C' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 12, fill: '#5C5C5C' }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(30,58,95,0.05)', radius: 6 }} />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                    {stats.studentsByDepartment.map((_, i) => (
-                      <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="count" fill="var(--color-navy)" radius={[6, 6, 0, 0]} activeBar={{ fill: '#2A4A70' }} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -222,7 +165,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Quick Links */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style={{ alignSelf: 'stretch' }}>
             <h2 className="text-lg font-bold text-[#1A1A1A] mb-5">Quick Access</h2>
             <div className="space-y-3">
               {quickLinks.map(({ label, icon: Icon, path, desc }) => (
@@ -241,6 +184,50 @@ const AdminDashboard = () => {
                   <ArrowRight size={16} className="text-gray-300 group-hover:text-[#1E3A5F] transition shrink-0" />
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bottom Section: Recent Activity + System Status ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Recent Activity */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-[#1A1A1A] mb-5">Recent Activity</h2>
+            <div className="space-y-3">
+              <div className="text-center py-8 text-[#5C5C5C]">
+                <BookOpen size={32} className="text-gray-300 mx-auto mb-2" />
+                <p className="text-sm">System is ready</p>
+                <p className="text-xs text-gray-400 mt-1">Activity logs will appear here</p>
+              </div>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-[#1A1A1A] mb-5">System Status</h2>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50/50">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#1A1A1A]">Database</p>
+                  <p className="text-xs text-emerald-600">Connected</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50/50">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#1A1A1A]">AI Service</p>
+                  <p className="text-xs text-emerald-600">Running</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50/50">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#1A1A1A]">Email Service</p>
+                  <p className="text-xs text-emerald-600">Configured</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

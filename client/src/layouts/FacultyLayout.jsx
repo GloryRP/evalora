@@ -3,7 +3,7 @@
  * Sidebar navigation for faculty users
  */
 import { useState } from 'react';
-import { Menu, LogOut, BookOpen, Calendar, ClipboardList, FileText } from 'lucide-react';
+import { Menu, LogOut, BookOpen, Calendar, ClipboardList, FileText, User } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBell from '../components/NotificationBell';
@@ -19,6 +19,7 @@ const FacultyLayout = () => {
     { label: 'My Duties', path: '/faculty/duties', icon: Calendar },
     { label: 'My Scripts', path: '/faculty/evaluations', icon: ClipboardList },
     { label: 'Question Papers', path: '/faculty/question-papers', icon: FileText },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   const handleLogout = () => {

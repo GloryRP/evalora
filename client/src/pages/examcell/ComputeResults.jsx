@@ -4,10 +4,12 @@ import api from '../../lib/api';
 import Button from '../../components/ui/Button';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import toast from 'react-hot-toast';
+import { useAcademicYear } from '../../contexts/InstitutionContext';
 
 const ComputeResults = () => {
-  const [academicYear, setAcademicYear] = useState('2025-26');
-  const [semester, setSemester] = useState('5');
+  const { currentAcademicYear, currentSemester } = useAcademicYear();
+  const [academicYear, setAcademicYear] = useState(currentAcademicYear);
+  const [semester, setSemester] = useState(String(currentSemester));
   const [department, setDepartment] = useState('');
   const [departments, setDepartments] = useState([]);
   
@@ -20,6 +22,12 @@ const ComputeResults = () => {
   const [computing, setComputing] = useState(false);
   const [summary, setSummary] = useState(null);
 
+  // Update academic year when context changes
+  useEffect(() => {
+    setAcademicYear(currentAcademicYear);
+    setSemester(String(currentSemester));
+  }, [currentAcademicYear, currentSemester]);
+
   useEffect(() => {
     fetchDepartments();
   }, []);
@@ -27,7 +35,6 @@ const ComputeResults = () => {
   useEffect(() => {
     fetchChecklistData();
   }, [semester, department]);
-
   const fetchDepartments = async () => {
     try {
       const res = await api.get('/examcell/departments');

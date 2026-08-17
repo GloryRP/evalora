@@ -22,6 +22,9 @@ const defaultInstitution = {
   affiliatedUniversity: 'Your University',
   academicYear: '2025-26',
   examCellEmail: 'examcell@yourinstitution.edu',
+  currentAcademicYear: '2025-26',
+  currentSemester: 5,
+  academicYears: [],
 };
 
 export const InstitutionProvider = ({ children }) => {
@@ -33,13 +36,23 @@ export const InstitutionProvider = ({ children }) => {
     const fetchInstitutionConfig = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/institution/config');
-        if (response.data?.success && response.data?.data) {
-          setInstitution({
-            ...defaultInstitution,
-            ...response.data.data,
-          });
-        }
+        
+        // Fetch both institution config and current academic year
+        const [configResponse, currentResponse] = await Promise.all([
+          api.get('/institution/config'),
+          api.get('/institution/current'),
+        ]);
+        
+        const configData = configResponse.data?.data || {};
+        const currentData = currentResponse.data?.data || {};
+        
+        setInstitution({
+          ...defaultInstitution,
+          ...configData,
+          currentAcademicYear: currentData.currentAcademicYear || configData.currentAcademicYear || '2025-26',
+          currentSemester: currentData.currentSemester || configData.currentSemester || 5,
+          academicYears: configData.academicYears || [],
+        });
       } catch (err) {
         console.warn('⚠️  Failed to fetch institution config, using defaults:', err.message);
         setError(err.message);
@@ -52,8 +65,23 @@ export const InstitutionProvider = ({ children }) => {
     fetchInstitutionConfig();
   }, []);
 
+  const refreshAcademicYear = async () => {
+    try {
+      const response = await api.get('/institution/current');
+      if (response.data?.success && response.data?.data) {
+        setInstitution(prev => ({
+          ...prev,
+          currentAcademicYear: response.data.data.currentAcademicYear,
+          currentSemester: response.data.data.currentSemester,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to refresh academic year:', err);
+    }
+  };
+
   return (
-    <InstitutionContext.Provider value={{ institution, loading, error }}>
+    <InstitutionContext.Provider value={{ institution, loading, error, refreshAcademicYear }}>
       {children}
     </InstitutionContext.Provider>
   );
@@ -73,4 +101,17 @@ export const useInstitutionContext = () => {
     throw new Error('useInstitutionContext must be used within InstitutionProvider');
   }
   return context;
+};
+
+export const useAcademicYear = () => {
+  const context = useContext(InstitutionContext);
+  if (!context) {
+    throw new Error('useAcademicYear must be used within InstitutionProvider');
+  }
+  return {
+    currentAcademicYear: context.institution.currentAcademicYear || '2025-26',
+    currentSemester: context.institution.currentSemester || 5,
+    academicYears: context.institution.academicYears || [],
+    refreshAcademicYear: context.refreshAcademicYear,
+  };
 };

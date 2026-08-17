@@ -16,6 +16,7 @@ import {
   X,
   Award,
   FileText,
+  User,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -36,8 +37,11 @@ const AdminLayout = () => {
     { path: '/admin/faculty', label: 'Faculty', icon: Users },
     { path: '/admin/subjects', label: 'Subjects', icon: BookOpen },
     { path: '/admin/departments', label: 'Departments', icon: Building2 },
+    { path: '/admin/halls', label: 'Halls', icon: Building2 },
     { path: '/admin/exams', label: 'Exams', icon: FileText },
     { path: '/admin/grading-scheme', label: 'Grading Scheme', icon: Award },
+    { path: '/admin/institution', label: 'Institution Settings', icon: Building2 },
+    { path: '/profile', label: 'Profile', icon: User },
   ];
 
   const SidebarContent = () => (

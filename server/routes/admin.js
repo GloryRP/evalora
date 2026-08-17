@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const { verifyToken, authorize } = require('../middleware/auth');
+const User = require('../models/User');
 const {
   // Stats
   getAdminStats,
@@ -400,6 +401,195 @@ router.delete('/grading-schemes/:id', async (req, res) => {
     res.json({ success: true, message: 'Scheme deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete scheme', error: error.message });
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/admin/users/:userId/reset-password
+ * @desc    Admin resets a user's password
+ * @access  Private (Admin only)
+ */
+router.patch('/users/:userId/reset-password', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ success: false, message: 'New password is required' });
+    }
+
+    // Validate admin is not resetting their own password
+    if (userId === req.user.userId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Use the change-password endpoint to update your own password' 
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Hash new password
+    const bcrypt = require('bcrypt');
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update user
+    await User.findByIdAndUpdate(userId, {
+      passwordHash: newPasswordHash,
+      isFirstLogin: true, // Forces user to change on next login
+      updatedAt: new Date()
+    });
+
+    // Send notification to user (if notification system exists)
+    const { sendNotification } = require('../services/notificationService');
+    try {
+      await sendNotification({
+        userId: user._id,
+        type: 'general',
+        title: 'Password Reset',
+        message: 'Your password has been reset by Admin. Please log in and change your password.',
+        priority: 'high'
+      });
+    } catch (notifError) {
+      console.log('Could not send notification:', notifError.message);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Password reset successfully. User will be prompted to change it on next login.' 
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to reset password', 
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * @route   GET /api/v1/admin/users
+ * @desc    Get all users by role
+ * @access  Private (Admin only)
+ */
+router.get('/users', async (req, res) => {
+  try {
+    const { role } = req.query;
+    const filter = role ? { role } : {};
+    
+    const users = await User.find(filter)
+      .select('-passwordHash')
+      .sort({ name: 1 });
+
+    res.json({ 
+      success: true, 
+      data: users 
+    });
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch users', 
+      error: error.message 
+    });
+  }
+});
+
+// ==================== HALL ROUTES ====================
+
+const Hall = require('../models/Hall');
+
+/**
+ * @route   GET /api/v1/admin/halls
+ * @desc    Get all halls
+ * @access  Private (Admin only)
+ */
+router.get('/halls', async (req, res) => {
+  try {
+    const halls = await Hall.find({}).sort({ building: 1, hallName: 1 });
+    res.json({ success: true, data: halls });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch halls', error: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/v1/admin/halls
+ * @desc    Create a new hall
+ * @access  Private (Admin only)
+ */
+router.post('/halls', async (req, res) => {
+  try {
+    const { hallName, building, capacity, floor, facilities } = req.body;
+    
+    if (!hallName || !capacity) {
+      return res.status(400).json({ success: false, message: 'Hall name and capacity are required' });
+    }
+
+    const existingHall = await Hall.findOne({ hallName });
+    if (existingHall) {
+      return res.status(400).json({ success: false, message: 'A hall with this name already exists' });
+    }
+
+    const hall = await Hall.create({
+      hallName,
+      building: building || 'Main',
+      capacity,
+      floor,
+      facilities: facilities || []
+    });
+
+    res.status(201).json({ success: true, message: 'Hall created successfully', data: hall });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to create hall', error: error.message });
+  }
+});
+
+/**
+ * @route   PUT /api/v1/admin/halls/:id
+ * @desc    Update a hall
+ * @access  Private (Admin only)
+ */
+router.put('/halls/:id', async (req, res) => {
+  try {
+    const { hallName, building, capacity, floor, facilities } = req.body;
+    
+    const hall = await Hall.findByIdAndUpdate(
+      req.params.id,
+      { hallName, building, capacity, floor, facilities },
+      { new: true, runValidators: true }
+    );
+
+    if (!hall) {
+      return res.status(404).json({ success: false, message: 'Hall not found' });
+    }
+
+    res.json({ success: true, message: 'Hall updated successfully', data: hall });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update hall', error: error.message });
+  }
+});
+
+/**
+ * @route   DELETE /api/v1/admin/halls/:id
+ * @desc    Delete a hall
+ * @access  Private (Admin only)
+ */
+router.delete('/halls/:id', async (req, res) => {
+  try {
+    const hall = await Hall.findByIdAndDelete(req.params.id);
+    
+    if (!hall) {
+      return res.status(404).json({ success: false, message: 'Hall not found' });
+    }
+
+    res.json({ success: true, message: 'Hall deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to delete hall', error: error.message });
   }
 });
 

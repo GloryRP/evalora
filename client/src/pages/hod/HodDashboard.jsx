@@ -95,18 +95,55 @@ const HodDashboard = () => {
     }
   }, [data, activeTab, selectedSem]);
 
-  // Dynamic Peer-Tutoring AI advisory matching
-  const generateAiAdvisory = () => {
+  const generateAiAdvisory = async () => {
     if (!data) return;
     setGeneratingAi(true);
 
-    setTimeout(() => {
+    let aiSlowLearners = [];
+    let globalRecs = [];
+    let usingFallback = false;
+
+    try {
+      // Call the actual AI analytics backend
+      const response = await api.post('/hod/remedial-analysis', {
+        semester: selectedSem === 'all' ? 1 : Number(selectedSem),
+        academicYear: '2023-2024'
+      });
+
+      if (response.data?.success) {
+        aiSlowLearners = response.data.data.slowLearners || [];
+        if (response.data.data.stats?.global) {
+           globalRecs.push(`Department Pass Rate is ${response.data.data.stats.global.passPercentage}% with an average SGPA of ${response.data.data.stats.global.avgSGPA}.`);
+        }
+      }
+    } catch (error) {
+      console.warn('AI Analysis failed (likely no computed results). Falling back to heuristic rules.', error);
+      toast.error(error.response?.data?.message || 'ML API unavailable. Falling back to heuristic pairing.');
+      usingFallback = true;
+    }
+
+    try {
+      // Use the AI identified slow learners to enrich the local slow learners, or use local if fallback
       const { toppers, slowLearners } = processedInsights;
       const matches = [];
       const subjectsWithFails = {};
+      let recommendations = [...globalRecs];
+
+      // Use union of ML slow learners and heuristic slow learners, enrich with ML risk score
+      const combinedSlowLearners = slowLearners.map(sl => {
+         const mlData = aiSlowLearners.find(m => m.usn === sl.usn);
+         if (mlData && mlData.recommendations) {
+            recommendations.push(...mlData.recommendations);
+         }
+         return {
+            ...sl,
+            riskScore: mlData ? mlData.riskScore : (sl.overallResult === 'FAIL' ? 85 : 60),
+            isMlPredicted: !!mlData || usingFallback
+         };
+      });
 
       // 1. Group slow learners by their failed subjects
-      slowLearners.forEach(slow => {
+      combinedSlowLearners.forEach(slow => {
         (slow.failedSubjects || []).forEach(sub => {
           if (!subjectsWithFails[sub.subjectCode]) {
             subjectsWithFails[sub.subjectCode] = {
@@ -122,24 +159,16 @@ const HodDashboard = () => {
       Object.keys(subjectsWithFails).forEach(subCode => {
         const item = subjectsWithFails[subCode];
         
-        // Find potential toppers who have scored high in this subject
-        // For SEE, we check if they passed it with high marks. For CIE, we inspect their scores.
         let potentialTutors = [];
         if (activeTab === 'see') {
-          // Look through results
           (data.seePerformance || []).forEach(top => {
             const passedHigh = toppers.some(t => t.usn === top.usn);
-            if (passedHigh) {
-              potentialTutors.push(top);
-            }
+            if (passedHigh) potentialTutors.push(top);
           });
         } else {
-          // Look through CIE
           (data.ciePerformance || []).forEach(top => {
             const passedHigh = toppers.some(t => t.usn === top.usn);
-            if (passedHigh) {
-              potentialTutors.push(top);
-            }
+            if (passedHigh) potentialTutors.push(top);
           });
         }
 
@@ -152,7 +181,7 @@ const HodDashboard = () => {
               subjectName: item.subjectName,
               student: slow.name,
               studentUsn: slow.usn,
-              studentScore: activeTab === 'see' ? `${slow.sgpa} SGPA` : `${slow.avgPercent}% Avg`,
+              studentScore: `Risk: ${slow.riskScore}% (${activeTab === 'see' ? `${slow.sgpa} SGPA` : `${slow.avgPercent}% Avg`})`,
               tutor: tutor.name,
               tutorUsn: tutor.usn,
               tutorScore: activeTab === 'see' ? `${tutor.sgpa} SGPA` : `${tutor.avgPercent}% Avg`
@@ -161,24 +190,36 @@ const HodDashboard = () => {
         });
       });
 
-      // 3. Construct advisory plan
-      const report = {
-        timestamp: new Date().toLocaleTimeString(),
-        semester: selectedSem === 'all' ? 'All Semesters' : `Semester ${selectedSem}`,
-        examType: activeTab === 'see' ? 'Semester Final Exam (SEE)' : 'Internal CIE Tests',
-        matches,
-        recommendations: [
+      recommendations = [...new Set(recommendations)].slice(0, 5);
+      if (recommendations.length === 0) {
+         recommendations = [
           `Coordinate peer tutoring groups. We have mapped ${matches.length} peer-tutoring pairs matching toppers with slow learners in CS/IS core courses.`,
           `Schedule a Departmental Remedial Coaching session (minimum 12 hours) focusing on subjects with the highest fail counts.`,
           `Faculties should arrange mock test reviews for slow learners, auditing mistakes made in past examination question papers.`,
           `Enable regular self-assessment tests via AI portal quizzes to continuously monitor student grading progression.`
-        ]
+         ];
+      }
+
+      // 3. Construct advisory plan
+      const report = {
+        timestamp: new Date().toLocaleTimeString(),
+        semester: selectedSem === 'all' ? 'Semester 1 (Default)' : `Semester ${selectedSem}`,
+        examType: activeTab === 'see' ? 'Semester Final Exam (SEE)' : 'Internal CIE Tests',
+        matches,
+        recommendations
       };
 
       setAiReport(report);
+      if (!usingFallback) {
+        toast.success('AI Remedial Advisory compiled successfully!');
+      }
+
+    } catch (error) {
+      console.error('Error in advisory processing:', error);
+      toast.error('Failed to generate advisory plan.');
+    } finally {
       setGeneratingAi(false);
-      toast.success('AI Remedial Advisory compiled successfully!');
-    }, 800);
+    }
   };
 
   if (loading) {
@@ -195,8 +236,8 @@ const HodDashboard = () => {
   }
 
   // Stats computation
-  const completionRate = data.totalScripts > 0 
-    ? Math.round((data.evaluatedScripts / data.totalScripts) * 100) 
+  const completionRate = (data?.totalScripts ?? 0) > 0 
+    ? Math.round(((data?.evaluatedScripts ?? 0) / (data?.totalScripts ?? 0)) * 100) 
     : 0;
 
   return (
@@ -288,7 +329,7 @@ const HodDashboard = () => {
       {/* Print-Only Header Block */}
       <div className="print-only-header">
         <h1>{institutionName}</h1>
-        <p>Department of {data.department} · Performance Audit Report · Generated on {new Date().toLocaleDateString()}</p>
+        <p>Department of {data?.department || 'N/A'} · Performance Audit Report · Generated on {new Date().toLocaleDateString()}</p>
       </div>
 
       {/* Header Panel */}
@@ -297,7 +338,7 @@ const HodDashboard = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <LayoutDashboard size={28} color="var(--color-gold)" />
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: '700', color: 'var(--color-navy)', margin: 0 }}>
-              {data.department} Head Office Portal
+              {data?.department || 'Department'} Head Office Portal
             </h1>
           </div>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem', margin: 0 }}>
@@ -414,7 +455,7 @@ const HodDashboard = () => {
           </div>
           <div>
             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: '600', letterSpacing: '0.5px' }}>DEPARTMENT SCRIPTS</span>
-            <h3 style={{ margin: '0.1rem 0 0 0', fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-navy)' }}>{data.totalScripts}</h3>
+            <h3 style={{ margin: '0.1rem 0 0 0', fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-navy)' }}>{data?.totalScripts || 0}</h3>
           </div>
         </div>
 
@@ -425,7 +466,7 @@ const HodDashboard = () => {
           <div>
             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: '600', letterSpacing: '0.5px' }}>VALUATION PROGRESS</span>
             <h3 style={{ margin: '0.1rem 0 0 0', fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-navy)' }}>
-              {data.evaluatedScripts} <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#888' }}>({completionRate}%)</span>
+              {data?.evaluatedScripts || 0} <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#888' }}>({completionRate}%)</span>
             </h3>
           </div>
         </div>
@@ -437,7 +478,7 @@ const HodDashboard = () => {
           <div>
             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: '600', letterSpacing: '0.5px' }}>AVERAGE SCORE</span>
             <h3 style={{ margin: '0.1rem 0 0 0', fontSize: '1.6rem', fontWeight: '700', color: 'var(--color-navy)' }}>
-              {data.averageMarks.toFixed(1)} <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#888' }}>/ 100</span>
+              {(data?.averageMarks ?? 0).toFixed(1)} <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#888' }}>/ 100</span>
             </h3>
           </div>
         </div>
@@ -449,7 +490,7 @@ const HodDashboard = () => {
           <div>
             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: '600', letterSpacing: '0.5px' }}>PASS RATE</span>
             <h3 style={{ margin: '0.1rem 0 0 0', fontSize: '1.6rem', fontWeight: '700', color: '#2D7A5F' }}>
-              {data.passRate.toFixed(1)}%
+              {(data?.passRate ?? 0).toFixed(1)}%
             </h3>
           </div>
         </div>
@@ -576,7 +617,7 @@ const HodDashboard = () => {
 
           <button
             onClick={generateAiAdvisory}
-            disabled={generatingAi || processedInsights.slowLearners.length === 0}
+            disabled={generatingAi}
             style={{
               background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
               color: 'white',
@@ -690,7 +731,7 @@ const HodDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {data.courseBreakdown
+              {(data?.subjectWise || [])
                 .filter(course => selectedSem === 'all' || course.semester === Number(selectedSem))
                 .map((course) => (
                   <tr key={course.subjectCode} style={{ borderBottom: '1px solid #E5E5E5' }}>

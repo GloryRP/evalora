@@ -5,14 +5,16 @@ import Button from '../../components/ui/Button';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import Badge from '../../components/ui/Badge';
 import toast from 'react-hot-toast';
+import { useAcademicYear } from '../../contexts/InstitutionContext';
 
 const PublishResults = () => {
+  const { currentAcademicYear, currentSemester } = useAcademicYear();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
-  const [semester, setSemester] = useState('5');
-  const [academicYear, setAcademicYear] = useState('2025-26');
+  const [semester, setSemester] = useState(String(currentSemester));
+  const [academicYear, setAcademicYear] = useState(currentAcademicYear);
   const [department, setDepartment] = useState('');
   const [departments, setDepartments] = useState([]);
 
@@ -24,10 +26,15 @@ const PublishResults = () => {
   // Modal / Detail state
   const [activeResult, setActiveResult] = useState(null);
 
+  // Update when context changes
+  useEffect(() => {
+    setAcademicYear(currentAcademicYear);
+    setSemester(String(currentSemester));
+  }, [currentAcademicYear, currentSemester]);
+
   useEffect(() => {
     fetchDepartments();
   }, []);
-
   useEffect(() => {
     fetchResults();
   }, [semester, academicYear, department]);

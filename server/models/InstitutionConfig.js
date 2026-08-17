@@ -32,6 +32,49 @@ const institutionConfigSchema = new mongoose.Schema({
   website: String,
 
   // Academic Details
+  currentAcademicYear: {
+    type: String,
+    default: '2025-26',
+  },
+  currentSemester: {
+    type: Number,
+    default: 5,
+    min: 1,
+    max: 8,
+  },
+  academicYears: [{
+    year: {
+      type: String,
+      required: true,
+    },
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    isCurrent: {
+      type: Boolean,
+      default: false,
+    },
+    semesters: [{
+      semesterNumber: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 8,
+      },
+      startDate: Date,
+      endDate: Date,
+      isActive: {
+        type: Boolean,
+        default: false,
+      },
+    }],
+  }],
+  // Legacy fields for backward compatibility
   academicYear: {
     type: String,
     default: '2025-26',

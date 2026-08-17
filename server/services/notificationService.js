@@ -80,13 +80,44 @@ const sendNotification = async ({
         emailHtml = buildResultPublishedEmail(data, institutionName);
         break;
 
+      case 'qp_assigned':
+        emailSubject = `Question Paper Assignment — ${data.subjectName} — ${data.examType}`;
+        emailHtml = buildQPAssignedEmail(data, institutionName);
+        break;
+
+      case 'qp_revision_requested':
+        emailSubject = `Revision Requested — ${data.subjectName} Question Paper`;
+        emailHtml = buildQPRevisionEmail(data, institutionName);
+        break;
+
+      case 'qp_approved':
+        emailSubject = `Question Paper Approved — ${data.subjectName}`;
+        emailHtml = buildQPApprovedEmail(data, institutionName);
+        break;
+
+      case 'qp_submitted':
+        emailSubject = `Question Paper Submitted — ${data.subjectName} by ${data.facultyName}`;
+        emailHtml = buildQPSubmittedEmail(data, institutionName);
+        break;
+
+      case 'qp_selected':
+        emailSubject = `✓ Your Question Paper Selected — ${data.subjectName}`;
+        emailHtml = buildQPSelectedEmail(data, institutionName);
+        break;
+
+      case 'qp_archived':
+        emailSubject = `Question Paper Update — ${data.subjectName}`;
+        emailHtml = buildQPArchivedEmail(data, institutionName);
+        break;
+
       default:
         console.warn(`⚠️  Unknown notification type: ${type}`);
         return notification;
     }
 
     // STEP 4: Send email using Nodemailer
-    if (!email || !email.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
       console.warn(`⚠️  Invalid or missing email address: ${email}`);
       await Notification.findByIdAndUpdate(notification._id, {
         emailSent: false,
@@ -470,6 +501,215 @@ const buildResultPublishedEmail = (data, institutionName) => {
       <div style="background:#f8f9fa; padding:16px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
         This is an auto-generated notification from ${institutionName} Examination System.<br/>
         For any discrepancies, please contact the Exam Cell.
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Build QP Assignment Email HTML (to faculty)
+ */
+const buildQPAssignedEmail = (data, institutionName) => {
+  const slotsHtml = (data.slots || []).map((slot, i) => {
+    const main = `Q${slot.questionNumber || i + 1}: ${slot.maxMarks}M${slot.or ? '' : ' (Compulsory)'}`;
+    const or = slot.or ? `<br/>&nbsp;&nbsp;&nbsp;&nbsp;OR Q${slot.or.questionNumber}: ${slot.or.maxMarks}M` : '';
+    return `<li style="margin-bottom:4px;">${main}${or}</li>`;
+  }).join('');
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+      <div style="background: #1E3A5F; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #C9A227;">
+        <h2 style="margin:0; font-size:20px;">${institutionName}</h2>
+        <p style="margin:6px 0 0 0; font-size:13px; opacity:0.9;">Question Paper Assignment</p>
+      </div>
+      <div style="padding: 24px; background: white;">
+        <p style="font-size:16px; color:#333; margin-top:0;"><strong>Dear ${data.facultyName || 'Faculty'},</strong></p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">You have been assigned to submit the question paper for:</p>
+        <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:16px; margin:16px 0;">
+          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666; width:130px;">Subject:</td><td style="padding:5px 0;">${data.subjectName || 'N/A'} (${data.subjectCode || 'N/A'})</td></tr>
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666;">Exam Type:</td><td style="padding:5px 0;">${data.examType || 'N/A'}</td></tr>
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666;">Semester:</td><td style="padding:5px 0;">Sem ${data.semester || 'N/A'}</td></tr>
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666;">Max Marks:</td><td style="padding:5px 0;">${data.maxMarks || 'N/A'}</td></tr>
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666;">Deadline:</td><td style="padding:5px 0; color:#dc2626; font-weight:bold;">${data.deadline || 'N/A'}</td></tr>
+          </table>
+        </div>
+        ${slotsHtml ? `
+        <p style="font-size:14px; color:#555; margin-bottom:6px;"><strong>The question paper must follow this structure:</strong></p>
+        <ul style="font-size:13px; color:#444; line-height:1.8; margin:0 0 16px 0; padding-left:20px;">${slotsHtml}</ul>
+        ` : ''}
+        <p style="font-size:14px; color:#555; line-height:1.6;">Please log in to <strong>Evalora</strong> and submit your question paper before the deadline.</p>
+        <div style="text-align:center; margin:24px 0;">
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/faculty/question-papers"
+             style="display:inline-block; background:#1E3A5F; color:white; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:14px;">
+            Open Evalora Portal
+          </a>
+        </div>
+      </div>
+      <div style="background:#f8f9fa; padding:14px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
+        Auto-generated by ${institutionName} Examination System. Contact Exam Cell for any queries.
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Build QP Revision Requested Email HTML (to faculty)
+ */
+const buildQPRevisionEmail = (data, institutionName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+      <div style="background: #1E3A5F; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #C9A227;">
+        <h2 style="margin:0; font-size:20px;">${institutionName}</h2>
+        <p style="margin:6px 0 0 0; font-size:13px; opacity:0.9;">Question Paper — Revision Requested</p>
+      </div>
+      <div style="padding: 24px; background: white;">
+        <p style="font-size:16px; color:#333; margin-top:0;"><strong>Dear ${data.facultyName || 'Faculty'},</strong></p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          The Exam Cell has reviewed your question paper for <strong>${data.subjectName || 'Unknown Subject'}</strong> and has requested revisions.
+        </p>
+        <div style="background:#fff7ed; border:1px solid #f97316; border-radius:6px; padding:16px; margin:16px 0;">
+          <p style="font-size:13px; color:#9a3412; font-weight:bold; margin:0 0 8px 0;">Reviewer's Comments:</p>
+          <p style="font-size:14px; color:#7c2d12; font-weight:600; margin:0; line-height:1.6;">${data.reviewNote || 'No comments provided.'}</p>
+        </div>
+        <p style="font-size:14px; color:#555; line-height:1.6;">Please log in to Evalora, update your question paper, and resubmit.</p>
+        <div style="text-align:center; margin:24px 0;">
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/faculty/question-papers"
+             style="display:inline-block; background:#1E3A5F; color:white; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:14px;">
+            Open Evalora Portal
+          </a>
+        </div>
+      </div>
+      <div style="background:#f8f9fa; padding:14px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
+        Auto-generated by ${institutionName} Examination System. Contact Exam Cell for any queries.
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Build QP Approved Email HTML (to faculty)
+ */
+const buildQPApprovedEmail = (data, institutionName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+      <div style="background: #1E3A5F; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #C9A227;">
+        <h2 style="margin:0; font-size:20px;">${institutionName}</h2>
+        <p style="margin:6px 0 0 0; font-size:13px; opacity:0.9;">Question Paper Approved ✓</p>
+      </div>
+      <div style="padding: 24px; background: white;">
+        <p style="font-size:16px; color:#333; margin-top:0;"><strong>Dear ${data.facultyName || 'Faculty'},</strong></p>
+        <div style="background:#f0fdf4; border:1px solid #22c55e; border-radius:6px; padding:16px; margin:16px 0; text-align:center;">
+          <p style="font-size:18px; color:#15803d; font-weight:700; margin:0;">✓ Question Paper Approved</p>
+          <p style="font-size:14px; color:#16a34a; margin:8px 0 0 0;">${data.subjectName || 'Unknown Subject'}</p>
+        </div>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          Your question paper for <strong>${data.subjectName || 'Unknown Subject'}</strong> has been reviewed and approved by the Exam Cell.
+        </p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          The question paper is now <strong>locked</strong> and will be used for the examination. No further edits are allowed.
+        </p>
+      </div>
+      <div style="background:#f8f9fa; padding:14px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
+        Auto-generated by ${institutionName} Examination System. Contact Exam Cell for any queries.
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Build QP Submitted Email HTML (to Exam Cell)
+ */
+const buildQPSubmittedEmail = (data, institutionName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+      <div style="background: #1E3A5F; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #C9A227;">
+        <h2 style="margin:0; font-size:20px;">${institutionName}</h2>
+        <p style="margin:6px 0 0 0; font-size:13px; opacity:0.9;">Question Paper Submitted — Review Required</p>
+      </div>
+      <div style="padding: 24px; background: white;">
+        <p style="font-size:16px; color:#333; margin-top:0;"><strong>Dear Exam Cell,</strong></p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          <strong>${data.facultyName || 'A faculty member'}</strong> has submitted the question paper for:
+        </p>
+        <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:16px; margin:16px 0;">
+          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666; width:130px;">Subject:</td><td style="padding:5px 0;">${data.subjectName || 'N/A'}</td></tr>
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666;">Exam Type:</td><td style="padding:5px 0;">${data.examType || 'N/A'}</td></tr>
+            <tr><td style="padding:5px 0; font-weight:bold; color:#666;">Semester:</td><td style="padding:5px 0;">Sem ${data.semester || 'N/A'}</td></tr>
+          </table>
+        </div>
+        <p style="font-size:14px; color:#555; line-height:1.6;">Please log in to review and approve / request revision.</p>
+        <div style="text-align:center; margin:24px 0;">
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/examcell/question-papers"
+             style="display:inline-block; background:#1E3A5F; color:white; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:14px;">
+            Review Submission
+          </a>
+        </div>
+      </div>
+      <div style="background:#f8f9fa; padding:14px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
+        Auto-generated by ${institutionName} Examination System.
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Build QP Selected Email HTML (to winning faculty)
+ */
+const buildQPSelectedEmail = (data, institutionName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+      <div style="background: #1E3A5F; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #C9A227;">
+        <h2 style="margin:0; font-size:20px;">${institutionName}</h2>
+        <p style="margin:6px 0 0 0; font-size:13px; opacity:0.9;">Question Paper — Official Selection</p>
+      </div>
+      <div style="padding: 24px; background: white;">
+        <p style="font-size:16px; color:#333; margin-top:0;"><strong>Dear ${data.facultyName || 'Faculty'},</strong></p>
+        <div style="background:#f0fdf4; border:2px solid #22c55e; border-radius:8px; padding:20px; margin:16px 0; text-align:center;">
+          <p style="font-size:22px; color:#15803d; font-weight:700; margin:0;">★ Congratulations!</p>
+          <p style="font-size:15px; color:#16a34a; margin:8px 0 0 0;">Your Question Paper Has Been Selected</p>
+        </div>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          Your question paper for <strong>${data.subjectName || 'the subject'}</strong> has been reviewed and selected as the <strong>official question paper</strong> for ${data.examType || 'the examination'}, Semester ${data.semester || 'N/A'}.
+        </p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          The paper is now <strong>locked</strong> and will be used for the official examination. No further edits are permitted.
+        </p>
+        <p style="font-size:13px; color:#6c757d; margin-top:20px;">Thank you for your dedication and contribution to the examination process.</p>
+      </div>
+      <div style="background:#f8f9fa; padding:14px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
+        Auto-generated by ${institutionName} Examination System.
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Build QP Archived Email HTML (to faculty whose paper was not selected)
+ */
+const buildQPArchivedEmail = (data, institutionName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+      <div style="background: #1E3A5F; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #C9A227;">
+        <h2 style="margin:0; font-size:20px;">${institutionName}</h2>
+        <p style="margin:6px 0 0 0; font-size:13px; opacity:0.9;">Question Paper — Review Update</p>
+      </div>
+      <div style="padding: 24px; background: white;">
+        <p style="font-size:16px; color:#333; margin-top:0;"><strong>Dear ${data.facultyName || 'Faculty'},</strong></p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          Thank you for submitting your question paper for <strong>${data.subjectName || 'the subject'}</strong>.
+        </p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          After carefully reviewing all submissions, the Exam Cell has selected a different paper for this examination. We sincerely appreciate your effort and contribution.
+        </p>
+        <p style="font-size:14px; color:#555; line-height:1.6;">
+          Your submission has been <strong>archived</strong> for reference. Your hard work and dedication to the examination process are valued.
+        </p>
+        <p style="font-size:13px; color:#6c757d; margin-top:20px;">Thank you for your continued contribution to academic excellence.</p>
+      </div>
+      <div style="background:#f8f9fa; padding:14px; text-align:center; font-size:12px; color:#6c757d; border-top:1px solid #dee2e6;">
+        Auto-generated by ${institutionName} Examination System. Contact Exam Cell for any queries.
       </div>
     </div>
   `;

@@ -3,10 +3,12 @@
  * Sidebar navigation for HOD users (hidden during print)
  */
 import { useState } from 'react';
-import { Menu, LogOut, BookOpen } from 'lucide-react';
+import { Menu, LogOut, BookOpen, User, Building2 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBell from '../components/NotificationBell';
+import api from '../lib/api';
 
 const HodLayout = () => {
   const navigate = useNavigate();
@@ -14,8 +16,16 @@ const HodLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Fetch HOD profile
+  const { data: hodProfile } = useQuery({
+    queryKey: ['hodProfile'],
+    queryFn: () => api.get('/hod/profile').then(r => r.data.data),
+    retry: false
+  });
+
   const navItems = [
     { label: 'Dashboard', path: '/hod/dashboard', icon: BookOpen },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   const handleLogout = () => {
@@ -60,11 +70,25 @@ const HodLayout = () => {
 
           {/* User info */}
           <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'white', marginBottom: '3px', lineHeight: 1.3 }}>HOD Portal</div>
-            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>Department Head</div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'white', marginBottom: '3px', lineHeight: 1.3 }}>
+              {hodProfile?.name || 'HOD Portal'}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>
+              {hodProfile?.username || 'Department Head'}
+            </div>
             <span style={{ display: 'inline-block', padding: '3px 10px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', borderRadius: '4px' }}>
               HOD
             </span>
+            {hodProfile?.department && (
+              <div style={{
+                fontSize: '0.7rem',
+                color: 'rgba(255,255,255,0.55)',
+                marginTop: '4px',
+                letterSpacing: '0.04em'
+              }}>
+                Dept: {hodProfile.department}
+              </div>
+            )}
           </div>
         </div>
 

@@ -32,7 +32,7 @@ const testUsers = [
     role: 'admin',
     name: 'Admin User',
     department: 'Administration',
-    email: 'admin1@admin.test',
+    email: 'admin1@evalora.ac.in',
   },
   {
     username: 'EXAMCELL1',
@@ -40,7 +40,7 @@ const testUsers = [
     role: 'examcell',
     name: 'Exam Cell Officer',
     department: 'Examination Cell',
-    email: 'examcell1@examcell.test',
+    email: 'examcell1@evalora.ac.in',
   },
   {
     username: 'FACULTY1',
@@ -48,7 +48,7 @@ const testUsers = [
     role: 'faculty',
     name: 'Dr. John Doe',
     department: 'Computer Science',
-    email: 'faculty1@faculty.test',
+    email: 'faculty1@evalora.ac.in',
   },
   {
     username: 'STUDENT1',
@@ -56,7 +56,7 @@ const testUsers = [
     role: 'student',
     name: 'Jane Smith',
     department: 'Computer Science',
-    email: 'student1@student.test',
+    email: 'student1@evalora.ac.in',
   },
   {
     username: 'HOD1',
@@ -64,7 +64,7 @@ const testUsers = [
     role: 'hod',
     name: 'Prof. Alice Johnson',
     department: 'Computer Science',
-    email: 'hod1@hod.test',
+    email: 'hod1@evalora.ac.in',
   },
   {
     username: 'PRINCIPAL1',
@@ -72,7 +72,7 @@ const testUsers = [
     role: 'principal',
     name: 'Dr. Robert Brown',
     department: 'Administration',
-    email: 'principal1@principal.test',
+    email: 'principal1@evalora.ac.in',
   },
 ];
 
@@ -115,18 +115,22 @@ const seedDatabase = async () => {
       console.log(`✓ Created ${userData.role}: ${userData.username} (${userData.email})`);
     }
 
-    // Create a test department
-    console.log('\nCreating test department...');
-    const existingDept = await Department.findOne({ departmentCode: 'CSE' });
-    if (!existingDept) {
-      await Department.create({
-        departmentName: 'Computer Science and Engineering',
-        departmentCode: 'CSE',
-        hodId: null, // Can be set later through the admin panel
-      });
-      console.log('✓ Created department: Computer Science and Engineering (CSE)');
-    } else {
-      console.log('✓ Department CSE already exists');
+    // Create departments
+    console.log('\nCreating departments...');
+    const departments = [
+      { departmentName: 'Computer Science and Engineering', departmentCode: 'CSE' },
+      { departmentName: 'Computer Science (Data Science)', departmentCode: 'CSDS' },
+      { departmentName: 'Electronics and Communication', departmentCode: 'ECE' },
+      { departmentName: 'Mechanical Engineering', departmentCode: 'ME' },
+    ];
+    for (const dept of departments) {
+      const existing = await Department.findOne({ departmentCode: dept.departmentCode });
+      if (!existing) {
+        await Department.create({ ...dept, hodId: null });
+        console.log(`✓ Created department: ${dept.departmentName} (${dept.departmentCode})`);
+      } else {
+        console.log(`✓ Department ${dept.departmentCode} already exists`);
+      }
     }
 
     // Create a test subject
@@ -162,25 +166,6 @@ const seedDatabase = async () => {
       console.log('✓ Student profile already exists');
     }
 
-    // Create extended profile for the test faculty
-    console.log('\nCreating test faculty profile...');
-    const existingFaculty = await Faculty.findOne({ employeeId: 'FACULTY1' });
-    if (!existingFaculty) {
-      const subject = await Subject.findOne({ subjectCode: 'CS101' });
-      await Faculty.create({
-        employeeId: 'FACULTY1',
-        name: 'Dr. John Doe',
-        department: 'Computer Science',
-        designation: 'Assistant Professor',
-        subjectsAssigned: subject ? [subject._id] : [],
-        email: 'faculty1@faculty.test',
-        phone: '9876543211',
-      });
-      console.log('✓ Created faculty profile for FACULTY1');
-    } else {
-      console.log('✓ Faculty profile already exists');
-    }
-
     // Create additional subjects for exams (Semester 5-6)
     console.log('\nCreating additional subjects for exam automation...');
     const additionalSubjects = [
@@ -200,6 +185,27 @@ const seedDatabase = async () => {
         await Subject.create(sub);
         console.log(`✓ Created subject: ${sub.subjectCode} - ${sub.subjectName}`);
       }
+    }
+
+    // Create extended profile for the test faculty
+    console.log('\nCreating test faculty profile...');
+    const allCsSubjects = await Subject.find({ department: 'Computer Science' });
+    const existingFaculty = await Faculty.findOne({ employeeId: 'FACULTY1' });
+    if (!existingFaculty) {
+      await Faculty.create({
+        employeeId: 'FACULTY1',
+        name: 'Dr. John Doe',
+        department: 'Computer Science',
+        designation: 'Assistant Professor',
+        subjectsAssigned: allCsSubjects.map(s => s._id),
+        email: 'faculty1@evalora.ac.in',
+        phone: '9876543211',
+      });
+      console.log('✓ Created faculty profile for FACULTY1');
+    } else {
+      existingFaculty.subjectsAssigned = allCsSubjects.map(s => s._id);
+      await existingFaculty.save();
+      console.log('✓ Updated faculty profile for FACULTY1 with assigned subjects');
     }
 
     // Create exam halls
@@ -304,10 +310,52 @@ const seedDatabase = async () => {
         email: 'exam@pes.edu',
         website: 'www.pes.edu',
         academicYear: '2025-26',
+        currentAcademicYear: '2025-26',
+        currentSemester: 5,
+        academicYears: [
+          {
+            year: '2024-25',
+            startDate: new Date('2024-06-01'),
+            endDate: new Date('2025-05-31'),
+            isCurrent: false,
+            semesters: [],
+          },
+          {
+            year: '2025-26',
+            startDate: new Date('2025-06-01'),
+            endDate: new Date('2026-05-31'),
+            isCurrent: true,
+            semesters: [],
+          },
+        ],
       });
-      console.log('✓ Created institution configuration');
+      console.log('✓ Created institution configuration with academic years');
     } else {
-      console.log('✓ Institution configuration already exists');
+      // Update existing config with academic years if not present
+      if (!existingConfig.currentAcademicYear) {
+        existingConfig.currentAcademicYear = '2025-26';
+        existingConfig.currentSemester = 5;
+        existingConfig.academicYears = [
+          {
+            year: '2024-25',
+            startDate: new Date('2024-06-01'),
+            endDate: new Date('2025-05-31'),
+            isCurrent: false,
+            semesters: [],
+          },
+          {
+            year: '2025-26',
+            startDate: new Date('2025-06-01'),
+            endDate: new Date('2026-05-31'),
+            isCurrent: true,
+            semesters: [],
+          },
+        ];
+        await existingConfig.save();
+        console.log('✓ Updated institution configuration with academic years');
+      } else {
+        console.log('✓ Institution configuration already exists with academic years');
+      }
     }
 
     // Initialize default grading scheme
@@ -337,12 +385,166 @@ const seedDatabase = async () => {
 
     console.log('\n========================================');
     console.log('✓ Database seeded successfully!');
+    
+    // Assign subjects to faculty for question paper testing
+    console.log('\nAssigning subjects to faculty...');
+    const cs501 = await Subject.findOne({ subjectCode: 'CS501' });
+    const cs502 = await Subject.findOne({ subjectCode: 'CS502' });
+    const cs503 = await Subject.findOne({ subjectCode: 'CS503' });
+    
+    if (cs501 && cs502 && cs503) {
+      // Assign subjects to FACULTY1
+      await Faculty.findOneAndUpdate(
+        { employeeId: 'FACULTY1' },
+        { $addToSet: { subjectsAssigned: { $each: [cs501._id, cs502._id] } } },
+        { upsert: false }
+      );
+      console.log('✓ Assigned CS501, CS502 to FACULTY1');
+      
+      // Assign subjects to FAC001
+      await Faculty.findOneAndUpdate(
+        { employeeId: 'FAC001' },
+        { $addToSet: { subjectsAssigned: { $each: [cs501._id, cs503._id] } } },
+        { upsert: false }
+      );
+      console.log('✓ Assigned CS501, CS503 to FAC001');
+      
+      // Assign subjects to FAC003
+      await Faculty.findOneAndUpdate(
+        { employeeId: 'FAC003' },
+        { $addToSet: { subjectsAssigned: { $each: [cs502._id, cs503._id] } } },
+        { upsert: false }
+      );
+      console.log('✓ Assigned CS502, CS503 to FAC003');
+    }
+
+    // Create department-specific HOD users
+    console.log('\nCreating department-specific HODs...');
+    
+    // HOD for Computer Science
+    const hodCSEUser = await User.findOneAndUpdate(
+      { username: 'HOD_CSE' },
+      {
+        username: 'HOD_CSE',
+        passwordHash: await bcrypt.hash('Hod@123', 10),
+        role: 'hod',
+        name: 'Dr. Rajesh Verma',
+        department: 'Computer Science and Engineering',
+        email: 'hod.cse@pesitm.ac.in',
+        isActive: true,
+        isFirstLogin: false
+      },
+      { upsert: true, new: true }
+    );
+    console.log('✓ Created HOD_CSE for Computer Science');
+
+    // HOD for Data Science
+    const hodDSUser = await User.findOneAndUpdate(
+      { username: 'HOD_DS' },
+      {
+        username: 'HOD_DS',
+        passwordHash: await bcrypt.hash('Hod@123', 10),
+        role: 'hod',
+        name: 'Dr. Sunitha B S',
+        department: 'Computer Science (Data Science)',
+        email: 'hod.ds@pesitm.ac.in',
+        isActive: true,
+        isFirstLogin: false
+      },
+      { upsert: true, new: true }
+    );
+    console.log('✓ Created HOD_DS for Data Science');
+
+    // HOD for Electronics
+    const hodECEUser = await User.findOneAndUpdate(
+      { username: 'HOD_ECE' },
+      {
+        username: 'HOD_ECE',
+        passwordHash: await bcrypt.hash('Hod@123', 10),
+        role: 'hod',
+        name: 'Dr. Pradeep Kumar',
+        department: 'Electronics and Communication',
+        email: 'hod.ece@pesitm.ac.in',
+        isActive: true,
+        isFirstLogin: false
+      },
+      { upsert: true, new: true }
+    );
+    console.log('✓ Created HOD_ECE for Electronics');
+
+    // Update existing HOD1
+    await User.findOneAndUpdate(
+      { username: 'HOD1' },
+      { 
+        department: 'Computer Science and Engineering',
+        name: 'HOD - Computer Science',
+        isFirstLogin: false 
+      }
+    );
+    console.log('✓ Updated HOD1 with department');
+
+    // Link HODs to departments
+    console.log('\nLinking HODs to departments...');
+    
+    // CSE department
+    const cseDept = await Department.findOne({ 
+      $or: [
+        { departmentCode: 'CSE' },
+        { departmentName: 'Computer Science and Engineering' }
+      ]
+    });
+    if (cseDept && hodCSEUser) {
+      await Department.findByIdAndUpdate(cseDept._id, {
+        hodUserId: hodCSEUser._id,
+        hodName: hodCSEUser.name
+      });
+      console.log('✓ HOD_CSE linked to CSE dept');
+    }
+
+    // CSDS department
+    const csdsDept = await Department.findOne({ 
+      $or: [
+        { departmentCode: 'CSDS' },
+        { departmentName: { $regex: 'Data Science', $options: 'i' }}
+      ]
+    });
+    if (csdsDept && hodDSUser) {
+      await Department.findByIdAndUpdate(csdsDept._id, {
+        hodUserId: hodDSUser._id,
+        hodName: hodDSUser.name
+      });
+      console.log('✓ HOD_DS linked to CSDS dept');
+    }
+
+    // ECE department
+    const eceDept = await Department.findOne({ 
+      $or: [
+        { departmentCode: 'ECE' },
+        { departmentName: { $regex: 'Electronics', $options: 'i' }}
+      ]
+    });
+    if (eceDept && hodECEUser) {
+      await Department.findByIdAndUpdate(eceDept._id, {
+        hodUserId: hodECEUser._id,
+        hodName: hodECEUser.name
+      });
+      console.log('✓ HOD_ECE linked to ECE dept');
+    }
+    
+    console.log('========================================');
     console.log('========================================');
     console.log('\nTest Credentials:');
     console.log('─────────────────────────────────────');
     testUsers.forEach(user => {
       console.log(`${user.role.toUpperCase().padEnd(12)} → Username: ${user.username.padEnd(12)} Password: ${user.password}`);
     });
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('HOD CREDENTIALS:');
+    console.log('HOD1    / HOD@123 → Computer Science');
+    console.log('HOD_CSE / Hod@123 → Computer Science');
+    console.log('HOD_DS  / Hod@123 → Data Science');
+    console.log('HOD_ECE / Hod@123 → Electronics');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('========================================\n');
 
     process.exit(0);

@@ -26,19 +26,11 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const userData = await login(formData.username, formData.password);
+      const userData = await login(formData.username, formData.password, navigate);
       toast.success(`Welcome back, ${userData.name}!`, {
         style: { background: 'var(--color-navy)', color: '#fff' },
       });
-      const roleRoutes = {
-        admin: '/admin/dashboard',
-        examcell: '/examcell/dashboard',
-        faculty: '/faculty/dashboard',
-        student: '/student/dashboard',
-        hod: '/hod/dashboard',
-        principal: '/principal/dashboard',
-      };
-      navigate(roleRoutes[userData.role] || '/', { replace: true });
+      // Navigation is now handled by the login function
     } catch (err) {
       toast.error(typeof err === 'string' ? err : 'Invalid credentials. Please try again.', {
         style: { background: 'var(--color-error)', color: '#fff' },
@@ -85,6 +77,38 @@ const Login = () => {
         </span>
       </div>
 
+      <div style={{
+        position: 'fixed',
+        top: '48px',
+        left: 0,
+        right: 0,
+        backgroundColor: 'var(--color-navy)',
+        padding: '10px 0',
+        overflow: 'hidden',
+        zIndex: 9,
+      }}>
+        <div style={{
+          display: 'inline-block',
+          whiteSpace: 'nowrap',
+          animation: 'marquee 25s linear infinite',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          color: 'white',
+        }}>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Examination Automation and Evaluation System
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Examination Automation and Evaluation System
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Examination Automation and Evaluation System
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Examination Automation and Evaluation System
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </div>
+      </div>
+
       {/* ── Main centered area ── */}
       <div
         style={{
@@ -92,7 +116,7 @@ const Login = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '80px 24px',
+          padding: '120px 24px 80px 24px',
         }}
       >
         {/* Content block — fixed width, truly centered */}
@@ -315,8 +339,9 @@ const Login = () => {
           fontSize: '0.72rem',
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
-          color: '#BBBBBB',
+          color: '#5C5C5C',
           fontFamily: 'var(--font-body)',
+          fontWeight: 700,
           pointerEvents: 'none',
         }}
       >
@@ -328,6 +353,10 @@ const Login = () => {
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0);    }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
       `}</style>
     </div>

@@ -76,6 +76,15 @@ const Departments = () => {
     staleTime: 30000,
   });
 
+  // Fetch HOD users
+  const { data: hodUsers } = useQuery({
+    queryKey: ['hodUsers'],
+    queryFn: async () => {
+      const response = await apiClient.get('/admin/users?role=hod');
+      return response.data.data || [];
+    },
+  });
+
   const allDepartments = departmentsData?.data || [];
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -180,56 +189,60 @@ const Departments = () => {
     <div className="p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div>
-              <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1">
-                Departments
-              </h1>
-              <p className="text-[#5C5C5C]">
-                {filtered.length} department{filtered.length !== 1 ? 's' : ''}{search ? ' found' : ' total'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button onClick={() => setIsExportModalOpen(true)} variant="ghost" className="flex items-center gap-2 whitespace-nowrap border border-gray-300 hover:border-green-500 hover:text-green-600">
+        <div style={{ marginBottom: '20px' }}>
+          {/* ROW 1: Title + Action Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
+              Departments
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button onClick={() => setIsExportModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: 'var(--color-text)', border: '1.5px solid #E0E0E0', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
                 <Download size={17} /> Export Excel
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setIsBulkModalOpen(true)}
-                variant="ghost"
-                className="flex items-center gap-2 whitespace-nowrap border border-gray-300 hover:border-[#1E3A5F]"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: 'var(--color-text)', border: '1.5px solid #E0E0E0', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}
               >
                 <Upload size={18} />
                 Import CSV/Excel
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => openModal()}
-                variant="gold"
-                className="flex items-center gap-2 whitespace-nowrap"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#B8911F'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gold)'; }}
               >
                 <Plus size={20} />
                 Add Department
-              </Button>
+              </button>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={17} />
-              <input
-                type="text"
-                placeholder="Search by code, name, or HOD..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm"
-              />
-            </div>
+          {/* ROW 2: Record count */}
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
+            {filtered.length} department{filtered.length !== 1 ? 's' : ''}{search ? ' found' : ' total'}
+          </p>
+
+          {/* ROW 3: Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              placeholder="Search by code, name, or HOD..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              style={{ flex: 1, minWidth: '200px', padding: '10px 16px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+            />
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #F0F0F0', overflow: 'hidden' }}>
           {isDeptsLoading ? (
             <div className="p-6">
               <LoadingSkeleton rows={5} columns={6} />
@@ -254,37 +267,39 @@ const Departments = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ backgroundColor: 'var(--color-navy)' }}>
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>
                         Code
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>
                         Department Name
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>
                         HOD
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">
+                      <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>
                         Faculty
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">
+                      <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>
                         Students
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">
+                      <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'white', whiteSpace: 'nowrap', borderBottom: 'none' }}>
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
+                  <tbody>
                     {paginated.map((department, index) => {
                       const code = department.departmentCode;
                       return (
                         <tr
                           key={department._id}
-                          className="hover:bg-gray-50 transition-colors"
+                          style={{ borderBottom: '1px solid #F5F5F5', transition: 'background-color 150ms ease' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-xs font-mono font-bold text-[#1E3A5F] bg-blue-50 px-2.5 py-1 rounded-md">
@@ -338,7 +353,36 @@ const Departments = () => {
                   </tbody>
                 </table>
               </div>
-              {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '0 4px' }}>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--color-text-secondary)' }}>Page {page} of {totalPages}</p>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button onClick={() => setPage(page - 1)} disabled={page <= 1}
+                      style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1.5px solid #E0E0E0', backgroundColor: 'white', fontSize: '0.875rem', cursor: page <= 1 ? 'not-allowed' : 'pointer', color: 'var(--color-text)', transition: 'all 150ms ease', opacity: page <= 1 ? 0.4 : 1 }}
+                      onMouseEnter={(e) => { if (page > 1) { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; } }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
+                      <ChevronLeft size={14} />
+                    </button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                      return p <= totalPages ? (
+                        <button key={p} onClick={() => setPage(p)}
+                          style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: p === page ? 'none' : '1.5px solid #E0E0E0', backgroundColor: p === page ? 'var(--color-navy)' : 'white', color: p === page ? 'white' : 'var(--color-text)', fontSize: '0.875rem', cursor: 'pointer', transition: 'all 150ms ease' }}
+                          onMouseEnter={(e) => { if (p !== page) { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; } }}
+                          onMouseLeave={(e) => { if (p !== page) { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; } }}>
+                          {p}
+                        </button>
+                      ) : null;
+                    })}
+                    <button onClick={() => setPage(page + 1)} disabled={page >= totalPages}
+                      style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1.5px solid #E0E0E0', backgroundColor: 'white', fontSize: '0.875rem', cursor: page >= totalPages ? 'not-allowed' : 'pointer', color: 'var(--color-text)', transition: 'all 150ms ease', opacity: page >= totalPages ? 0.4 : 1 }}
+                      onMouseEnter={(e) => { if (page < totalPages) { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; } }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -347,14 +391,23 @@ const Departments = () => {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-bold text-[#1A1A1A]">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Navy Header */}
+            <div style={{ backgroundColor: 'var(--color-navy)', padding: '16px 24px', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'white', margin: 0 }}>
                 {editingDepartment ? 'Edit Department' : 'Add New Department'}
               </h2>
+              <button onClick={closeModal} type="button" style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.8, transition: 'opacity 150ms' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
                   Department Code <span className="text-[#B3413E]">*</span>
@@ -387,22 +440,30 @@ const Departments = () => {
 
               <div>
                 <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
-                  HOD User ID
+                  Head of Department
                   <span className="text-[#5C5C5C] text-xs font-normal ml-1">(Optional)</span>
                 </label>
-                <p className="text-xs text-[#5C5C5C] mb-2">
-                  Enter the MongoDB User ID of the Head of Department
-                </p>
-                <input
-                  type="text"
+                <select
                   value={formData.hodId}
                   onChange={(e) => setFormData({ ...formData, hodId: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none font-mono text-sm"
-                  placeholder="User ObjectId (optional)"
-                />
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm bg-white"
+                >
+                  <option value="">-- No HOD Assigned --</option>
+                  {hodUsers?.map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.name} ({user.username})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-[#5C5C5C] mt-1.5">
+                  Select a user with HOD role to assign as department head
+                </p>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              </div>
+
+              {/* Sticky Footer */}
+              <div style={{ padding: '16px 24px', borderTop: '1px solid #E0E0E0', display: 'flex', gap: '12px', flexShrink: 0 }}>
                 <Button
                   type="button"
                   onClick={closeModal}

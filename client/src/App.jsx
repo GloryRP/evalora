@@ -13,6 +13,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Pages
 import Login from './pages/Login';
 import PlaceholderDashboard from './pages/PlaceholderDashboard';
+import ChangePassword from './pages/ChangePassword';
+import Profile from './pages/Profile';
 
 // Admin
 import AdminLayout from './layouts/AdminLayout';
@@ -23,6 +25,7 @@ import Students from './pages/admin/Students';
 import Faculty from './pages/admin/Faculty';
 import Subjects from './pages/admin/Subjects';
 import Departments from './pages/admin/Departments';
+import AdminHalls from './pages/admin/Halls';
 import InstitutionSettings from './pages/admin/InstitutionSettings';
 import AdminExams from './pages/admin/Exams';
 
@@ -57,7 +60,8 @@ import FacultyLayout from './layouts/FacultyLayout';
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import MyDuties from './pages/faculty/MyDuties';
 import Evaluations from './pages/faculty/Evaluations';
-import FacultyQuestionPapers from './pages/faculty/FacultyQuestionPapers';
+import QuestionPaperSubmissions from './pages/faculty/QuestionPaperSubmissions';
+import SubmitQuestionPaper from './pages/faculty/SubmitQuestionPaper';
 import HodDashboard from './pages/hod/HodDashboard';
 import PrincipalDashboard from './pages/principal/PrincipalDashboard';
 
@@ -80,6 +84,18 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
+              
+              {/* Shared Routes (any authenticated user) */}
+              <Route path="/change-password" element={
+                <ProtectedRoute allowedRoles={['admin', 'examcell', 'faculty', 'student', 'hod', 'principal']}>
+                  <ChangePassword />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute allowedRoles={['admin', 'examcell', 'faculty', 'student', 'hod', 'principal']}>
+                  <Profile />
+                </ProtectedRoute>
+              } />
             
             {/* Admin Routes */}
             <Route
@@ -95,6 +111,7 @@ function App() {
               <Route path="faculty" element={<Faculty />} />
               <Route path="subjects" element={<Subjects />} />
               <Route path="departments" element={<Departments />} />
+              <Route path="halls" element={<AdminHalls />} />
               <Route path="exams" element={<AdminExams />} />
               <Route path="institution" element={<InstitutionSettings />} />
               <Route path="grading-scheme" element={<GradingScheme />} />
@@ -151,7 +168,8 @@ function App() {
               <Route path="dashboard" element={<FacultyDashboard />} />
               <Route path="duties" element={<MyDuties />} />
               <Route path="evaluations" element={<Evaluations />} />
-              <Route path="question-papers" element={<FacultyQuestionPapers />} />
+              <Route path="question-papers" element={<QuestionPaperSubmissions />} />
+              <Route path="question-papers/:id" element={<SubmitQuestionPaper />} />
             </Route>
 
             {/* HOD Routes */}

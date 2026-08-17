@@ -907,10 +907,16 @@ exports.getInvigilatorAssignments = async (req, res) => {
     if (facultyId) filter.facultyId = facultyId;
 
     const assignments = await InvigilatorAssignment.find(filter)
-      .populate('examId')
-      .populate('hallId')
-      .populate('facultyId')
-      .sort({ examId: 1, hallId: 1 });
+      .populate({
+        path: 'examId',
+        populate: {
+          path: 'subjectId',
+          select: 'subjectCode subjectName'
+        }
+      })
+      .populate('hallId', 'hallName building')
+      .populate('facultyId', 'name employeeId department designation')
+      .sort({ 'examId.examDate': 1 });
 
     res.json({
       success: true,

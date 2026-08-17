@@ -203,31 +203,32 @@ const Exams = () => {
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1">
+      <div style={{ marginBottom: '20px' }}>
+        {/* ROW 1: Title + Action Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
             Exam Series & Schedules
           </h1>
-          <p className="text-[#5C5C5C] text-sm">
-            Manage assessment schedules grouped by semester and type (CIE / SEE).
-          </p>
+          <button onClick={() => setShowWizard(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#B8911F'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gold)'; }}>
+            <Plus size={16} /> Schedule Exam Series
+          </button>
         </div>
 
-        <Button onClick={() => setShowWizard(true)} variant="gold" className="flex items-center gap-2 font-bold shadow-sm shadow-amber-100">
-          <Plus size={16} /> Schedule Exam Series
-        </Button>
-      </div>
+        {/* ROW 2: Description */}
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
+          Manage assessment schedules grouped by semester and type (CIE / SEE).
+        </p>
 
-      {/* Search Filter */}
-      <div className="mb-6 relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-        <input
-          type="text"
-          placeholder="Search by Semester or Exam Type (e.g. Sem 5, Internal 1)..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm bg-white shadow-sm"
-        />
+        {/* ROW 3: Search Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <input type="text" placeholder="Search by Semester or Exam Type (e.g. Sem 5, Internal 1)..." value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: 1, minWidth: '200px', padding: '10px 16px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }} />
+        </div>
       </div>
 
       {/* Series Grid */}
@@ -245,31 +246,34 @@ const Exams = () => {
             const maxDateStr = series.maxDate ? series.maxDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
             
             return (
-              <div key={`${series.semester}-${series.examType}`} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start gap-2 mb-4">
-                    <div>
-                      <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/50 px-2.5 py-0.5 rounded-full">
-                        Semester {series.semester}
-                      </span>
-                    </div>
-                    <Badge variant={series.status === 'scheduled' ? 'emerald' : 'gold'}>
-                      {series.status}
-                    </Badge>
-                  </div>
+              <div key={`${series.semester}-${series.examType}`} style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #F0F0F0', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} className="hover:shadow-md transition">
+                {/* Absolute status badge */}
+                <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+                  <Badge variant={series.status === 'scheduled' ? 'emerald' : 'gold'}>
+                    {series.status}
+                  </Badge>
+                </div>
 
-                  <h3 className="text-lg font-bold text-[#1E3A5F] mb-1.5">
+                <div>
+                  {/* Semester label - always gold */}
+                  <p style={{ color: 'var(--color-gold)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Semester {series.semester}
+                  </p>
+
+                  {/* Title - padded right to not overlap badge */}
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '12px', paddingRight: '80px' }}>
                     {getExamTypeLabel(series.examType)}
                   </h3>
 
-                  <div className="space-y-2 mt-4 text-xs font-semibold text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-[#C9A227]" />
-                      <span>Date Range: <strong className="text-gray-700">{minDateStr}</strong> to <strong className="text-gray-700">{maxDateStr}</strong></span>
+                  {/* Meta rows */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--color-text-secondary)' }}>
+                      <Clock size={14} style={{ color: 'var(--color-gold)', flexShrink: 0 }} />
+                      <span>Date Range: <strong style={{ color: 'var(--color-navy)' }}>{minDateStr}</strong> to <strong style={{ color: 'var(--color-navy)' }}>{maxDateStr}</strong></span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <FileText size={14} className="text-purple-600" />
-                      <span>Scheduled Papers: <strong className="text-purple-700">{series.exams.length} Courses</strong></span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--color-text-secondary)' }}>
+                      <FileText size={14} style={{ color: 'var(--color-navy)', flexShrink: 0 }} />
+                      <span>Scheduled Papers: <strong style={{ color: 'var(--color-navy)' }}>{series.exams.length} Courses</strong></span>
                     </div>
                   </div>
                 </div>
@@ -356,105 +360,376 @@ const Exams = () => {
 
       {/* Scheduling Wizard Modal */}
       {showWizard && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="bg-[#1E3A5F] px-6 py-4 text-white flex items-center gap-2 justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <Settings className="text-[#C9A227]" size={20} />
-                <h2 className="text-lg font-bold">Schedule Exam Series</h2>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '540px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            overflow: 'hidden',
+          }}>
+
+            {/* ── HEADER ── */}
+            <div style={{
+              backgroundColor: 'var(--color-navy, #1E3A5F)',
+              padding: '18px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Settings size={18} color="#C9A227" />
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '1.05rem',
+                  fontWeight: 700,
+                  color: 'white',
+                }}>Schedule Exam Series</span>
               </div>
-              <Button onClick={() => setShowWizard(false)} variant="ghost" className="text-white hover:bg-white/10 text-xs">
-                Cancel
-              </Button>
+              <button
+                type="button"
+                onClick={() => setShowWizard(false)}
+                style={{
+                  padding: '6px 14px',
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  borderRadius: '6px',
+                  color: 'white',
+                  fontSize: '0.825rem',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >Cancel</button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+            {/* ── BODY ── */}
+            <div style={{
+              padding: '24px',
+              flex: 1,
+              overflowY: 'auto',
+            }}>
               {wizardStep === 1 ? (
-                <div className="space-y-4">
-                  <p className="text-xs text-[#5C5C5C]">
-                    Enter the parameters to auto-generate exam dates. The solver skips weekends and assigns morning/afternoon slots.
-                  </p>
+                <>
+                  {/* Description card */}
+                  <div style={{
+                    fontSize: '0.825rem',
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.5,
+                    marginBottom: '20px',
+                    padding: '10px 14px',
+                    backgroundColor: '#F8F9FA',
+                    borderRadius: '8px',
+                    border: '1px solid #EEEEEE',
+                  }}>
+                    Configure exam scheduling parameters. The system automatically skips weekends and avoids scheduling conflicts between subjects in the same semester.
+                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* ROW 1: Semester + Exam Category */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px',
+                    marginBottom: '18px',
+                  }}>
+                    {/* Semester */}
                     <div>
-                      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Semester</label>
-                      <select value={wizardParams.semester} onChange={e => setWizardParams({ ...wizardParams, semester: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-sm">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: 'var(--color-text-secondary)',
+                        marginBottom: '6px',
+                      }}>SEMESTER</label>
+                      <select
+                        value={wizardParams.semester}
+                        onChange={e => setWizardParams({ ...wizardParams, semester: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1.5px solid #E0E0E0',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          color: 'var(--color-text)',
+                          backgroundColor: 'white',
+                          outline: 'none',
+                          fontFamily: 'var(--font-body)',
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          cursor: 'pointer',
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                      >
                         {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Semester {s}</option>)}
                       </select>
                     </div>
+
+                    {/* Exam Category */}
                     <div>
-                      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Exam Category</label>
-                      <select value={wizardParams.examCategory} onChange={e => setWizardParams({ ...wizardParams, examCategory: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-sm">
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: 'var(--color-text-secondary)',
+                        marginBottom: '6px',
+                      }}>EXAM CATEGORY</label>
+                      <select
+                        value={wizardParams.examCategory}
+                        onChange={e => setWizardParams({ ...wizardParams, examCategory: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1.5px solid #E0E0E0',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          color: 'var(--color-text)',
+                          backgroundColor: 'white',
+                          outline: 'none',
+                          fontFamily: 'var(--font-body)',
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          cursor: 'pointer',
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                      >
                         <option value="internal1">Internal 1 (CIE)</option>
                         <option value="internal2">Internal 2 (CIE)</option>
                         <option value="external">External (SEE)</option>
+                        <option value="makeup">Make-up / Supplementary</option>
                       </select>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Start Date</label>
-                    <input type="date" value={wizardParams.startDate} onChange={e => setWizardParams({ ...wizardParams, startDate: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-sm" />
+                  {/* ROW 2: Start Date (full width) */}
+                  <div style={{ marginBottom: '18px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-text-secondary)',
+                      marginBottom: '6px',
+                    }}>START DATE</label>
+                    <input
+                      type="date"
+                      value={wizardParams.startDate}
+                      onChange={e => setWizardParams({ ...wizardParams, startDate: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        border: '1.5px solid #E0E0E0',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        color: 'var(--color-text)',
+                        backgroundColor: 'white',
+                        outline: 'none',
+                        fontFamily: 'var(--font-body)',
+                        boxSizing: 'border-box',
+                        appearance: 'none',
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                    />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* ROW 3: Morning + Afternoon time */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px',
+                    marginBottom: '0',
+                  }}>
+                    {/* Morning */}
                     <div>
-                      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Morning Start Time</label>
-                      <input type="time" value={wizardParams.theoryStartTime} onChange={e => setWizardParams({ ...wizardParams, theoryStartTime: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: 'var(--color-text-secondary)',
+                        marginBottom: '6px',
+                      }}>MORNING START TIME</label>
+                      <input
+                        type="time"
+                        value={wizardParams.theoryStartTime}
+                        onChange={e => setWizardParams({ ...wizardParams, theoryStartTime: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1.5px solid #E0E0E0',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          color: 'var(--color-text)',
+                          backgroundColor: 'white',
+                          outline: 'none',
+                          fontFamily: 'var(--font-body)',
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                      />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Afternoon Start Time</label>
-                      <input type="time" value={wizardParams.labStartTime} onChange={e => setWizardParams({ ...wizardParams, labStartTime: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2 justify-end pt-4 border-t border-gray-100">
-                    <Button onClick={handleRunScheduler} disabled={isGenerating} variant="gold" className="px-6 font-bold flex items-center gap-1.5">
-                      {isGenerating ? <Loader className="animate-spin" size={16} /> : <Play size={16} />}
-                      Generate Timetable Draft
-                    </Button>
+                    {/* Afternoon */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: 'var(--color-text-secondary)',
+                        marginBottom: '6px',
+                      }}>AFTERNOON START TIME</label>
+                      <input
+                        type="time"
+                        value={wizardParams.labStartTime}
+                        onChange={e => setWizardParams({ ...wizardParams, labStartTime: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1.5px solid #E0E0E0',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          color: 'var(--color-text)',
+                          backgroundColor: 'white',
+                          outline: 'none',
+                          fontFamily: 'var(--font-body)',
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }}
+                      />
+                    </div>
                   </div>
-                </div>
+                </>
               ) : (
-                <div className="space-y-4">
-                  <h4 className="font-bold text-sm text-[#1E3A5F] border-b pb-2">Draft Timetable Preview</h4>
-                  <table className="w-full text-xs border-collapse">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h4 style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-navy, #1E3A5F)', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', margin: 0 }}>
+                    Draft Timetable Preview
+                  </h4>
+                  <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr className="bg-gray-50 border-b">
-                        <th className="px-3 py-2 text-left font-bold text-gray-500">Date</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-500">Slot Time</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-500">Subject Code</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-500">Subject Name</th>
+                      <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#6B7280' }}>Date</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#6B7280' }}>Slot Time</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#6B7280' }}>Subject Code</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#6B7280' }}>Subject Name</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody>
                       {draftTimetable?.map((dt, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-gray-600 font-semibold">{new Date(dt.examDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
-                          <td className="px-3 py-2 text-gray-500">{dt.startTime} to {dt.endTime}</td>
-                          <td className="px-3 py-2 font-mono font-bold text-[#1E3A5F]">{dt.subjectCode}</td>
-                          <td className="px-3 py-2 text-gray-800 font-medium">{dt.subjectName}</td>
+                        <tr key={idx} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                          <td style={{ padding: '8px 12px', color: '#374151', fontWeight: 600 }}>
+                            {new Date(dt.examDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </td>
+                          <td style={{ padding: '8px 12px', color: '#6B7280' }}>{dt.startTime} to {dt.endTime}</td>
+                          <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-navy, #1E3A5F)' }}>{dt.subjectCode}</td>
+                          <td style={{ padding: '8px 12px', color: '#1F2937', fontWeight: 500 }}>{dt.subjectName}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
-                  <div className="flex justify-between pt-4 border-t border-gray-100">
-                    <Button onClick={() => setWizardStep(1)} variant="ghost" className="border border-gray-300">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid #F3F4F6' }}>
+                    <button
+                      onClick={() => setWizardStep(1)}
+                      style={{
+                        background: 'white', border: '1px solid #D1D5DB', color: '#374151',
+                        padding: '10px 20px', borderRadius: '8px', fontSize: '0.875rem',
+                        fontWeight: 500, cursor: 'pointer',
+                      }}
+                    >
                       Back to Config
-                    </Button>
-                    <Button onClick={handleConfirmTimetable} disabled={isGenerating} variant="gold" className="font-bold">
+                    </button>
+                    <button
+                      onClick={handleConfirmTimetable}
+                      disabled={isGenerating}
+                      style={{
+                        backgroundColor: 'var(--color-gold, #C9A227)', color: 'white',
+                        padding: '10px 24px', border: 'none', borderRadius: '8px',
+                        fontSize: '0.875rem', fontWeight: 700,
+                        cursor: isGenerating ? 'not-allowed' : 'pointer',
+                        opacity: isGenerating ? 0.7 : 1,
+                      }}
+                    >
                       {isGenerating ? 'Saving...' : 'Confirm and Save Timetable'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* ── FOOTER (only on step 1) ── */}
+            {wizardStep === 1 && (
+              <div style={{
+                padding: '16px 24px',
+                borderTop: '1px solid #F0F0F0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexShrink: 0,
+                backgroundColor: 'white',
+              }}>
+                <span style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--color-text-secondary)',
+                  maxWidth: '200px',
+                  lineHeight: 1.4,
+                }}>Exams will be scheduled starting from the selected start date</span>
+                <button
+                  onClick={handleRunScheduler}
+                  disabled={isGenerating}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '11px 22px',
+                    backgroundColor: 'var(--color-navy, #1E3A5F)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    cursor: isGenerating ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-body)',
+                    whiteSpace: 'nowrap',
+                    transition: 'background-color 150ms ease',
+                    opacity: isGenerating ? 0.7 : 1,
+                  }}
+                  onMouseEnter={(e) => { if (!isGenerating) e.currentTarget.style.backgroundColor = 'var(--color-navy-light, #2C5282)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-navy, #1E3A5F)'; }}
+                >
+                  {isGenerating ? <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={15} />}
+                  Generate Timetable Draft
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
       )}

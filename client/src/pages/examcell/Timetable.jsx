@@ -8,6 +8,7 @@ import api from '../../lib/api';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
+import { useAcademicYear } from '../../contexts/InstitutionContext';
 
 const getBranchCode = (dept) => {
   if (!dept) return '—';
@@ -26,6 +27,7 @@ const getBranchCode = (dept) => {
 };
 
 const Timetable = () => {
+  const { currentAcademicYear } = useAcademicYear();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
@@ -140,33 +142,41 @@ const Timetable = () => {
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
       {/* Header controls (hidden during print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 print:hidden">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1">
+      <div style={{ marginBottom: '20px' }} className="print:hidden">
+        {/* ROW 1: Title + Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
             Exam Timetable
           </h1>
-          <p className="text-[#5C5C5C] text-sm">
-            Structured timetable output matching VTU assessment sheets.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: 'var(--color-text)', border: '1.5px solid #E0E0E0', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.color = 'var(--color-text)'; }}>
+              <Printer size={16} /> Print Timetable
+            </button>
+            <button onClick={handleDownloadPDF} disabled={downloadingPDF || exams.length === 0} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-gold)', color: 'var(--color-navy)', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: downloadingPDF || exams.length === 0 ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: downloadingPDF || exams.length === 0 ? 0.6 : 1 }}
+              onMouseEnter={(e) => { if (!downloadingPDF && exams.length > 0) e.currentTarget.style.backgroundColor = '#B8911F'; }}
+              onMouseLeave={(e) => { if (!downloadingPDF && exams.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-gold)'; }}>
+              {downloadingPDF ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
+              Download PDF
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <select value={filter.semester} onChange={(e) => setFilter({ semester: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none text-sm bg-white font-medium">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-              <option key={sem} value={sem}>Semester {sem}</option>
-            ))}
-          </select>
+        {/* ROW 2: Description */}
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
+          Structured timetable output matching VTU assessment sheets.
+        </p>
 
-          <Button onClick={handlePrint} variant="ghost" className="flex items-center gap-2 border border-gray-300">
-            <Printer size={16} /> Print Timetable
-          </Button>
-
-          <Button onClick={handleDownloadPDF} disabled={downloadingPDF || exams.length === 0} variant="gold" className="flex items-center gap-2 font-semibold">
-            {downloadingPDF ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
-            Download PDF
-          </Button>
-        </div>
+        {/* ROW 3: Semester Filter */}
+        <select value={filter.semester} onChange={(e) => setFilter({ semester: e.target.value })}
+          style={{ width: '180px', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', appearance: 'none', backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C5C5C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px', transition: 'border-color 200ms ease' }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+            <option key={sem} value={sem}>Semester {sem}</option>
+          ))}
+        </select>
       </div>
 
       {/* Main Timetable Document */}
@@ -188,7 +198,7 @@ const Timetable = () => {
               Time Table (BE All Branches — Semester {filter.semester})
             </p>
             <div className="flex justify-center gap-4 text-xs font-bold text-gray-500 mt-1">
-              <span>Academic Year: 2025-26</span>
+              <span>Academic Year: {currentAcademicYear}</span>
               <span>•</span>
               <span>Test: IA - II</span>
             </div>

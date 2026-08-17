@@ -131,4 +131,123 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { login, logout, getMe };
+/**
+ * changePassword - Change user password
+ * PATCH /api/v1/auth/change-password
+ * Requires: verifyToken middleware
+ * Body: { currentPassword, newPassword, confirmPassword }
+ */
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Check if new password matches confirm password
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match'
+      });
+    }
+
+    // Check if new password is different from current
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from current password'
+      });
+    }
+
+    // Find user
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    await User.findByIdAndUpdate(req.user.userId, {
+      passwordHash: newPasswordHash,
+      isFirstLogin: false,
+      updatedAt: new Date()
+    });
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to change password',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * updateProfile - Update user profile information
+ * PATCH /api/v1/auth/update-profile
+ * Requires: verifyToken middleware
+ * Body: { email?, phone? }
+ */
+const updateProfile = async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    const updateData = {};
+
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields to update'
+      });
+    }
+
+    updateData.updatedAt = new Date();
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      updateData,
+      { new: true, select: '-passwordHash' }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update profile',
+      error: error.message
+    });
+  }
+};
+
+module.exports = { login, logout, getMe, changePassword, updateProfile };

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
+import { useAcademicYear } from '../../contexts/InstitutionContext';
 
 // ── Grade colour helpers ──────────────────────────────────────────────────────
 const gradeColor = (grade) => {
@@ -63,9 +64,10 @@ const ConfirmDialog = ({ message, onConfirm, onCancel }) => (
 
 // ── New Scheme Modal ──────────────────────────────────────────────────────────
 const NewSchemeModal = ({ onClose, onCreated }) => {
+  const { currentAcademicYear } = useAcademicYear();
   const [form, setForm] = useState({
     schemeName: '',
-    academicYear: '',
+    academicYear: currentAcademicYear,
     passMarkPercentage: 40,
     setActive: false,
   });
@@ -119,7 +121,7 @@ const NewSchemeModal = ({ onClose, onCreated }) => {
             <div className="sm:col-span-1">
               <label className="block text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider mb-1.5">Academic Year *</label>
               <input value={form.academicYear} onChange={e => setForm({...form, academicYear: e.target.value})}
-                placeholder="e.g. 2024-25" required
+                placeholder={`e.g. ${currentAcademicYear}`} required
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
             </div>
             <div className="sm:col-span-2">
@@ -214,6 +216,7 @@ const NewSchemeModal = ({ onClose, onCreated }) => {
 // Main Component
 // ═══════════════════════════════════════════════════════════════════
 const GradingScheme = () => {
+  const { currentAcademicYear } = useAcademicYear();
   const [allSchemes, setAllSchemes]   = useState([]);
   const [selectedId, setSelectedId]   = useState(null);
   const [editData, setEditData]       = useState(null);   // working copy
@@ -342,52 +345,139 @@ const GradingScheme = () => {
     <div className="flex h-full min-h-screen" style={{ background: '#F8FAFC' }}>
 
       {/* ── LEFT SIDEBAR — Scheme History ── */}
-      <div className="w-72 shrink-0 bg-white border-r border-gray-100 flex flex-col"
-        style={{ minHeight: '100vh' }}>
+      <div style={{
+        width: '288px',
+        flexShrink: 0,
+        backgroundColor: 'white',
+        borderRight: '1px solid #EEEEEE',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        borderRadius: '10px',
+        padding: 0,
+        overflow: 'hidden'
+      }}>
         {/* Sidebar header */}
-        <div className="px-5 py-4 border-b border-gray-100"
-          style={{ background: 'linear-gradient(135deg,#1E3A5F,#2D5A8E)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen size={18} className="text-[#C9A227]" />
-            <h2 className="text-sm font-bold text-white">Scheme History</h2>
+        <div style={{
+          backgroundColor: '#F8F9FA',
+          padding: '14px 16px',
+          borderBottom: '1px solid #EEEEEE',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <BookOpen size={14} style={{ color: 'var(--color-text-secondary)' }} />
+            Scheme History
           </div>
-          <button onClick={() => setShowNewModal(true)}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#C9A227] hover:bg-[#b8911f] text-[#1A1A1A] text-xs font-bold transition">
-            <Plus size={14}/> New Scheme
+          <button
+            onClick={() => setShowNewModal(true)}
+            style={{
+              fontSize: '0.75rem',
+              padding: '4px 10px',
+              backgroundColor: 'var(--color-navy)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              transition: 'opacity 150ms ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <Plus size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+            New Scheme
           </button>
         </div>
 
         {/* Scheme list */}
-        <div className="flex-1 overflow-y-auto py-2">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           {loading ? (
-            <div className="space-y-2 p-3">
-              {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse"/>)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
+              {[1,2,3].map(i => <div key={i} style={{ height: '64px', borderRadius: '12px', backgroundColor: '#F3F4F6', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}/>)}
             </div>
           ) : allSchemes.length === 0 ? (
-            <div className="p-5 text-center text-sm text-gray-400">No schemes yet</div>
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: '0.875rem', color: '#9CA3AF' }}>No schemes yet</div>
           ) : (
-            allSchemes.map(scheme => (
-              <button key={scheme._id}
-                onClick={() => handleSelectScheme(scheme)}
-                className={`w-full text-left px-4 py-3.5 border-b border-gray-50 transition-all group hover:bg-blue-50/60 ${selectedId === scheme._id ? 'bg-blue-50 border-l-4 border-l-[#1E3A5F]' : 'border-l-4 border-l-transparent'}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className={`text-xs font-bold truncate ${selectedId===scheme._id ? 'text-[#1E3A5F]' : 'text-[#1A1A1A]'}`}>
-                      {scheme.schemeName}
-                    </p>
-                    <p className="text-xs text-[#5C5C5C] mt-0.5 flex items-center gap-1">
-                      <Clock size={10}/>{scheme.academicYear || 'No Year'}
-                    </p>
+            allSchemes.map(scheme => {
+              const isSelected = selectedId === scheme._id;
+              return (
+                <button
+                  key={scheme._id}
+                  onClick={() => handleSelectScheme(scheme)}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: '1px solid #F5F5F5',
+                    borderLeft: isSelected ? '3px solid var(--color-navy)' : '3px solid transparent',
+                    paddingLeft: isSelected ? '13px' : '16px',
+                    backgroundColor: isSelected ? '#EEF2FF' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    display: 'block'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = '#F8F9FA';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: 'var(--color-text)',
+                        marginBottom: '3px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {scheme.schemeName}
+                      </p>
+                      <p style={{
+                        fontSize: '0.72rem',
+                        color: 'var(--color-text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {scheme.academicYear || 'No Year'} • {scheme.passMarkPercentage}% pass
+                      </p>
+                    </div>
+                    <div style={{ flexShrink: 0, marginTop: '2px' }}>
+                      {scheme.isActive ? (
+                        <span style={{
+                          backgroundColor: '#ECFDF5',
+                          color: '#065F46',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                          display: 'inline-block'
+                        }}>
+                          Active
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="shrink-0 mt-0.5">
-                    {scheme.isActive
-                      ? <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold"><CheckCircle2 size={10}/>Active</span>
-                      : <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold">Archive</span>}
-                  </div>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1">{scheme.gradeTable?.length || 0} grades · Pass {scheme.passMarkPercentage}%</p>
-              </button>
-            ))
+                </button>
+              );
+            })
           )}
         </div>
 
@@ -419,35 +509,48 @@ const GradingScheme = () => {
           <div className="p-6 lg:p-8 space-y-6">
 
             {/* ── Top bar ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-[#1A1A1A]">{editData.schemeName}</h1>
-                  {isActiveSelected
-                    ? <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold"><CheckCircle2 size={12}/>Active</span>
-                    : <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">Archived</span>}
-                  {isDirty && <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Unsaved</span>}
+            <div style={{ marginBottom: '20px' }}>
+              {/* ROW 1: Title + Action Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
+                  {editData.schemeName}
+                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {!isActiveSelected && (
+                    <button onClick={handleActivate} disabled={activating}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: '#059669', border: '1.5px solid #059669', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 600, cursor: activating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: activating ? 0.5 : 1 }}
+                      onMouseEnter={(e) => { if (!activating) { e.currentTarget.style.backgroundColor = '#F0FDF4'; e.currentTarget.style.borderColor = '#10B981'; } }}
+                      onMouseLeave={(e) => { if (!activating) { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#059669'; } }}>
+                      <Zap size={15}/>{activating ? 'Activating…' : 'Set as Active'}
+                    </button>
+                  )}
+                  {!isActiveSelected && (
+                    <button onClick={() => setConfirmDelete(selectedId)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: '#DC2626', border: '1.5px solid #DC2626', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FEF2F2'; e.currentTarget.style.borderColor = '#EF4444'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#DC2626'; }}>
+                      <Trash2 size={15}/> Delete
+                    </button>
+                  )}
+                  <button onClick={handleSave} disabled={saving || !isDirty}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: saving || !isDirty ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: saving || !isDirty ? 0.5 : 1 }}
+                    onMouseEnter={(e) => { if (!saving && isDirty) e.currentTarget.style.backgroundColor = '#2A4A70'; }}
+                    onMouseLeave={(e) => { if (!saving && isDirty) e.currentTarget.style.backgroundColor = 'var(--color-navy)'; }}>
+                    <Save size={15}/>{saving ? 'Saving…' : 'Save Changes'}
+                  </button>
                 </div>
-                <p className="text-sm text-[#5C5C5C]">Academic Year: <span className="font-semibold text-[#1A1A1A]">{editData.academicYear}</span></p>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {!isActiveSelected && (
-                  <button onClick={handleActivate} disabled={activating}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-green-500 text-green-600 hover:bg-green-50 transition disabled:opacity-50">
-                    <Zap size={15}/>{activating ? 'Activating…' : 'Set as Active'}
-                  </button>
-                )}
-                {!isActiveSelected && (
-                  <button onClick={() => setConfirmDelete(selectedId)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition">
-                    <Trash2 size={15}/> Delete
-                  </button>
-                )}
-                <button onClick={handleSave} disabled={saving || !isDirty}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-50"
-                  style={{ background: isDirty ? 'linear-gradient(135deg,#1E3A5F,#2D5A8E)' : '#9CA3AF' }}>
-                  <Save size={15}/>{saving ? 'Saving…' : 'Save Changes'}
-                </button>
+
+              {/* ROW 2: Status and Academic Year */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>Status:</span>
+                  {isActiveSelected
+                    ? <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', backgroundColor: '#DCFCE7', color: '#065F46', fontSize: '0.75rem', fontWeight: 700 }}><CheckCircle2 size={12}/>Active</span>
+                    : <span style={{ padding: '4px 10px', borderRadius: '20px', backgroundColor: '#F3F4F6', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600 }}>Archived</span>}
+                  {isDirty && <span style={{ padding: '2px 8px', borderRadius: '20px', backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.75rem', fontWeight: 600 }}>Unsaved</span>}
+                </div>
+                <span>Academic Year: <strong style={{ fontWeight: 600, color: 'var(--color-text)' }}>{editData.academicYear}</strong></span>
               </div>
             </div>
 
@@ -467,7 +570,7 @@ const GradingScheme = () => {
                   <label className="block text-xs font-semibold text-[#5C5C5C] mb-1.5">Academic Year</label>
                   <input value={editData.academicYear}
                     onChange={e => handleFieldChange('academicYear', e.target.value)}
-                    placeholder="e.g. 2024-25"
+                    placeholder={`e.g. ${currentAcademicYear}`}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
                 </div>
                 <div>

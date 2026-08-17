@@ -3,10 +3,9 @@
  * Overview of exam automation system with stats, upcoming activities, and agent logs
  */
 import { useState, useEffect } from 'react';
-import { FileText, Building2, Play, Clock, Activity, Cpu, ArrowUpRight } from 'lucide-react';
+import { FileText, Play, Clock, Activity, Cpu, ArrowUpRight, ShieldCheck, MapPin, CalendarDays, Zap } from 'lucide-react';
 import api from '../../lib/api';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
-import Badge from '../../components/ui/Badge';
 import { Link } from 'react-router-dom';
 
 const ExamCellDashboard = () => {
@@ -43,144 +42,363 @@ const ExamCellDashboard = () => {
   };
 
   const statCards = [
-    { label: 'Total Exams', value: stats?.totalExams || 0, icon: FileText, color: 'indigo', link: '/examcell/exams' },
-    { label: 'Scheduled', value: stats?.scheduledExams || 0, icon: Clock, color: 'emerald', link: '/examcell/timetable' },
-    { label: 'Agent Runs', value: stats?.totalRuns || 0, icon: Play, color: 'navy', link: '/examcell/agent-logs' },
+    { label: 'Total Exams', value: stats?.totalExams || 0, icon: FileText, link: '/examcell/exams' },
+    { label: 'Scheduled', value: stats?.scheduledExams || 0, icon: Clock, link: '/examcell/timetable' },
+    { label: 'Agent Runs', value: stats?.totalRuns || 0, icon: Play, link: '/examcell/agent-logs' },
   ];
 
-  const getStatusBadgeVariant = (status) => {
+  const getAgentLabelAndIcon = (type) => {
+    switch (type) {
+      case 'Invigilator': return { label: 'Invigilator Assignment', icon: <ShieldCheck size={14} /> };
+      case 'Hall_allocation': return { label: 'Hall Allocation', icon: <MapPin size={14} /> };
+      case 'Scheduling': return { label: 'Exam Scheduling', icon: <CalendarDays size={14} /> };
+      case 'Orchestrator': return { label: 'Full Pipeline', icon: <Zap size={14} /> };
+      default: return { label: type, icon: <Cpu size={14} /> };
+    }
+  };
+
+  const getStatusBadgeStyle = (status) => {
     switch (status) {
-      case 'completed': return 'emerald';
-      case 'running': return 'gold';
-      case 'failed': return 'red';
-      default: return 'navy';
+      case 'completed': return { backgroundColor: '#ECFDF5', color: '#065F46', padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 600 };
+      case 'failed': return { backgroundColor: '#FEF2F2', color: '#991B1B', padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 600 };
+      case 'running': return { backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 600 };
+      default: return { backgroundColor: '#F3F4F6', color: '#374151', padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 600 };
     }
   };
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <div style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
         <LoadingSkeleton count={4} />
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-[#1A1A1A] mb-1.5">
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: '#1A1A1A', marginBottom: '6px' }}>
           Exam Cell Dashboard
         </h1>
-        <p className="text-[#5C5C5C]">
+        <p style={{ fontSize: '0.9rem', color: '#5C5C5C', margin: 0 }}>
           Orchestrate automated exams, classroom seating arrangements, and invigilation pipelines.
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* KPI Cards Row */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '16px',
+        marginBottom: '28px'
+      }}>
         {statCards.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <Link key={idx} to={stat.link} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md hover:border-gray-200 transition group">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl bg-gray-50 text-gray-700 transition group-hover:bg-[#1E3A5F]/10 group-hover:text-[#1E3A5F]`}>
-                  <Icon size={24} />
+            <Link key={idx} to={stat.link} style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '10px',
+                  padding: '20px 24px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                  border: '1px solid #F0F0F0',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  position: 'relative'
+                }}
+              >
+                {/* Left side */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-secondary)'
+                  }}>
+                    {stat.label}
+                  </div>
+                  <div style={{
+                    fontSize: '2.2rem',
+                    fontWeight: 700,
+                    color: 'var(--color-navy)',
+                    lineHeight: 1,
+                    fontFamily: 'var(--font-display)'
+                  }}>
+                    {stat.value}
+                  </div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-[#1A1A1A] tracking-tight">{stat.value}</div>
-                  <div className="text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider mt-0.5">{stat.label}</div>
+
+                {/* Right side icon */}
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '10px',
+                  backgroundColor: '#EEF2FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-navy)'
+                }}>
+                  <Icon size={22} />
                 </div>
+
+                <ArrowUpRight style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  color: '#CCCCCC',
+                  fontSize: '0.75rem'
+                }} size={14} />
               </div>
-              <ArrowUpRight size={18} className="text-gray-300 group-hover:text-[#C9A227] transition" />
             </Link>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Agent Runs */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-display font-bold text-[#1A1A1A] text-lg flex items-center gap-2">
-              <Cpu size={18} className="text-[#C9A227]" /> Recent Agent Runs
+      {/* Bottom Two-Column Section */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 380px',
+        gap: '20px',
+        alignItems: 'start'
+      }}>
+        {/* LEFT: Recent Agent Runs */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '10px',
+          padding: '24px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
+        }}>
+          {/* Header Row */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1rem',
+              fontWeight: 600,
+              color: 'var(--color-navy)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              margin: 0
+            }}>
+              <Cpu size={18} style={{ color: 'var(--color-gold)' }} />
+              Recent Agent Runs
             </h2>
-            <Link to="/examcell/agent-logs" className="text-xs font-semibold text-[#1E3A5F] hover:underline">
+            <Link to="/examcell/agent-logs" style={{
+              fontSize: '0.8rem',
+              color: 'var(--color-navy)',
+              fontWeight: 500,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
               View All Logs
             </Link>
           </div>
-          
+
           {recentRuns.length === 0 ? (
-            <div className="p-8 text-center text-[#5C5C5C]">
+            <div style={{ padding: '32px', textAlign: 'center', color: '#5C5C5C', fontSize: '0.875rem' }}>
               No agent execution records found. Start the AI solver to view progress.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-100">
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ backgroundColor: '#F8F9FA', borderRadius: '6px' }}>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Agent Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Triggered By</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider">Execution Time</th>
+                    {['Agent Type', 'Status', 'Triggered By', 'Date', 'Exec Time'].map((col) => (
+                      <th key={col} style={{
+                        padding: '10px 14px',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        color: 'var(--color-text-secondary)',
+                        textAlign: 'left'
+                      }}>
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {recentRuns.map((run) => (
-                    <tr key={run._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#1A1A1A] capitalize">
-                        {run.agentType}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={getStatusBadgeVariant(run.status)}>{run.status}</Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#5C5C5C]">
-                        {run.triggeredBy}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#5C5C5C]">
-                        <div className="font-semibold">{new Date(run.createdAt).toLocaleDateString()}</div>
-                        <div className="text-gray-400 mt-0.5">{run.executionTimeMs ? `${(run.executionTimeMs / 1000).toFixed(2)}s` : 'In Progress'}</div>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody>
+                  {recentRuns.map((run, idx) => {
+                    const isLast = idx === recentRuns.length - 1;
+                    const { label, icon } = getAgentLabelAndIcon(run.agentType);
+                    
+                    return (
+                      <tr key={run._id}>
+                        <td style={{
+                          padding: '12px 14px',
+                          fontSize: '0.875rem',
+                          borderBottom: isLast ? 'none' : '1px solid #F5F5F5',
+                          verticalAlign: 'middle'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500, color: 'var(--color-text)' }}>
+                            <span style={{ color: '#9CA3AF' }}>{icon}</span>
+                            {label}
+                          </div>
+                        </td>
+                        <td style={{
+                          padding: '12px 14px',
+                          borderBottom: isLast ? 'none' : '1px solid #F5F5F5',
+                          verticalAlign: 'middle'
+                        }}>
+                          <span style={getStatusBadgeStyle(run.status)}>
+                            {run.status}
+                          </span>
+                        </td>
+                        <td style={{
+                          padding: '12px 14px',
+                          fontSize: '0.875rem',
+                          color: '#5C5C5C',
+                          borderBottom: isLast ? 'none' : '1px solid #F5F5F5',
+                          verticalAlign: 'middle'
+                        }}>
+                          {run.triggeredBy}
+                        </td>
+                        <td style={{
+                          padding: '12px 14px',
+                          borderBottom: isLast ? 'none' : '1px solid #F5F5F5',
+                          verticalAlign: 'middle'
+                        }}>
+                          <div style={{ fontSize: '0.825rem', color: 'var(--color-text)', fontWeight: 500 }}>
+                            {new Date(run.createdAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td style={{
+                          padding: '12px 14px',
+                          borderBottom: isLast ? 'none' : '1px solid #F5F5F5',
+                          verticalAlign: 'middle'
+                        }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)' }}>
+                            {run.executionTimeMs ? `${(run.executionTimeMs / 1000).toFixed(2)}s` : 'In Progress'}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
-        {/* Quick Operations Guide */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="font-display font-bold text-[#1A1A1A] text-lg flex items-center gap-2 mb-4">
-              <Activity size={18} className="text-[#C9A227]" /> Quick Operations
-            </h2>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                <div>
-                  <h4 className="text-sm font-semibold text-[#1A1A1A]">Exams Scheduling</h4>
-                  <p className="text-xs text-[#5C5C5C] mt-0.5">Configure start date, duration, and generate the exam timetable.</p>
+        {/* RIGHT: Quick Operations */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '10px',
+          padding: '24px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
+        }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '1rem',
+            fontWeight: 600,
+            color: 'var(--color-navy)',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            margin: '0 0 20px 0'
+          }}>
+            <Activity size={18} style={{ color: 'var(--color-gold)' }} />
+            Quick Operations
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {[
+              {
+                title: 'Exams Scheduling',
+                desc: 'Configure start date, duration, and generate the exam timetable.',
+              },
+              {
+                title: 'Seating Allotments',
+                desc: 'Generate anti-malpractice seating arrangements on physical benches.',
+              },
+              {
+                title: 'Invigilator Duties',
+                desc: 'Assign faculty supervisors to populated halls without scheduling clashes.',
+              }
+            ].map((op, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '16px',
+                padding: '14px 0',
+                borderBottom: idx === 2 ? 'none' : '1px solid #F5F5F5'
+              }}>
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-navy)',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '2px'
+                }}>
+                  {idx + 1}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h4 style={{
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: 'var(--color-navy)',
+                    margin: '0 0 4px 0'
+                  }}>
+                    {op.title}
+                  </h4>
+                  <p style={{
+                    fontSize: '0.78rem',
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.5,
+                    margin: 0
+                  }}>
+                    {op.desc}
+                  </p>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                <div>
-                  <h4 className="text-sm font-semibold text-[#1A1A1A]">Seating Allotments</h4>
-                  <p className="text-xs text-[#5C5C5C] mt-0.5">Generate anti-malpractice seating arrangements on physical benches.</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-blue-50 text-[#1E3A5F] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
-                <div>
-                  <h4 className="text-sm font-semibold text-[#1A1A1A]">Invigilator Duties</h4>
-                  <p className="text-xs text-[#5C5C5C] mt-0.5">Assign faculty supervisors to populated halls without scheduling clashes.</p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-          <Link to="/examcell/run-agents" className="w-full py-3 bg-[#1E3A5F] hover:bg-[#152B45] text-white rounded-xl text-center text-sm font-semibold transition mt-6 block shadow-sm shadow-blue-100">
-            Launch AI Orchestrator
+
+          <Link to="/examcell/run-agents" style={{ textDecoration: 'none' }}>
+            <button
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-navy-light)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-navy)'}
+              style={{
+                width: '100%',
+                marginTop: '20px',
+                backgroundColor: 'var(--color-navy)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '14px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                transition: 'background-color 150ms ease'
+              }}
+            >
+              Launch AI Orchestrator
+            </button>
           </Link>
         </div>
       </div>

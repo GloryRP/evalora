@@ -3,7 +3,7 @@
  * Sidebar navigation for student users
  */
 import { useState } from 'react';
-import { Menu, LogOut, BookOpen, Calendar, FileText, ClipboardList } from 'lucide-react';
+import { Menu, LogOut, BookOpen, Calendar, FileText, ClipboardList, User } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBell from '../components/NotificationBell';
@@ -19,6 +19,7 @@ const StudentLayout = () => {
     { label: 'Hall Ticket', path: '/student/hall-ticket', icon: FileText },
     { label: 'Timetable', path: '/student/timetable', icon: Calendar },
     { label: 'My Results', path: '/student/results', icon: ClipboardList },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   const handleLogout = () => {

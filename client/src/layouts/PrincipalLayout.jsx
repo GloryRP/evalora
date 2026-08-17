@@ -3,7 +3,7 @@
  * Sidebar navigation for Principal users (hidden during print)
  */
 import { useState } from 'react';
-import { Menu, LogOut, BookOpen } from 'lucide-react';
+import { Menu, LogOut, BookOpen, User } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBell from '../components/NotificationBell';
@@ -16,6 +16,7 @@ const PrincipalLayout = () => {
 
   const navItems = [
     { label: 'College Insights', path: '/principal/dashboard', icon: BookOpen },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   const handleLogout = () => {
