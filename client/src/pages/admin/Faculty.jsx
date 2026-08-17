@@ -50,7 +50,7 @@ const Pagination = ({ page, totalPages, onChange }) => (
   </div>
 );
 
-const designations = ['Head of Department', 'HOD', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Lab Assistant', 'Other'];
+const designations = ['Head of Department', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Lab Assistant', 'Other'];
 
 const Faculty = () => {
   const queryClient = useQueryClient();
