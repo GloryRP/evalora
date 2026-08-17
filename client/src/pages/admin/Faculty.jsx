@@ -60,6 +60,7 @@ const Faculty = () => {
   const [editingFaculty, setEditingFaculty] = useState(null);
   const [assigningFaculty, setAssigningFaculty] = useState(null);
   const [assignedSubjectsTemp, setAssignedSubjectsTemp] = useState([]);
+  const [subjectSearch, setSubjectSearch] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ department: '' });
@@ -134,6 +135,7 @@ const Faculty = () => {
   const openAssignSubjectsModal = (faculty) => {
     setAssigningFaculty(faculty);
     setAssignedSubjectsTemp(faculty.subjectsAssigned?.map(s => s._id || s) || []);
+    setSubjectSearch('');
   };
 
   const handleSaveSubjects = () => {
@@ -507,57 +509,128 @@ const Faculty = () => {
 
       {assigningFaculty && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
-              <h2 className="text-lg font-bold text-[#1E3A5F]">Assign Subjects</h2>
-              <p className="text-xs text-gray-500">Select subjects taught by <strong className="text-gray-700">{assigningFaculty.name}</strong></p>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-gray-100">
+            {/* Header with Navy Theme */}
+            <div style={{ backgroundColor: 'var(--color-navy)', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white', margin: 0 }}>
+                  Assign Subjects
+                </h2>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.8)', margin: '4px 0 0 0' }}>
+                  Select subjects taught by <strong style={{ color: '#FCD34D' }}>{assigningFaculty.name}</strong> ({assigningFaculty.employeeId})
+                </p>
+              </div>
+              <button
+                onClick={() => setAssigningFaculty(null)}
+                style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', opacity: 0.85, transition: 'all 150ms' }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            
+
+            {/* Search and Content Body */}
             <div className="p-6 flex-1 overflow-y-auto space-y-4">
-              {/* Filtered Subject Options */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Subject Options ({allSubjects.length}):</p>
+              {/* Search Bar & Counter */}
+              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-100">
+                <input
+                  type="text"
+                  placeholder="Search subject by code, name, department..."
+                  value={subjectSearch}
+                  onChange={(e) => setSubjectSearch(e.target.value)}
+                  style={{ width: '100%', padding: '9px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = '#E0E0E0'}
+                />
+                <span className="text-xs font-semibold text-gray-500 whitespace-nowrap bg-gray-100 px-3 py-1.5 rounded-full">
+                  {assignedSubjectsTemp.length} selected
+                </span>
+              </div>
+
+              {/* Subject Options Grid */}
+              <div>
                 {allSubjects.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">No subjects configured in system. Add subjects under Subjects tab first.</p>
+                  <p className="text-sm text-gray-400 italic text-center py-8">No subjects configured in system. Add subjects under Subjects tab first.</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {allSubjects.map(sub => {
-                      const isChecked = assignedSubjectsTemp.includes(sub._id);
-                      const isSameDept = sub.department?.toLowerCase() === assigningFaculty.department?.toLowerCase();
-                      return (
-                        <label key={sub._id} className={`flex items-start gap-2.5 p-2 rounded-lg border cursor-pointer transition ${
-                          isChecked 
-                            ? 'bg-[#1E3A5F]/5 border-[#1E3A5F]/20 text-[#1E3A5F]' 
-                            : isSameDept
-                              ? 'bg-amber-50/20 border-amber-100/50 text-gray-700 hover:bg-gray-50'
-                              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleSubjectTemp(sub._id)}
-                            className="mt-0.5 rounded text-[#1E3A5F] focus:ring-[#1E3A5F]"
-                          />
-                          <div className="text-xs">
-                            <span className="font-mono font-bold block">{sub.subjectCode}</span>
-                            <span className="block font-medium truncate max-w-[170px]" title={sub.subjectName}>{sub.subjectName}</span>
-                            <span className="text-[10px] text-gray-400 block">{sub.department} - Sem {sub.semester}</span>
-                          </div>
-                        </label>
-                      );
-                    })}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {allSubjects
+                      .filter(sub => {
+                        const q = subjectSearch.toLowerCase();
+                        if (!q) return true;
+                        return (
+                          sub.subjectCode?.toLowerCase().includes(q) ||
+                          sub.subjectName?.toLowerCase().includes(q) ||
+                          sub.department?.toLowerCase().includes(q)
+                        );
+                      })
+                      .map(sub => {
+                        const isChecked = assignedSubjectsTemp.includes(sub._id);
+                        const isSameDept = sub.department?.toLowerCase() === assigningFaculty.department?.toLowerCase();
+                        return (
+                          <label
+                            key={sub._id}
+                            className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20 text-[#1E3A5F]'
+                                : isSameDept
+                                  ? 'bg-blue-50/30 border-blue-100 text-gray-800 hover:border-blue-300 hover:bg-blue-50/60'
+                                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleSubjectTemp(sub._id)}
+                              className="mt-1 h-4 w-4 rounded text-[#1E3A5F] focus:ring-[#1E3A5F]"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-gray-100 text-[#1E3A5F]">
+                                  {sub.subjectCode}
+                                </span>
+                                <span className="text-[11px] font-semibold text-gray-500">
+                                  Sem {sub.semester}
+                                </span>
+                              </div>
+                              <span className="block font-medium text-sm text-gray-900 leading-tight mb-1" title={sub.subjectName}>
+                                {sub.subjectName}
+                              </span>
+                              <span className="text-[11px] text-gray-400 block truncate">
+                                {sub.department}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-150 flex gap-3 bg-gray-50/50">
-              <Button type="button" onClick={() => setAssigningFaculty(null)} variant="ghost" className="flex-1">
+            {/* Footer Buttons */}
+            <div style={{ borderTop: '1px solid #E5E7EB', padding: '16px 24px', display: 'flex', gap: '12px', backgroundColor: '#F9FAFB' }}>
+              <button
+                type="button"
+                onClick={() => setAssigningFaculty(null)}
+                style={{ flex: 1, padding: '10px 20px', backgroundColor: 'white', color: 'var(--color-text)', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F5F5F5'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+              >
                 Cancel
-              </Button>
-              <Button type="button" onClick={handleSaveSubjects} disabled={updateMutation.isPending} variant="primary" className="flex-1">
-                {updateMutation.isPending ? 'Saving...' : 'Save Subject Allocations'}
-              </Button>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveSubjects}
+                disabled={updateMutation.isPending}
+                style={{ flex: 1, padding: '10px 20px', backgroundColor: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: updateMutation.isPending ? 'not-allowed' : 'pointer', opacity: updateMutation.isPending ? 0.6 : 1, transition: 'all 150ms' }}
+                onMouseEnter={(e) => { if (!updateMutation.isPending) e.currentTarget.style.backgroundColor = '#152B45'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-navy)'; }}
+              >
+                {updateMutation.isPending ? 'Saving Allocations...' : 'Save Subject Allocations'}
+              </button>
             </div>
           </div>
         </div>
