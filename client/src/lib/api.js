@@ -35,8 +35,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - could trigger logout here
-      console.error('Unauthorized request - token may be invalid');
+      console.warn('Unauthorized request (401) - clearing invalid session and redirecting to login');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      localStorage.clear();
+      setAuthToken(null);
+      
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
