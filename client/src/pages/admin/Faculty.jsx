@@ -50,7 +50,7 @@ const Pagination = ({ page, totalPages, onChange }) => (
   </div>
 );
 
-const designations = ['Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Lab Assistant', 'Other'];
+const designations = ['Head of Department', 'HOD', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Lab Assistant', 'Other'];
 
 const Faculty = () => {
   const queryClient = useQueryClient();
@@ -170,6 +170,7 @@ const Faculty = () => {
 
   const designationStyle = (d) => {
     if (!d) return { backgroundColor: '#F3F4F6', color: '#6B7280' };
+    if (d === 'Head of Department' || d === 'HOD') return { backgroundColor: '#FCE7F3', color: '#9D174D' }; // Pink/Magenta badge for HOD
     if (d === 'Professor') return { backgroundColor: '#FEF3C7', color: '#92400E' };
     if (d === 'Associate Professor') return { backgroundColor: '#EEF2FF', color: '#1E40AF' };
     return { backgroundColor: '#ECFDF5', color: '#065F46' }; // Assistant Professor or other

@@ -30,7 +30,7 @@ const facultySchema = new mongoose.Schema({
     required: [true, 'Designation is required'],
     trim: true,
     enum: {
-      values: ['Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Lab Assistant', 'Other'],
+      values: ['Head of Department', 'HOD', 'Head of Department (HOD)', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Lab Assistant', 'Other'],
       message: '{VALUE} is not a valid designation'
     },
   },
