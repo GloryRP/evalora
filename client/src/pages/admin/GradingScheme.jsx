@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import {
   Award, Plus, Trash2, Save, RefreshCw, CheckCircle2,
-  Clock, ChevronRight, BookOpen, Zap, X, AlertTriangle, Edit3,
+  BookOpen, Zap, X, AlertTriangle, Edit3, Calculator
 } from 'lucide-react';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
@@ -21,7 +21,7 @@ const gradeColor = (grade) => {
   if (g === 'B+') return '#7C3AED';
   if (g === 'B')  return '#9333EA';
   if (g === 'C')  return '#D97706';
-  if (g === 'P')  return '#F59E0B';
+  if (g === 'P')  return '#D97706';
   if (g === 'F')  return '#DC2626';
   return '#6B7280';
 };
@@ -101,93 +101,93 @@ const NewSchemeModal = ({ onClose, onCreated }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
         style={{ animation: 'pop .22s cubic-bezier(.34,1.56,.64,1)' }}>
         {/* header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100"
-          style={{ background: 'linear-gradient(135deg,#1E3A5F,#2D5A8E)' }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100"
+          style={{ background: 'var(--color-navy)' }}>
           <div>
-            <h2 className="text-lg font-bold text-white">Create New Grading Scheme</h2>
-            <p className="text-xs text-blue-200 mt-0.5">Saves as a separate historical record</p>
+            <h2 className="text-xl font-bold text-white">Create New Grading Scheme</h2>
+            <p className="text-xs text-blue-200 mt-1">Saves as a separate historical record for your institution</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-6">
           {/* name + year + pass % */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="sm:col-span-1">
-              <label className="block text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider mb-1.5">Academic Year *</label>
+              <label className="block text-xs font-bold text-[#5C5C5C] uppercase tracking-wider mb-2">Academic Year *</label>
               <input value={form.academicYear} onChange={e => setForm({...form, academicYear: e.target.value})}
                 placeholder={`e.g. ${currentAcademicYear}`} required
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider mb-1.5">Scheme Name *</label>
+              <label className="block text-xs font-bold text-[#5C5C5C] uppercase tracking-wider mb-2">Scheme Name *</label>
               <input value={form.schemeName} onChange={e => setForm({...form, schemeName: e.target.value})}
-                placeholder="e.g. VTU CBCS 2021 Scheme" required
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
+                placeholder="e.g. VTU CBCS 2024 Scheme" required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#5C5C5C] uppercase tracking-wider mb-1.5">Pass Mark %</label>
+              <label className="block text-xs font-bold text-[#5C5C5C] uppercase tracking-wider mb-2">Pass Mark %</label>
               <input type="number" value={form.passMarkPercentage} min={1} max={100}
                 onChange={e => setForm({...form, passMarkPercentage: parseFloat(e.target.value)})}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
             </div>
-            <div className="sm:col-span-2 flex items-center gap-3 mt-2">
+            <div className="sm:col-span-2 flex items-center gap-3 pt-2">
               <input type="checkbox" id="setActive" checked={form.setActive}
                 onChange={e => setForm({...form, setActive: e.target.checked})}
-                className="w-4 h-4 rounded accent-[#C9A227]" />
+                className="w-5 h-5 rounded accent-[#C9A227]" />
               <label htmlFor="setActive" className="text-sm font-medium text-[#1A1A1A]">
-                Set as <span className="text-[#C9A227] font-semibold">Active</span> scheme immediately
+                Set as <span className="text-[#C9A227] font-bold">Active</span> scheme immediately
               </label>
             </div>
           </div>
 
           {/* Grade table */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-[#1E3A5F]">Grade Point Map</h3>
+          <div className="pt-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-[#1E3A5F]">Grade Point Map</h3>
               <button type="button" onClick={() => setGradeTable([...gradeTable, { minPercentage: 0, maxPercentage: 9, grade: '', gradePoint: 0, description: '' }])}
-                className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-[#C9A227] text-[#C9A227] font-semibold hover:bg-amber-50 transition">
-                + Add Row
+                className="text-xs px-4 py-2 rounded-xl border border-dashed border-[#C9A227] text-[#C9A227] font-bold hover:bg-amber-50 transition flex items-center gap-1.5">
+                <Plus size={14} /> Add Row
               </button>
             </div>
-            <div className="overflow-auto rounded-xl border border-gray-200">
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
               <table className="w-full text-sm">
                 <thead className="bg-[#1E3A5F] text-white">
                   <tr>{['Min %','Max %','Grade','Points','Description',''].map(h => (
-                    <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold">{h}</th>
+                    <th key={h} className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider">{h}</th>
                   ))}</tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {gradeTable.map((row, i) => (
-                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={i} className="hover:bg-gray-50/80 transition-colors">
                       {['minPercentage','maxPercentage'].map(f => (
-                        <td key={f} className="px-2 py-1.5">
+                        <td key={f} className="px-3 py-2.5">
                           <input type="number" step="0.01" value={row[f]}
                             onChange={e => handleRowChange(i, f, e.target.value)}
-                            className="w-16 px-2 py-1 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-[#C9A227] outline-none" />
+                            className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-center focus:ring-1 focus:ring-[#C9A227] outline-none" />
                         </td>
                       ))}
-                      <td className="px-2 py-1.5">
+                      <td className="px-3 py-2.5">
                         <input type="text" value={row.grade} onChange={e => handleRowChange(i, 'grade', e.target.value)}
-                          className="w-14 px-2 py-1 border border-gray-300 rounded text-xs text-center font-bold focus:ring-1 focus:ring-[#C9A227] outline-none"
+                          className="w-16 px-3 py-2 border border-gray-300 rounded-lg text-xs text-center font-bold focus:ring-1 focus:ring-[#C9A227] outline-none"
                           style={{ color: gradeColor(row.grade) }} />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-3 py-2.5">
                         <input type="number" value={row.gradePoint} onChange={e => handleRowChange(i, 'gradePoint', e.target.value)}
-                          className="w-14 px-2 py-1 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-[#C9A227] outline-none" />
+                          className="w-16 px-3 py-2 border border-gray-300 rounded-lg text-xs text-center font-semibold focus:ring-1 focus:ring-[#C9A227] outline-none" />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-3 py-2.5">
                         <input type="text" value={row.description} onChange={e => handleRowChange(i, 'description', e.target.value)}
-                          className="w-full min-w-[120px] px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-[#C9A227] outline-none" />
+                          className="w-full min-w-[140px] px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-[#C9A227] outline-none" />
                       </td>
-                      <td className="px-2 py-1.5 text-center">
+                      <td className="px-3 py-2.5 text-center">
                         <button type="button" onClick={() => setGradeTable(gradeTable.filter((_,j)=>j!==i))}
-                          className="text-red-400 hover:text-red-600 transition"><Trash2 size={14}/></button>
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"><Trash2 size={16}/></button>
                       </td>
                     </tr>
                   ))}
@@ -197,13 +197,13 @@ const NewSchemeModal = ({ onClose, onCreated }) => {
           </div>
         </form>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+        <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
           <button type="button" onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#5C5C5C] hover:bg-gray-200 transition">Cancel</button>
+            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-[#5C5C5C] hover:bg-gray-200 transition">Cancel</button>
           <button onClick={handleSubmit} disabled={saving}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg,#1E3A5F,#2D5A8E)' }}>
-            {saving ? 'Creating…' : <><Save size={15}/> Create Scheme</>}
+            className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold text-white transition disabled:opacity-60 shadow-md"
+            style={{ background: 'var(--color-navy)' }}>
+            {saving ? 'Creating…' : <><Save size={16}/> Create Scheme</>}
           </button>
         </div>
       </div>
@@ -346,146 +346,137 @@ const GradingScheme = () => {
 
       {/* ── LEFT SIDEBAR — Scheme History ── */}
       <div style={{
-        width: '288px',
+        width: '320px',
         flexShrink: 0,
         backgroundColor: 'white',
-        borderRight: '1px solid #EEEEEE',
+        borderRight: '1px solid #E5E7EB',
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
-        borderRadius: '10px',
-        padding: 0,
+        boxShadow: '2px 0 8px rgba(0,0,0,0.02)',
         overflow: 'hidden'
       }}>
         {/* Sidebar header */}
         <div style={{
-          backgroundColor: '#F8F9FA',
-          padding: '14px 16px',
-          borderBottom: '1px solid #EEEEEE',
+          backgroundColor: '#F8FAFC',
+          padding: '20px 20px',
+          borderBottom: '1px solid #E5E7EB',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          gap: '12px'
         }}>
           <div style={{
-            fontSize: '0.8rem',
-            fontWeight: 700,
+            fontSize: '0.8125rem',
+            fontWeight: 800,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: 'var(--color-text-secondary)',
+            color: 'var(--color-navy)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
-            <BookOpen size={14} style={{ color: 'var(--color-text-secondary)' }} />
+            <BookOpen size={16} style={{ color: 'var(--color-navy)' }} />
             Scheme History
           </div>
           <button
             onClick={() => setShowNewModal(true)}
             style={{
-              fontSize: '0.75rem',
-              padding: '4px 10px',
-              backgroundColor: 'var(--color-navy)',
-              color: 'white',
+              fontSize: '0.78125rem',
+              padding: '7px 14px',
+              backgroundColor: 'var(--color-gold)',
+              color: 'var(--color-navy)',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '8px',
               cursor: 'pointer',
-              fontWeight: 600,
-              transition: 'opacity 150ms ease'
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 4px rgba(201,162,39,0.2)',
+              transition: 'all 150ms ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B8911F'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-gold)'}
           >
-            <Plus size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-            New Scheme
+            <Plus size={14} /> New
           </button>
         </div>
 
         {/* Scheme list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
-              {[1,2,3].map(i => <div key={i} style={{ height: '64px', borderRadius: '12px', backgroundColor: '#F3F4F6', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}/>)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[1,2,3].map(i => <div key={i} style={{ height: '72px', borderRadius: '12px', backgroundColor: '#F3F4F6', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}/>)}
             </div>
           ) : allSchemes.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', fontSize: '0.875rem', color: '#9CA3AF' }}>No schemes yet</div>
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: '0.875rem', color: '#9CA3AF' }}>No schemes configured yet</div>
           ) : (
-            allSchemes.map(scheme => {
-              const isSelected = selectedId === scheme._id;
-              return (
-                <button
-                  key={scheme._id}
-                  onClick={() => handleSelectScheme(scheme)}
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '12px 16px',
-                    borderTop: 'none',
-                    borderRight: 'none',
-                    borderBottom: '1px solid #F5F5F5',
-                    borderLeft: isSelected ? '3px solid var(--color-navy)' : '3px solid transparent',
-                    paddingLeft: isSelected ? '13px' : '16px',
-                    backgroundColor: isSelected ? '#EEF2FF' : 'transparent',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                    display: 'block'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.backgroundColor = '#F8F9FA';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {allSchemes.map(scheme => {
+                const isSelected = selectedId === scheme._id;
+                return (
+                  <button
+                    key={scheme._id}
+                    onClick={() => handleSelectScheme(scheme)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: isSelected ? '1.5px solid var(--color-navy)' : '1px solid #E5E7EB',
+                      backgroundColor: isSelected ? '#F0F4F8' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 150ms ease',
+                      boxShadow: isSelected ? '0 2px 8px rgba(30,58,95,0.08)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.backgroundColor = '#F8FAFC';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) e.currentTarget.style.backgroundColor = 'white';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
                       <p style={{
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: 'var(--color-text)',
-                        marginBottom: '3px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        fontSize: '0.90rem',
+                        fontWeight: isSelected ? 700 : 600,
+                        color: 'var(--color-navy)',
+                        margin: 0,
+                        lineHeight: 1.3
                       }}>
                         {scheme.schemeName}
                       </p>
-                      <p style={{
-                        fontSize: '0.72rem',
-                        color: 'var(--color-text-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        {scheme.academicYear || 'No Year'} • {scheme.passMarkPercentage}% pass
-                      </p>
-                    </div>
-                    <div style={{ flexShrink: 0, marginTop: '2px' }}>
-                      {scheme.isActive ? (
+                      {scheme.isActive && (
                         <span style={{
-                          backgroundColor: '#ECFDF5',
+                          backgroundColor: '#DCFCE7',
                           color: '#065F46',
                           padding: '2px 8px',
-                          borderRadius: '10px',
-                          fontSize: '0.65rem',
-                          fontWeight: 600,
-                          display: 'inline-block'
+                          borderRadius: '12px',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          flexShrink: 0
                         }}>
                           Active
                         </span>
-                      ) : null}
+                      )}
                     </div>
-                  </div>
-                </button>
-              );
-            })
+                    <div style={{ display: 'flex', itemsCenter: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748B', marginTop: '4px' }}>
+                      <span>Year: <strong>{scheme.academicYear || '—'}</strong></span>
+                      <span>Pass: <strong>{scheme.passMarkPercentage}%</strong></span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
         {/* Refresh */}
-        <div className="border-t border-gray-100 p-3">
+        <div className="border-t border-gray-100 p-4 bg-gray-50/50">
           <button onClick={fetchAll}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-gray-200 text-xs text-[#5C5C5C] hover:bg-gray-50 transition">
-            <RefreshCw size={12}/> Refresh
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-[#5C5C5C] hover:bg-white transition shadow-sm">
+            <RefreshCw size={13}/> Refresh Schemes
           </button>
         </div>
       </div>
@@ -493,144 +484,190 @@ const GradingScheme = () => {
       {/* ── RIGHT PANEL — Selected Scheme Editor ── */}
       <div className="flex-1 overflow-y-auto">
         {!editData ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-10">
-            <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
-              <Award size={36} className="text-gray-300"/>
+          <div className="flex flex-col items-center justify-center h-full text-center p-12">
+            <div className="w-20 h-20 rounded-2xl bg-blue-50 flex items-center justify-center mb-5">
+              <Award size={40} className="text-[#1E3A5F]"/>
             </div>
-            <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">Select a Scheme</h3>
-            <p className="text-sm text-[#5C5C5C] mb-5">Choose a grading scheme from the left panel, or create a new one.</p>
+            <h3 className="text-xl font-bold text-[#1E3A5F] mb-2">Select a Grading Scheme</h3>
+            <p className="text-sm text-[#64748B] mb-6 max-w-sm">Choose a scheme from the left panel to inspect or edit its rules, or create a brand new scheme.</p>
             <button onClick={() => setShowNewModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg,#1E3A5F,#2D5A8E)' }}>
-              <Plus size={16}/> Create First Scheme
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-md transition hover:bg-[#152B45]"
+              style={{ backgroundColor: 'var(--color-navy)' }}>
+              <Plus size={18}/> Create New Scheme
             </button>
           </div>
         ) : (
-          <div className="p-6 lg:p-8 space-y-6">
+          <div className="p-8 lg:p-10 space-y-8 max-w-6xl mx-auto">
 
-            {/* ── Top bar ── */}
-            <div style={{ marginBottom: '20px' }}>
-              {/* ROW 1: Title + Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 0 }}>
-                  {editData.schemeName}
-                </h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* ── Top Header Section ── */}
+            <div style={{ marginBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800, color: 'var(--color-navy)', margin: 0 }}>
+                      {editData.schemeName}
+                    </h1>
+                    {isActiveSelected ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 12px', borderRadius: '20px', backgroundColor: '#DCFCE7', color: '#065F46', fontSize: '0.78125rem', fontWeight: 700 }}>
+                        <CheckCircle2 size={14}/> Active Scheme
+                      </span>
+                    ) : (
+                      <span style={{ padding: '4px 12px', borderRadius: '20px', backgroundColor: '#F1F5F9', color: '#64748B', fontSize: '0.78125rem', fontWeight: 600 }}>
+                        Historical Scheme
+                      </span>
+                    )}
+                    {isDirty && (
+                      <span style={{ padding: '4px 12px', borderRadius: '20px', backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.78125rem', fontWeight: 700 }}>
+                        Unsaved Changes
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0 }}>
+                    Academic Year: <strong style={{ color: '#1E293B', fontWeight: 600 }}>{editData.academicYear || 'Not Specified'}</strong> &bull; Minimum Pass Mark: <strong style={{ color: '#1E293B', fontWeight: 600 }}>{editData.passMarkPercentage}%</strong>
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   {!isActiveSelected && (
                     <button onClick={handleActivate} disabled={activating}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: '#059669', border: '1.5px solid #059669', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 600, cursor: activating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: activating ? 0.5 : 1 }}
-                      onMouseEnter={(e) => { if (!activating) { e.currentTarget.style.backgroundColor = '#F0FDF4'; e.currentTarget.style.borderColor = '#10B981'; } }}
-                      onMouseLeave={(e) => { if (!activating) { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#059669'; } }}>
-                      <Zap size={15}/>{activating ? 'Activating…' : 'Set as Active'}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', backgroundColor: 'white', color: '#059669', border: '1.5px solid #059669', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700, cursor: activating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: activating ? 0.5 : 1 }}
+                      onMouseEnter={(e) => { if (!activating) { e.currentTarget.style.backgroundColor = '#F0FDF4'; } }}
+                      onMouseLeave={(e) => { if (!activating) { e.currentTarget.style.backgroundColor = 'white'; } }}>
+                      <Zap size={16}/>{activating ? 'Activating…' : 'Set as Active'}
                     </button>
                   )}
                   {!isActiveSelected && (
                     <button onClick={() => setConfirmDelete(selectedId)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', backgroundColor: 'white', color: '#DC2626', border: '1.5px solid #DC2626', borderRadius: '6px', fontSize: '0.825rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FEF2F2'; e.currentTarget.style.borderColor = '#EF4444'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#DC2626'; }}>
-                      <Trash2 size={15}/> Delete
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', backgroundColor: 'white', color: '#DC2626', border: '1.5px solid #DC2626', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FEF2F2'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}>
+                      <Trash2 size={16}/> Delete
                     </button>
                   )}
                   <button onClick={handleSave} disabled={saving || !isDirty}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', backgroundColor: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700, cursor: saving || !isDirty ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', opacity: saving || !isDirty ? 0.5 : 1 }}
-                    onMouseEnter={(e) => { if (!saving && isDirty) e.currentTarget.style.backgroundColor = '#2A4A70'; }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 22px', backgroundColor: 'var(--color-navy)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700, cursor: saving || !isDirty ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 6px rgba(30,58,95,0.15)', transition: 'all 150ms ease', opacity: saving || !isDirty ? 0.5 : 1 }}
+                    onMouseEnter={(e) => { if (!saving && isDirty) e.currentTarget.style.backgroundColor = '#152B45'; }}
                     onMouseLeave={(e) => { if (!saving && isDirty) e.currentTarget.style.backgroundColor = 'var(--color-navy)'; }}>
-                    <Save size={15}/>{saving ? 'Saving…' : 'Save Changes'}
+                    <Save size={16}/>{saving ? 'Saving…' : 'Save Changes'}
                   </button>
                 </div>
               </div>
-
-              {/* ROW 2: Status and Academic Year */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 400, marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>Status:</span>
-                  {isActiveSelected
-                    ? <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', backgroundColor: '#DCFCE7', color: '#065F46', fontSize: '0.75rem', fontWeight: 700 }}><CheckCircle2 size={12}/>Active</span>
-                    : <span style={{ padding: '4px 10px', borderRadius: '20px', backgroundColor: '#F3F4F6', color: '#6B7280', fontSize: '0.75rem', fontWeight: 600 }}>Archived</span>}
-                  {isDirty && <span style={{ padding: '2px 8px', borderRadius: '20px', backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.75rem', fontWeight: 600 }}>Unsaved</span>}
-                </div>
-                <span>Academic Year: <strong style={{ fontWeight: 600, color: 'var(--color-text)' }}>{editData.academicYear}</strong></span>
-              </div>
             </div>
 
-            {/* ── Meta fields ── */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-sm font-bold text-[#5C5C5C] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Edit3 size={14}/> Scheme Details
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[#5C5C5C] mb-1.5">Scheme Name</label>
+            {/* ── CARD 1: Scheme Details ── */}
+            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-7">
+              <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+                <Edit3 size={18} className="text-[#1E3A5F]"/>
+                <h2 className="text-base font-bold text-[#1E3A5F] uppercase tracking-wider margin-0">
+                  Scheme Details
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-2">Scheme Name</label>
                   <input value={editData.schemeName}
                     onChange={e => handleFieldChange('schemeName', e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none transition" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5C5C5C] mb-1.5">Academic Year</label>
+                  <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-2">Academic Year</label>
                   <input value={editData.academicYear}
                     onChange={e => handleFieldChange('academicYear', e.target.value)}
                     placeholder={`e.g. ${currentAcademicYear}`}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none transition" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5C5C5C] mb-1.5">Pass Mark %</label>
+                  <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-2">Pass Mark %</label>
                   <input type="number" min={1} max={100} value={editData.passMarkPercentage}
                     onChange={e => handleFieldChange('passMarkPercentage', parseFloat(e.target.value))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none" />
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#C9A227] focus:border-transparent outline-none transition" />
                 </div>
               </div>
             </div>
 
-            {/* ── Grade table ── */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-[#5C5C5C] uppercase tracking-wider flex items-center gap-2">
-                  <Award size={14} className="text-[#C9A227]"/> Grade Point Map
-                </h2>
+            {/* ── CARD 2: Grade Point Map ── */}
+            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-7">
+              <div className="flex items-center justify-between gap-4 mb-6 border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <Award size={20} className="text-[#C9A227]"/>
+                  <div>
+                    <h2 className="text-base font-bold text-[#1E3A5F] uppercase tracking-wider margin-0">
+                      Grade Point Map
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Configure marks percentage ranges, corresponding letter grades, and grade points</p>
+                  </div>
+                </div>
                 <button onClick={addRow}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-[#C9A227] text-[#C9A227] font-semibold hover:bg-amber-50 transition flex items-center gap-1">
-                  <Plus size={12}/> Add Row
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#FEF3C7',
+                    color: '#92400E',
+                    border: '1.5px solid #FCD34D',
+                    borderRadius: '8px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 150ms'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FDE68A'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF3C7'}
+                >
+                  <Plus size={16}/> Add Row
                 </button>
               </div>
-              <div className="overflow-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm">
+
+              {/* Spacious Table Container */}
+              <div className="overflow-hidden rounded-xl border border-gray-200 mb-6">
+                <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-[#1E3A5F] text-white">
-                      {['Min %','Max %','Grade','Points','Description',''].map(h => (
-                        <th key={h} className="px-3 py-3 text-left text-xs font-semibold">{h}</th>
-                      ))}
+                      <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider w-24">Min %</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider w-24">Max %</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider w-20">Grade</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider w-20">Points</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Description</th>
+                      <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider w-16">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100">
                     {editData.gradeTable.map((row, i) => (
-                      <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        {['minPercentage','maxPercentage'].map(f => (
-                          <td key={f} className="px-2 py-2">
-                            <input type="number" step="0.01" value={row[f]}
-                              onChange={e => handleRowChange(i, f, e.target.value)}
-                              className="w-18 px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-center focus:ring-1 focus:ring-[#C9A227] outline-none transition" style={{width:'72px'}} />
-                          </td>
-                        ))}
-                        <td className="px-2 py-2">
+                      <tr key={i} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="px-4 py-3">
+                          <input type="number" step="0.01" value={row.minPercentage}
+                            onChange={e => handleRowChange(i, 'minPercentage', e.target.value)}
+                            className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-xs font-bold text-center focus:ring-2 focus:ring-[#C9A227] outline-none" />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input type="number" step="0.01" value={row.maxPercentage}
+                            onChange={e => handleRowChange(i, 'maxPercentage', e.target.value)}
+                            className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-xs font-bold text-center focus:ring-2 focus:ring-[#C9A227] outline-none" />
+                        </td>
+                        <td className="px-4 py-3">
                           <input type="text" value={row.grade}
                             onChange={e => handleRowChange(i, 'grade', e.target.value)}
-                            className="w-14 px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-center font-bold focus:ring-1 focus:ring-[#C9A227] outline-none transition"
-                            style={{ color: gradeColor(row.grade), width:'56px' }} />
+                            className="w-16 px-3 py-2 border border-gray-300 rounded-lg text-xs text-center font-extrabold focus:ring-2 focus:ring-[#C9A227] outline-none"
+                            style={{ color: gradeColor(row.grade) }} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-4 py-3">
                           <input type="number" value={row.gradePoint}
                             onChange={e => handleRowChange(i, 'gradePoint', e.target.value)}
-                            className="w-14 px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-center focus:ring-1 focus:ring-[#C9A227] outline-none transition" style={{width:'56px'}} />
+                            className="w-16 px-3 py-2 border border-gray-300 rounded-lg text-xs text-center font-bold focus:ring-2 focus:ring-[#C9A227] outline-none" />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-4 py-3">
                           <input type="text" value={row.description}
                             onChange={e => handleRowChange(i, 'description', e.target.value)}
-                            className="w-full min-w-[130px] px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-[#C9A227] outline-none transition" />
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:ring-2 focus:ring-[#C9A227] outline-none" />
                         </td>
-                        <td className="px-2 py-2 text-center">
+                        <td className="px-4 py-3 text-center">
                           <button onClick={() => removeRow(i)}
-                            className="text-red-300 hover:text-red-500 transition"><Trash2 size={14}/></button>
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete Row">
+                            <Trash2 size={16}/>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -638,47 +675,58 @@ const GradingScheme = () => {
                 </table>
               </div>
 
-              {/* Grade badge preview */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {editData.gradeTable.map((row,i) => (
-                  <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border"
-                    style={{ borderColor: gradeColor(row.grade), color: gradeColor(row.grade), background: `${gradeColor(row.grade)}15` }}>
-                    {row.grade || '?'} <span className="font-normal opacity-60">({row.gradePoint}pt)</span>
-                  </div>
-                ))}
+              {/* Grade Badges Quick Reference */}
+              <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-200/60">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  Grade Badges Quick Reference
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  {editData.gradeTable.map((row, i) => (
+                    <div key={i} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border shadow-xs"
+                      style={{ borderColor: gradeColor(row.grade), color: gradeColor(row.grade), background: `${gradeColor(row.grade)}12` }}>
+                      <span>{row.grade || '?'}</span>
+                      <span className="font-semibold opacity-75">({row.gradePoint} pt)</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* ── CGPA Calculator Preview ── */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-sm font-bold text-[#5C5C5C] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <ChevronRight size={14}/> Grade Preview Calculator
-              </h2>
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                  <label className="text-sm font-medium text-[#5C5C5C] whitespace-nowrap">Enter Marks %</label>
+            {/* ── CARD 3: Grade Preview Calculator ── */}
+            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-7">
+              <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+                <Calculator size={18} className="text-[#1E3A5F]"/>
+                <h2 className="text-base font-bold text-[#1E3A5F] uppercase tracking-wider margin-0">
+                  Grade Preview Calculator
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-6 flex-wrap">
+                <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <label className="text-sm font-bold text-[#1E293B] whitespace-nowrap">Enter Marks %</label>
                   <input type="number" min={0} max={100} value={previewMarks}
                     onChange={e => setPreviewMarks(e.target.value)}
                     placeholder="e.g. 75"
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center font-semibold focus:ring-2 focus:ring-[#C9A227] outline-none" />
+                    className="w-28 px-3 py-2.5 border border-gray-300 rounded-lg text-base text-center font-bold text-[#1E3A5F] focus:ring-2 focus:ring-[#C9A227] outline-none" />
                 </div>
+
                 {previewGrade ? (
-                  <div className="flex items-center gap-3 px-5 py-3 rounded-xl border-2"
-                    style={{ borderColor: gradeColor(previewGrade.grade), background: `${gradeColor(previewGrade.grade)}12` }}>
-                    <span className="text-3xl font-black" style={{ color: gradeColor(previewGrade.grade) }}>
+                  <div className="flex items-center gap-4 px-6 py-3.5 rounded-xl border-2 shadow-xs"
+                    style={{ borderColor: gradeColor(previewGrade.grade), background: `${gradeColor(previewGrade.grade)}10` }}>
+                    <span className="text-4xl font-black" style={{ color: gradeColor(previewGrade.grade) }}>
                       {previewGrade.grade}
                     </span>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: gradeColor(previewGrade.grade) }}>
+                      <p className="text-base font-bold" style={{ color: gradeColor(previewGrade.grade) }}>
                         {previewGrade.gradePoint} Grade Points
                       </p>
-                      <p className="text-xs text-[#5C5C5C]">{previewGrade.description}</p>
+                      <p className="text-xs font-medium text-gray-600">{previewGrade.description}</p>
                     </div>
                   </div>
                 ) : previewMarks ? (
-                  <div className="px-4 py-3 rounded-xl bg-gray-100 text-sm text-gray-500">No matching grade found</div>
+                  <div className="px-5 py-3.5 rounded-xl bg-gray-100 text-sm font-semibold text-gray-500">No matching grade found for {previewMarks}%</div>
                 ) : (
-                  <p className="text-sm text-gray-400 italic">Enter a percentage to see the grade →</p>
+                  <p className="text-sm font-medium text-gray-400 italic">Enter a percentage to test grade calculation →</p>
                 )}
               </div>
             </div>
@@ -706,3 +754,4 @@ const GradingScheme = () => {
 };
 
 export default GradingScheme;
+
