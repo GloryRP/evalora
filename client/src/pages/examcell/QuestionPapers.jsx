@@ -297,9 +297,13 @@ const ManageAssignmentsTab = ({ onSwitchToReview }) => {
   const loadSubjectsPreview = async (sem) => {
     setPreviewLoading(true);
     try {
-      const res = await api.get(`/qp-submissions/subjects-preview?semester=${sem}`);
+      console.log('Fetching subjects for semester:', sem, typeof sem);
+      const res = await api.get('/qp-submissions/subjects-preview', {
+        params: { semester: Number(sem) }
+      });
       setPreviewSubjects(res.data?.data || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch subjects preview:', err);
       setPreviewSubjects([]);
     } finally {
       setPreviewLoading(false);
@@ -316,9 +320,16 @@ const ManageAssignmentsTab = ({ onSwitchToReview }) => {
   const loadOverview = async (sem, et, ay) => {
     setOverviewLoading(true);
     try {
-      const res = await api.get(`/qp-submissions/overview?semester=${sem}&examType=${et}&academicYear=${ay}`);
+      const res = await api.get('/qp-submissions/overview', {
+        params: {
+          semester: Number(sem),
+          examType: et,
+          academicYear: ay,
+        }
+      });
       setOverview(res.data?.data || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load overview:', err);
       setOverview([]);
     } finally {
       setOverviewLoading(false);
@@ -753,14 +764,21 @@ const ReviewSelectTab = ({ initialSubjectId, initialSemester, initialExamType })
 
   const loadSubjectsForFilters = async (sem, et, ay) => {
     try {
-      const res = await api.get(`/qp-submissions/overview?semester=${sem}&examType=${et}&academicYear=${ay}`);
+      const res = await api.get('/qp-submissions/overview', {
+        params: {
+          semester: Number(sem),
+          examType: et,
+          academicYear: ay,
+        }
+      });
       const overviewData = res.data?.data || [];
       setSubjectOptions(overviewData);
       if (initialSubjectId && overviewData.some(s => s.subjectId?.toString() === initialSubjectId)) {
         setSelectedSubjectId(initialSubjectId);
         loadSubmissions(initialSubjectId);
       }
-    } catch {
+    } catch (err) {
+      console.error('Failed to load subjects for filters:', err);
       setSubjectOptions([]);
     }
   };

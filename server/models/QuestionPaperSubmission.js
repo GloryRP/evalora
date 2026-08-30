@@ -132,9 +132,8 @@ questionPaperSubmissionSchema.index(
 );
 
 // ─── Pre-save ─────────────────────────────────────────────────────────────────
-questionPaperSubmissionSchema.pre('save', function (next) {
+questionPaperSubmissionSchema.pre('save', function () {
   this.updatedAt = new Date();
-  next();
 });
 
 module.exports = mongoose.model('QuestionPaperSubmission', questionPaperSubmissionSchema);

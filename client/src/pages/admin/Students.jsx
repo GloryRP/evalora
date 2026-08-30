@@ -186,11 +186,16 @@ const Students = () => {
               style={{ flex: 1, minWidth: '200px', padding: '10px 16px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
               onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }} />
-            <input type="text" placeholder="Department…" value={filters.department}
+            <select value={filters.department}
               onChange={e => { setFilters({ ...filters, department: e.target.value }); setPage(1); }}
-              style={{ width: '180px', flexShrink: 0, padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
+              style={{ width: '200px', flexShrink: 0, padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
               onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }} />
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}>
+              <option value="">All Departments</option>
+              {(departmentsData || []).map(dept => (
+                <option key={dept._id} value={dept.departmentName}>{dept.departmentName}</option>
+              ))}
+            </select>
             <select value={filters.batch} onChange={e => { setFilters({ ...filters, batch: e.target.value }); setPage(1); }}
               style={{ width: '140px', padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', appearance: 'none', backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C5C5C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px', transition: 'border-color 200ms ease' }}
               onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
@@ -373,7 +378,7 @@ const Students = () => {
                     >
                       <option value="">Select Department</option>
                       {(departmentsData || []).map(dept => (
-                        <option key={dept._id} value={dept.departmentCode}>
+                        <option key={dept._id} value={dept.departmentName}>
                           {dept.departmentName} ({dept.departmentCode})
                         </option>
                       ))}

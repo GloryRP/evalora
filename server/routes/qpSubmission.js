@@ -15,6 +15,13 @@ router.post(
 );
 
 router.get(
+  '/subjects-preview',
+  verifyToken,
+  authorize('examcell'),
+  qpSubmissionController.getSubjectsPreview
+);
+
+router.get(
   '/overview',
   verifyToken,
   authorize('examcell'),

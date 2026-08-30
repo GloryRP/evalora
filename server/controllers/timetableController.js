@@ -7,6 +7,7 @@ const puppeteer = require('puppeteer');
 const fs = require('fs').promises;
 const path = require('path');
 const Exam = require('../models/Exam');
+const Subject = require('../models/Subject');
 const InstitutionConfig = require('../models/InstitutionConfig');
 
 /**
@@ -14,7 +15,7 @@ const InstitutionConfig = require('../models/InstitutionConfig');
  */
 exports.generateTimetablePDF = async (req, res) => {
   try {
-    const { semester, examType = 'regular' } = req.query;
+    const { semester, examType } = req.query;
 
     // Fetch institution configuration
     let config = await InstitutionConfig.findOne();
@@ -22,12 +23,19 @@ exports.generateTimetablePDF = async (req, res) => {
       config = await InstitutionConfig.create({});
     }
 
+    // Build query
+    const query = {
+      status: { $in: ['scheduled', 'draft'] }
+    };
+    if (semester && semester !== 'all') {
+      query.semester = parseInt(semester);
+    }
+    if (examType && examType !== 'regular' && examType !== 'all') {
+      query.examType = examType;
+    }
+
     // Fetch exam data
-    const exams = await Exam.find({
-      semester: parseInt(semester),
-      examType,
-      status: 'scheduled',
-    })
+    const exams = await Exam.find(query)
       .populate('subjectId')
       .sort({ examDate: 1, startTime: 1 });
 
@@ -63,25 +71,29 @@ exports.generateTimetablePDF = async (req, res) => {
       dateExams.forEach((exam, idx) => {
         const dateCell = idx === 0 ? `<td rowspan="${dateExams.length}"><strong>${dateStr}</strong></td>` : '';
 
-        const branchCell = config.timetable.columns.branch
-          ? `<td>${exam.subjectId.department || '-'}</td>`
+        const dept = exam.subjectId?.department || '-';
+        const code = exam.subjectId?.subjectCode || '-';
+        const name = exam.subjectId?.subjectName || 'Exam';
+
+        const branchCell = config.timetable?.columns?.branch !== false
+          ? `<td>${dept}</td>`
           : '';
 
-        const roomCell = config.timetable.columns.room
+        const roomCell = config.timetable?.columns?.room
           ? `<td>-</td>`
           : '';
 
-        const semesterCell = config.timetable.columns.semester
+        const semesterCell = config.timetable?.columns?.semester !== false
           ? `<td>${exam.semester}</td>`
           : '';
 
         examRows += `
           <tr>
             ${dateCell}
-            <td>${exam.startTime} - ${exam.endTime}</td>
+            <td>${exam.startTime || '09:30 AM'} - ${exam.endTime || '12:30 PM'}</td>
             ${branchCell}
-            <td><strong>${exam.subjectId.subjectCode}</strong></td>
-            <td>${exam.subjectId.subjectName}</td>
+            <td><strong>${code}</strong></td>
+            <td>${name}</td>
             ${roomCell}
             ${semesterCell}
           </tr>
@@ -90,13 +102,13 @@ exports.generateTimetablePDF = async (req, res) => {
     }
 
     // Generate column headers dynamically
-    let columnBranch = config.timetable.columns.branch ? '<th>Branch</th>' : '';
-    let columnRoom = config.timetable.columns.room ? '<th>Room</th>' : '';
-    let columnSemester = config.timetable.columns.semester ? '<th>Semester</th>' : '';
+    let columnBranch = config.timetable?.columns?.branch !== false ? '<th>Branch</th>' : '';
+    let columnRoom = config.timetable?.columns?.room ? '<th>Room</th>' : '';
+    let columnSemester = config.timetable?.columns?.semester !== false ? '<th>Semester</th>' : '';
 
     // Format date range
-    const dateRangeStart = minDate.toLocaleDateString('en-IN');
-    const dateRangeEnd = maxDate.toLocaleDateString('en-IN');
+    const dateRangeStart = minDate ? minDate.toLocaleDateString('en-IN') : '';
+    const dateRangeEnd = maxDate ? maxDate.toLocaleDateString('en-IN') : '';
     const examDateRange = `${dateRangeStart} to ${dateRangeEnd}`;
 
     // Format generated date
@@ -119,37 +131,37 @@ exports.generateTimetablePDF = async (req, res) => {
 
     // Replace all placeholders
     const replacements = {
-      '{{PAGE_FORMAT}}': config.documentDefaults.format === 'Letter' ? '8.5in 11in' : 'A4',
-      '{{MARGIN_TOP}}': config.documentDefaults.marginTop,
-      '{{MARGIN_BOTTOM}}': config.documentDefaults.marginBottom,
-      '{{MARGIN_LEFT}}': config.documentDefaults.marginLeft,
-      '{{MARGIN_RIGHT}}': config.documentDefaults.marginRight,
-      '{{HEADER_BG_COLOR}}': config.branding.primaryColor,
+      '{{PAGE_FORMAT}}': config.documentDefaults?.format === 'Letter' ? '8.5in 11in' : 'A4',
+      '{{MARGIN_TOP}}': config.documentDefaults?.marginTop || '20mm',
+      '{{MARGIN_BOTTOM}}': config.documentDefaults?.marginBottom || '20mm',
+      '{{MARGIN_LEFT}}': config.documentDefaults?.marginLeft || '15mm',
+      '{{MARGIN_RIGHT}}': config.documentDefaults?.marginRight || '15mm',
+      '{{HEADER_BG_COLOR}}': config.branding?.primaryColor || '#1E3A5F',
       '{{HEADER_TEXT_COLOR}}': '#FFFFFF',
-      '{{PRIMARY_COLOR}}': config.branding.primaryColor,
-      '{{SECONDARY_COLOR}}': config.branding.secondaryColor,
-      '{{HEADER_BG_COLOR_TABLE}}': config.timetable.tableStyle.headerBgColor,
-      '{{ROW_BG_COLOR}}': config.timetable.tableStyle.rowBgColor,
-      '{{ALTERNATE_ROW_BG_COLOR}}': config.timetable.tableStyle.alternateRowBgColor,
-      '{{BORDER_COLOR}}': config.timetable.tableStyle.borderColor,
-      '{{TABLE_FONT_SIZE}}': config.timetable.tableStyle.fontSize,
-      '{{ABBREVIATION}}': config.abbreviation,
-      '{{INSTITUTION_NAME}}': config.institutionName,
+      '{{PRIMARY_COLOR}}': config.branding?.primaryColor || '#1E3A5F',
+      '{{SECONDARY_COLOR}}': config.branding?.secondaryColor || '#C9A227',
+      '{{HEADER_BG_COLOR_TABLE}}': config.timetable?.tableStyle?.headerBgColor || '#1E3A5F',
+      '{{ROW_BG_COLOR}}': config.timetable?.tableStyle?.rowBgColor || '#FFFFFF',
+      '{{ALTERNATE_ROW_BG_COLOR}}': config.timetable?.tableStyle?.alternateRowBgColor || '#F9FAFB',
+      '{{BORDER_COLOR}}': config.timetable?.tableStyle?.borderColor || '#E5E7EB',
+      '{{TABLE_FONT_SIZE}}': config.timetable?.tableStyle?.fontSize || '10pt',
+      '{{ABBREVIATION}}': config.abbreviation || 'EVALORA',
+      '{{INSTITUTION_NAME}}': config.institutionName || 'EVALORA COLLEGE OF ENGINEERING',
       '{{ADDRESS}}': addressStr,
       '{{PHONE}}': config.phone || 'Contact: +91-XXXXXXXXXX',
       '{{EMAIL}}': config.email || 'exam@institution.edu',
       '{{WEBSITE}}': config.website || 'www.institution.edu',
-      '{{EXAM_TITLE}}': `${examType.toUpperCase()} EXAMINATION - SEMESTER ${semester}`,
-      '{{ACADEMIC_YEAR}}': config.academicYear,
+      '{{EXAM_TITLE}}': `${(examType ? examType.toUpperCase() : 'SEMESTER')} EXAMINATION - SEMESTER ${semester || ''}`,
+      '{{ACADEMIC_YEAR}}': config.academicYear || '2025-26',
       '{{EXAM_DATE_RANGE}}': examDateRange,
       '{{GENERATED_DATE}}': generatedDate,
       '{{COLUMN_BRANCH}}': columnBranch,
       '{{COLUMN_ROOM}}': columnRoom,
       '{{COLUMN_SEMESTER}}': columnSemester,
       '{{EXAM_ROWS}}': examRows,
-      '{{SIGNATURE_LABEL}}': config.timetable.signatureLabel,
-      '{{SIGNATURE_DESIGNATION}}': config.timetable.signatureDesignation,
-      '{{FOOTER_TEXT}}': config.timetable.footerText,
+      '{{SIGNATURE_LABEL}}': config.timetable?.signatureLabel || 'Controller of Examinations',
+      '{{SIGNATURE_DESIGNATION}}': config.timetable?.signatureDesignation || 'Exam Cell',
+      '{{FOOTER_TEXT}}': config.timetable?.footerText || 'Confidential — For Internal Use Only',
     };
 
     for (const [key, value] of Object.entries(replacements)) {
@@ -202,18 +214,24 @@ exports.generateTimetablePDF = async (req, res) => {
  */
 exports.previewTimetable = async (req, res) => {
   try {
-    const { semester, examType = 'regular' } = req.query;
+    const { semester, examType } = req.query;
 
     let config = await InstitutionConfig.findOne();
     if (!config) {
       config = await InstitutionConfig.create({});
     }
 
-    const exams = await Exam.find({
-      semester: parseInt(semester),
-      examType,
-      status: 'scheduled',
-    })
+    const query = {
+      status: { $in: ['scheduled', 'draft'] }
+    };
+    if (semester && semester !== 'all') {
+      query.semester = parseInt(semester);
+    }
+    if (examType && examType !== 'regular' && examType !== 'all') {
+      query.examType = examType;
+    }
+
+    const exams = await Exam.find(query)
       .populate('subjectId')
       .sort({ examDate: 1, startTime: 1 });
 

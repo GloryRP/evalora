@@ -218,11 +218,16 @@ const Faculty = () => {
               style={{ flex: 1, minWidth: '200px', padding: '10px 16px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
               onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,162,39,0.08)'; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; e.currentTarget.style.boxShadow = 'none'; }} />
-            <input type="text" placeholder="Department…" value={filters.department}
+            <select value={filters.department}
               onChange={e => { setFilters({ department: e.target.value }); setPage(1); }}
-              style={{ width: '180px', flexShrink: 0, padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
+              style={{ width: '200px', flexShrink: 0, padding: '10px 14px', border: '1.5px solid #E0E0E0', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--color-text)', backgroundColor: 'white', outline: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'border-color 200ms ease' }}
               onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }} />
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}>
+              <option value="">All Departments</option>
+              {(departmentsData || []).map(dept => (
+                <option key={dept._id} value={dept.departmentName}>{dept.departmentName}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -400,7 +405,7 @@ const Faculty = () => {
                     >
                       <option value="">Select Department</option>
                       {(departmentsData || []).map(dept => (
-                        <option key={dept._id} value={dept.departmentCode}>
+                        <option key={dept._id} value={dept.departmentName}>
                           {dept.departmentName} ({dept.departmentCode})
                         </option>
                       ))}

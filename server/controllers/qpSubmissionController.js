@@ -3,6 +3,7 @@
  * Multi-submission workflow: Exam Cell auto-assigns → Faculty submits →
  * Exam Cell reviews ALL submissions per subject → selects ONE final paper → archives others
  */
+const mongoose = require('mongoose');
 const QuestionPaperSubmission = require('../models/QuestionPaperSubmission');
 const QPTemplate = require('../models/QPTemplate');
 const Exam = require('../models/Exam');
@@ -31,7 +32,17 @@ exports.getSubjectsPreview = async (req, res) => {
       return res.status(400).json({ success: false, message: 'semester is required' });
     }
 
-    const subjects = await Subject.find({ semester: Number(semester) }).sort({ subjectCode: 1 }).lean();
+    // CRITICAL FIX: always convert to Number before querying
+    const semesterNum = parseInt(semester, 10);
+
+    if (isNaN(semesterNum)) {
+      return res.status(400).json({ success: false, message: 'Invalid semester value' });
+    }
+
+    console.log('Querying subjects with filter:', { semester: semesterNum, type: typeof semesterNum });
+
+    const subjects = await Subject.find({ semester: semesterNum }).sort({ subjectCode: 1 }).lean();
+    console.log(`Found ${subjects.length} subjects for semester ${semesterNum}`);
     const facultyList = await Faculty.find({}, '_id name employeeId subjectsAssigned department').lean();
 
     const data = subjects.map(sub => {
@@ -428,10 +439,10 @@ exports.selectFinal = async (req, res) => {
   try {
     const { submissionId, examSeriesId, subjectId } = req.body;
 
-    if (!submissionId || !examSeriesId || !subjectId) {
+    if (!submissionId) {
       return res.status(400).json({
         success: false,
-        message: 'submissionId, examSeriesId, and subjectId are required',
+        message: 'submissionId is required',
       });
     }
 
@@ -459,12 +470,26 @@ exports.selectFinal = async (req, res) => {
 
     await selected.save();
 
-    // Archive all other submissions for same subject+series
-    const others = await QuestionPaperSubmission.find({
-      examSeriesId,
-      subjectId,
-      _id: { $ne: submissionId },
-    })
+    // Archive all other submissions for same subject
+    const othersFilter = {
+      _id: { $ne: selected._id },
+    };
+    const targetSubjectId = subjectId || selected.subjectId?._id || selected.subjectId;
+    if (targetSubjectId) {
+      othersFilter.subjectId = targetSubjectId;
+    }
+    const targetSeriesId = examSeriesId || selected.examSeriesId;
+    if (targetSeriesId) {
+      othersFilter.examSeriesId = targetSeriesId;
+    }
+    if (selected.academicYear) {
+      othersFilter.academicYear = selected.academicYear;
+    }
+    if (selected.patternRef?.examType) {
+      othersFilter['patternRef.examType'] = selected.patternRef.examType;
+    }
+
+    const others = await QuestionPaperSubmission.find(othersFilter)
       .populate('facultyUserId')
       .populate('facultyId', 'name email');
 
@@ -818,6 +843,29 @@ exports.revise = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/v1/qp-submissions/:id
+ * Get single submission by ID
+ */
+exports.getOne = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid submission ID' });
+    }
+    const submission = await QuestionPaperSubmission.findById(id)
+      .populate('subjectId')
+      .populate('facultyId', 'name employeeId department email');
+    if (!submission) {
+      return res.status(404).json({ success: false, message: 'Submission not found' });
+    }
+    res.status(200).json({ success: true, data: submission });
+  } catch (error) {
+    console.error('Error in getOne:', error);
+    res.status(500).json({ success: false, message: 'Failed to get submission', error: error.message });
+  }
+};
+
 // Legacy compatibility exports (kept for any older routes)
 exports.assignToFaculty = exports.autoAssign;
 exports.getAllSubmissions = exports.getOverview;
@@ -825,3 +873,4 @@ exports.getSubmissionById = exports.getOne;
 exports.reviewSubmission = exports.review;
 exports.getMyAssignmentById = exports.getMyAssignment;
 exports.submitForReview = exports.submit;
+

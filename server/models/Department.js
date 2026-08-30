@@ -2,8 +2,12 @@ const mongoose = require('mongoose');
 
 /**
  * Department Schema - Department/Branch master data
- * departmentCode: Short code for the department (e.g., "CSE", "ECE")
- * hodId: Reference to the User who is the Head of Department
+ * departmentCode : Short unique code (e.g. "CSE", "CSDS", "ECE")
+ * departmentName : Canonical full name — the SINGLE SOURCE OF TRUTH
+ * aliases        : All known alternate spellings / legacy strings for this
+ *                  department, used by resolveDepartment() to normalise
+ *                  free-text values that arrive from older data
+ * hodId / hodUserId / hodName : HOD references (unchanged)
  */
 const departmentSchema = new mongoose.Schema({
   departmentName: {
@@ -19,10 +23,14 @@ const departmentSchema = new mongoose.Schema({
     trim: true,
     uppercase: true,
   },
+  aliases: [{
+    type: String,
+    trim: true,
+  }],
   hodId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    default: null, // HOD can be assigned later
+    default: null,
   },
   hodUserId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -41,3 +49,4 @@ const departmentSchema = new mongoose.Schema({
 departmentSchema.index({ departmentCode: 1 });
 
 module.exports = mongoose.model('Department', departmentSchema);
+

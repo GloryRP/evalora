@@ -18,7 +18,18 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['timetable_published', 'hall_ticket', 'invigilation_duty', 'result_published', 'general'],
+    enum: [
+      'timetable_published',
+      'hall_ticket',
+      'invigilation_duty',
+      'result_published',
+      'general',
+      'qp_assigned',
+      'qp_submitted',
+      'qp_selected',
+      'qp_archived',
+      'qp_revision_requested'
+    ],
     required: true,
   },
   title: {
