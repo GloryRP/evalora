@@ -17,6 +17,7 @@ const hodRoutes = require('./routes/hod');
 const resultsRoutes = require('./routes/results');
 const principalRoutes = require('./routes/principal');
 const qpSubmissionRoutes = require('./routes/qpSubmission');
+const fileProxyRoutes = require('./routes/fileProxy');
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
+// File proxy MUST be registered before /examcell (which applies global verifyToken)
+// so that ?token= query-param auth works for iframes
+app.use('/api/v1/file-proxy', fileProxyRoutes);
 app.use('/api/v1/examcell', examcellRoutes);
 app.use('/api/v1/institution', institutionRoutes);
 app.use('/api/v1/timetable', timetableRoutes);

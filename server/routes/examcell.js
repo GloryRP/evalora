@@ -161,8 +161,10 @@ router.post('/answer-scripts/bundle-distribute', examcellController.bundleDistri
 // Get evaluations for review
 router.get('/answer-scripts/review', examcellController.getEvaluationsForReview);
 
+
 // Publish results
 router.post('/answer-scripts/publish', examcellController.publishResults);
+
 
 // ============================================
 // QP TEMPLATE ROUTES (global per exam type + exceptions)

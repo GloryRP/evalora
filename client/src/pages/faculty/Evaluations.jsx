@@ -231,6 +231,12 @@ const Evaluations = () => {
 
   const getFileUrl = (filePath) => {
     if (!filePath) return '';
+    const token = sessionStorage.getItem('token') || '';
+    // Cloudinary URLs (raw uploads) require authentication — proxy through backend
+    if (filePath.startsWith('http://res.cloudinary.com') || filePath.startsWith('https://res.cloudinary.com')) {
+      return `http://localhost:5000/api/v1/file-proxy?url=${encodeURIComponent(filePath)}&token=${token}`;
+    }
+    // Local /uploads/ path
     const index = filePath.indexOf('/uploads/');
     if (index !== -1) {
       return `http://localhost:5000${filePath.substring(index)}`;
