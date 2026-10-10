@@ -12,8 +12,16 @@ const login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // F1: Strict type validation — reject non-string values before any DB or bcrypt call
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password must be plain strings.',
+      });
+    }
+
     // Validate input
-    if (!username || !password) {
+    if (!username.trim() || !password) {
       return res.status(400).json({
         success: false,
         message: 'Username and password are required.',
@@ -21,7 +29,7 @@ const login = async (req, res) => {
     }
 
     // Find user by username (case-insensitive by converting to uppercase)
-    const user = await User.findOne({ username: username.toUpperCase() });
+    const user = await User.findOne({ username: username.trim().toUpperCase() });
 
     if (!user) {
       return res.status(401).json({
@@ -140,6 +148,14 @@ const getMe = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // F1: Reject non-string password values before any bcrypt call
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || typeof confirmPassword !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Password fields must be plain strings.',
+      });
+    }
 
     // Check if new password matches confirm password
     if (newPassword !== confirmPassword) {

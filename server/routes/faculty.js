@@ -9,6 +9,9 @@ const InvigilatorAssignment = require('../models/InvigilatorAssignment');
 const Faculty = require('../models/Faculty');
 const User = require('../models/User');
 const AnswerScript = require('../models/AnswerScript');
+const QuestionPaper = require('../models/QuestionPaper');
+const QPTemplate = require('../models/QPTemplate');
+const Exam = require('../models/Exam');
 
 /**
  * GET /api/v1/faculty/duties
@@ -151,28 +154,13 @@ router.get('/evaluations', verifyToken, authorize('faculty'), async (req, res) =
   }
 });
 
-// Submit marks for a script
+// Submit / update marks for a script (F2 + F3)
 router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (req, res) => {
   try {
     const { scriptId } = req.params;
-    const { marksObtained, questionMarks, comments } = req.body;
+    const { questionMarks, comments } = req.body;
 
-    let totalMarks = 0;
-    let savedQuestionMarks = [];
-
-    if (questionMarks && Array.isArray(questionMarks) && questionMarks.length > 0) {
-      savedQuestionMarks = questionMarks.map(qm => ({
-        questionNumber: qm.questionNumber,
-        marksObtained: parseFloat(qm.marksObtained) || 0
-      }));
-      totalMarks = savedQuestionMarks.reduce((sum, qm) => sum + qm.marksObtained, 0);
-    } else {
-      if (marksObtained === undefined || marksObtained === null) {
-        return res.status(400).json({ success: false, message: 'marksObtained or questionMarks is required' });
-      }
-      totalMarks = parseFloat(marksObtained);
-    }
-
+    // ── Resolve faculty ──────────────────────────────────────────────────────
     const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -183,21 +171,119 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
       return res.status(404).json({ success: false, message: 'Faculty profile not found' });
     }
 
-    const script = await AnswerScript.findOne({
-      _id: scriptId,
-      evaluatorId: faculty._id,
-    });
-
+    // ── F3: Only the assigned evaluator may edit ─────────────────────────────
+    const script = await AnswerScript.findById(scriptId);
     if (!script) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Answer script not found or you are not authorized to evaluate it' 
+      return res.status(404).json({ success: false, message: 'Answer script not found' });
+    }
+
+    if (!script.evaluatorId || script.evaluatorId.toString() !== faculty._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not the assigned evaluator for this script.',
       });
     }
 
-    script.marksObtained = totalMarks;
-    script.questionMarks = savedQuestionMarks;
-    script.comments = comments || '';
+    // ── F3: Reject edit if script is locked ──────────────────────────────────
+    if (script.isLocked) {
+      return res.status(409).json({
+        success: false,
+        message: 'This answer script is locked and cannot be edited. Contact the Exam Cell to unlock it.',
+      });
+    }
+
+    // ── F2: Validate questionMarks against the approved question paper ────────
+    if (!questionMarks || !Array.isArray(questionMarks) || questionMarks.length === 0) {
+      return res.status(400).json({ success: false, message: 'questionMarks array is required and must not be empty.' });
+    }
+
+    // Load the QuestionPaper for this exam
+    const paper = await QuestionPaper.findOne({ examId: script.examId });
+    if (!paper) {
+      return res.status(400).json({ success: false, message: 'No question paper pattern found for this exam. Cannot validate marks.' });
+    }
+
+    // Build an allowed-question map: questionNumber → maxMarks (include OR alternatives)
+    const allowedQuestions = {};
+    const patternSlots = paper.slots && paper.slots.length > 0 ? paper.slots : paper.questions;
+    for (const slot of patternSlots) {
+      allowedQuestions[slot.questionNumber] = slot.maxMarks;
+      if (slot.or) {
+        allowedQuestions[slot.or.questionNumber] = slot.or.maxMarks;
+      }
+    }
+
+    // Per-question validation
+    const errors = [];
+    const validatedMarks = [];
+
+    for (const qm of questionMarks) {
+      const qNum = qm.questionNumber;
+      const marks = parseFloat(qm.marksObtained);
+
+      if (!qNum || typeof qNum !== 'string') {
+        errors.push({ questionNumber: qNum, error: 'Question number must be a non-empty string.' });
+        continue;
+      }
+
+      if (!(qNum in allowedQuestions)) {
+        errors.push({ questionNumber: qNum, error: `Question "${qNum}" does not exist in the approved question paper pattern.` });
+        continue;
+      }
+
+      if (!isFinite(marks) || isNaN(marks)) {
+        errors.push({ questionNumber: qNum, error: `Marks for "${qNum}" must be a finite number.` });
+        continue;
+      }
+
+      if (marks < 0) {
+        errors.push({ questionNumber: qNum, error: `Marks for "${qNum}" cannot be negative.` });
+        continue;
+      }
+
+      const maxAllowed = allowedQuestions[qNum];
+      if (marks > maxAllowed) {
+        errors.push({ questionNumber: qNum, error: `Marks for "${qNum}" (${marks}) exceed maximum allowed (${maxAllowed}).` });
+        continue;
+      }
+
+      validatedMarks.push({ questionNumber: qNum, marksObtained: marks });
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'One or more question marks failed validation.',
+        errors,
+      });
+    }
+
+    // ── F2: Compute server-side total (ignore any client-supplied marksObtained) ──
+    const serverTotal = validatedMarks.reduce((sum, qm) => sum + qm.marksObtained, 0);
+
+    // ── F3: Capture editHistory entry before overwriting ─────────────────────
+    if (script.status === 'evaluated') {
+      script.editHistory.push({
+        editedAt: new Date(),
+        editedBy: req.user.userId,
+        previousMarksObtained: script.marksObtained,
+        previousQuestionMarks: script.questionMarks.map(q => ({ ...q.toObject() })),
+        previousComments: script.comments || '',
+        unlockReason: '',
+      });
+
+      // F3: Mark agent-computed result as stale since marks changed
+      const Result = require('../models/Result');
+      const existingResult = await Result.findOne({ studentId: script.studentId });
+      if (existingResult) {
+        script.isResultStale = true;
+      }
+    }
+
+    // ── Persist ───────────────────────────────────────────────────────────────
+    script.marksObtained = serverTotal;
+    script.questionMarks = validatedMarks;
+    script.comments = typeof comments === 'string' ? comments : (script.comments || '');
     script.status = 'evaluated';
     script.evaluatedAt = new Date();
     await script.save();
@@ -205,7 +291,14 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
     res.json({
       success: true,
       message: 'Evaluation submitted successfully',
-      data: script,
+      data: {
+        scriptId: script._id,
+        marksObtained: script.marksObtained,
+        maxMarks: script.maxMarks,
+        questionMarks: script.questionMarks,
+        status: script.status,
+        isResultStale: script.isResultStale,
+      },
     });
   } catch (error) {
     console.error('Error submitting evaluation:', error);
@@ -213,9 +306,6 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
   }
 });
 
-const QuestionPaper = require('../models/QuestionPaper');
-const QPTemplate = require('../models/QPTemplate');
-const Exam = require('../models/Exam');
 
 /**
  * GET /api/v1/faculty/question-papers
@@ -524,10 +614,10 @@ router.put('/evaluations/publish-class/:examId', verifyToken, authorize('faculty
       });
     }
 
-    // Update all evaluated scripts to published
+    // F3: Update all evaluated scripts to published AND lock them to prevent further edits
     await AnswerScript.updateMany(
       { examId, evaluatorId: faculty._id, status: 'evaluated' },
-      { $set: { status: 'published', publishedAt: new Date() } }
+      { $set: { status: 'published', publishedAt: new Date(), isLocked: true } }
     );
 
     res.json({
@@ -537,6 +627,52 @@ router.put('/evaluations/publish-class/:examId', verifyToken, authorize('faculty
   } catch (error) {
     console.error('Error publishing class results:', error);
     res.status(500).json({ success: false, message: 'Failed to publish class results', error: error.message });
+  }
+});
+/**
+ * POST /api/v1/faculty/evaluations/:scriptId/unlock
+ * F3: Allows Admin or ExamCell to unlock a locked answer script so the evaluator can re-edit.
+ * Body: { reason } (required)
+ */
+router.post('/evaluations/:scriptId/unlock', verifyToken, authorize('admin', 'examcell'), async (req, res) => {
+  try {
+    const { scriptId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      return res.status(400).json({ success: false, message: 'A reason for unlocking is required.' });
+    }
+
+    const script = await AnswerScript.findById(scriptId);
+    if (!script) {
+      return res.status(404).json({ success: false, message: 'Answer script not found.' });
+    }
+
+    if (!script.isLocked) {
+      return res.status(400).json({ success: false, message: 'Answer script is not locked.' });
+    }
+
+    // F3: Append unlock event to editHistory
+    script.editHistory.push({
+      editedAt: new Date(),
+      editedBy: req.user.userId,
+      previousMarksObtained: script.marksObtained,
+      previousQuestionMarks: script.questionMarks.map(q => ({ ...q.toObject() })),
+      previousComments: script.comments || '',
+      unlockReason: reason.trim(),
+    });
+
+    script.isLocked = false;
+    await script.save();
+
+    res.json({
+      success: true,
+      message: 'Answer script has been unlocked. The evaluator may now re-submit marks.',
+      data: { scriptId: script._id, isLocked: script.isLocked },
+    });
+  } catch (error) {
+    console.error('Error unlocking script:', error);
+    res.status(500).json({ success: false, message: 'Failed to unlock script', error: error.message });
   }
 });
 
