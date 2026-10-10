@@ -16,10 +16,38 @@ const User = require('../models/User');
 const AnswerScript = require('../models/AnswerScript');
 const QuestionPaper = require('../models/QuestionPaper');
 const QuestionPaperPattern = require('../models/QuestionPaperPattern');
-const QPTemplate = require('../models/QPTemplate');
+const Department = require('../models/Department');
 const { sendNotification } = require('../services/notificationService');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+
+/**
+ * Helper to fetch eligible faculty for invigilation excluding HOD accounts
+ */
+const getEligibleFacultyForInvigilation = async () => {
+  // Find all User accounts with role 'hod' to get their linked identifiers
+  const hodUsers = await User.find({ role: 'hod' }, 'username').lean();
+  const hodUsernames = hodUsers.map(u => (u.username || '').toUpperCase());
+
+  // Also find department HOD links
+  const departments = await Department.find({}).lean();
+  const departmentHodIds = departments
+    .map(d => d.hodId || d.hodUserId)
+    .filter(Boolean)
+    .map(id => id.toString());
+
+  const allFaculty = await Faculty.find({}).lean();
+  const eligibleFaculty = allFaculty.filter(f => {
+    const isHodUsername = hodUsernames.includes((f.employeeId || '').toUpperCase());
+    const isHodId = departmentHodIds.includes(f._id.toString());
+    const designation = (f.designation || '').toLowerCase();
+    const isHodDesignation = designation.includes('head of department') || designation.includes('hod');
+    return !isHodUsername && !isHodId && !isHodDesignation;
+  });
+
+  console.log(`Invigilator pool: ${eligibleFaculty.length} eligible faculty (excluded ${allFaculty.length - eligibleFaculty.length} HOD accounts)`);
+  return eligibleFaculty;
+};
 
 // ============================================
 // SUBJECTS (for exam scheduling)
@@ -307,7 +335,7 @@ exports.runFullPipeline = async (req, res) => {
     // Fetch required data from database
     const subjects = await Subject.find({ semester: parseInt(semester) }).lean();
     const students = await Student.find().lean();
-    const faculty = await Faculty.find().lean();
+    const faculty = await getEligibleFacultyForInvigilation();
     const halls = await Hall.find().lean();
     
     // Retrieve all subjects to resolve subjectsAssigned ObjectIds to codes
@@ -429,14 +457,33 @@ exports.runFullPipeline = async (req, res) => {
       console.log('=============================\n');
 
       // Step 1: Save scheduled exams and build a mapping
+      // First clean up previous exams for the same semester and category
+      const examFilter = { semester: parseInt(semester), examType: examCategory };
+      const existingExams = await Exam.find(examFilter).select('_id');
+      const existingExamIds = existingExams.map(e => e._id);
+      if (existingExamIds.length > 0) {
+        await HallAllocation.deleteMany({ examId: { $in: existingExamIds } });
+        await InvigilatorAssignment.deleteMany({ examId: { $in: existingExamIds } });
+        await Exam.deleteMany(examFilter);
+        console.log(`Cleaned up ${existingExamIds.length} previous exams and associated allocations for semester ${semester} (${examCategory})`);
+      }
+
       const examDocs = [];
       const subjectCodeToExamId = {}; // Map subjectCode → newly created exam _id
       
       for (const exam of result.scheduled_exams) {
+        if (!exam.subjectCode || exam.subjectCode.trim() === '') {
+          console.warn(`⚠️  Skipping empty schedule entry for date ${exam.examDate}`);
+          continue;
+        }
+
         // Look up the real subject ObjectId from subjectCode
-        const subject = await Subject.findOne({ subjectCode: exam.subjectCode });
+        const subject = await Subject.findOne({ 
+          subjectCode: exam.subjectCode 
+        });
+        
         if (!subject) {
-          console.log(`⚠️  Skipping exam: Subject ${exam.subjectCode} not found in database`);
+          console.warn(`⚠️  Skipping exam: Subject code "${exam.subjectCode}" not found in database. This may indicate a bug in the Scheduling Agent generating an invalid code.`);
           continue;
         }
         
@@ -447,6 +494,7 @@ exports.runFullPipeline = async (req, res) => {
           endTime: exam.endTime,
           semester: exam.semester,
           examType: exam.examType || 'regular',
+          componentType: exam.componentType || 'theory',
           status: 'scheduled',
         });
         
@@ -723,7 +771,7 @@ exports.runSingleAgent = async (req, res) => {
 
         case 'invigilator':
           const examsForInv = await Exam.find({ _id: { $in: inputData.examIds } }).lean();
-          const faculty = await Faculty.find().lean();
+          const faculty = await getEligibleFacultyForInvigilation();
           const hallAllocations = await HallAllocation.find({ examId: { $in: inputData.examIds } }).lean();
           const allSubs = await Subject.find().lean();
           const subIdToCode = {};
@@ -837,10 +885,16 @@ exports.getTimetable = async (req, res) => {
       .populate('subjectId')
       .sort({ examDate: 1, startTime: 1 });
 
+    const validExams = exams.filter(exam => 
+      exam.subjectId && 
+      exam.subjectId.subjectCode && 
+      exam.subjectId.subjectName
+    );
+
     res.json({
       success: true,
-      count: exams.length,
-      data: exams,
+      count: validExams.length,
+      data: validExams,
     });
   } catch (error) {
     console.error('Error fetching timetable:', error);
@@ -959,25 +1013,41 @@ async function triggerPostPipelineNotifications(examDocs, allocationDocs, assign
 
       const studentId = allocation.studentId._id.toString();
       const semester = allocation.examId.semester;
+      const examType = allocation.examId.examType;
 
       if (!studentAllocations[studentId]) {
+        // Query database for ALL allocations of this student for the same semester and exam category
+        const allStudentAllocs = await HallAllocation.find({ studentId })
+          .populate({
+            path: 'examId',
+            populate: { path: 'subjectId' }
+          })
+          .populate('hallId')
+          .lean();
+
+        // Filter valid allocations matching semester and examType
+        const validStudentAllocs = allStudentAllocs.filter(a => 
+          a.examId && 
+          a.hallId && 
+          a.examId.semester === semester && 
+          a.examId.examType === examType
+        );
+
         studentAllocations[studentId] = {
           student: allocation.studentId,
           semester,
-          exams: [],
+          exams: validStudentAllocs.map(a => ({
+            subjectName: a.examId.subjectId?.subjectName || 'N/A',
+            subjectCode: a.examId.subjectId?.subjectCode || 'N/A',
+            examDate: a.examId.examDate,
+            startTime: a.examId.startTime,
+            endTime: a.examId.endTime,
+            hallName: a.hallId.hallName || a.hallId.name || 'N/A',
+            building: a.hallId.building || 'N/A',
+            seatNumber: a.seatNumber,
+          })),
         };
       }
-
-      studentAllocations[studentId].exams.push({
-        subjectName: allocation.examId.subjectId?.subjectName || 'N/A',
-        subjectCode: allocation.examId.subjectId?.subjectCode || 'N/A',
-        examDate: allocation.examId.examDate,
-        startTime: allocation.examId.startTime,
-        endTime: allocation.examId.endTime,
-        hallName: allocation.hallId.hallName,
-        building: allocation.hallId.building,
-        seatNumber: allocation.seatNumber,
-      });
     }
 
     // Step 2: Send hall ticket notification to each student
@@ -989,8 +1059,8 @@ async function triggerPostPipelineNotifications(examDocs, allocationDocs, assign
       // Get User record for recipientId and email (case-insensitive)
       const user = await User.findOne({ username: { $regex: new RegExp('^' + student.usn + '$', 'i') } });
       if (!user || !user.email) {
-        console.warn(`⚠️  Skipping ${student.usn} - No user or email found`);
-        continue;
+        console.warn(`⚠️  Cannot send notification — no email found for user ${user?.username || student.usn || 'unknown'}`);
+        continue; // skip this recipient, don't crash
       }
 
       console.log(`Sending hall ticket to ${student.usn}...`);
@@ -1013,6 +1083,79 @@ async function triggerPostPipelineNotifications(examDocs, allocationDocs, assign
       });
 
       console.log(`✓ Email sent to ${user.email}`);
+    }
+
+    // Step 2b: Notify all HODs that the timetable has been published
+    if (examDocs.length > 0) {
+      console.log('\nSending timetable published notifications to HODs...');
+      try {
+        // examDocs may have raw ObjectId subjectIds (from Exam.create in pipeline)
+        // or populated objects (from confirmTimetable). Re-query subjects to be safe.
+        const subjectIds = [...new Set(
+          examDocs.map(e => e.subjectId?._id?.toString() || e.subjectId?.toString()).filter(Boolean)
+        )];
+        const subjectDocs = await Subject.find({ _id: { $in: subjectIds } }, 'department').lean();
+        const subjectIdToDept = {};
+        subjectDocs.forEach(s => { subjectIdToDept[s._id.toString()] = s.department; });
+
+        // Collect unique departments
+        const involvedDepartments = [...new Set(
+          examDocs.map(e => {
+            const sid = e.subjectId?._id?.toString() || e.subjectId?.toString();
+            return subjectIdToDept[sid] || e.subjectId?.department || e.department;
+          }).filter(Boolean)
+        )];
+        console.log(`  Involved departments: ${involvedDepartments.join(', ') || '(none resolved)'}`);
+
+        const examDates = examDocs.map(e => new Date(e.examDate)).sort((a, b) => a - b);
+        const startDateStr = examDates[0]?.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const endDateStr = examDates[examDates.length - 1]?.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        // Notify each HOD whose department is involved
+        const hodUsers = await User.find({ role: 'hod' }).lean();
+        for (const hod of hodUsers) {
+          const hodDept = hod.department || '';
+          // Send if HOD's dept is in involved depts, or if we couldn't resolve any depts (send to all)
+          const deptMatches = involvedDepartments.length === 0 || involvedDepartments.includes(hodDept);
+          if (!deptMatches) {
+            console.log(`  → Skipping HOD ${hod.username} (dept "${hodDept}" not in exam departments)`);
+            continue;
+          }
+          if (!hod.email) {
+            console.warn(`⚠️  HOD ${hod.username} has no email — skipping timetable notification`);
+            continue;
+          }
+          // Count exams for this HOD's department
+          const deptExamsCount = examDocs.filter(e => {
+            const sid = e.subjectId?._id?.toString() || e.subjectId?.toString();
+            const dept = subjectIdToDept[sid] || e.subjectId?.department || e.department;
+            return dept === hodDept;
+          }).length || examDocs.length;
+
+          console.log(`  → Sending timetable published notification to HOD: ${hod.username} (${hod.email})`);
+          await sendNotification({
+            recipientId: hod._id,
+            recipientRole: 'hod',
+            type: 'timetable_published',
+            title: `Exam Timetable Published — ${hodDept}`,
+            message: `The exam timetable for ${hodDept} has been published. ${deptExamsCount} exam(s) scheduled.`,
+            email: hod.email,
+            recipientName: hod.name || hod.username,
+            data: {
+              department: hodDept,
+              examsCount: deptExamsCount,
+              dateRange: {
+                start: startDateStr || 'N/A',
+                end: endDateStr || 'N/A',
+              },
+              academicYear: '2023-2024',
+            },
+          });
+        }
+        console.log(`✓ Timetable published notifications sent to HODs`);
+      } catch (timetableNotifErr) {
+        console.error('Error sending timetable published notifications:', timetableNotifErr.message);
+      }
     }
 
     // Step 3: Group assignments by faculty
@@ -1061,8 +1204,8 @@ async function triggerPostPipelineNotifications(examDocs, allocationDocs, assign
       // Get User record for recipientId and email (case-insensitive)
       const user = await User.findOne({ username: { $regex: new RegExp('^' + faculty.employeeId + '$', 'i') } });
       if (!user || !user.email) {
-        console.warn(`⚠️  Skipping ${faculty.employeeId} - No user or email found`);
-        continue;
+        console.warn(`⚠️  Cannot send notification — no email found for user ${user?.username || faculty.employeeId || 'unknown'}`);
+        continue; // skip this recipient, don't crash
       }
 
       console.log(`Sending duty to ${faculty.name}...`);
@@ -2071,9 +2214,17 @@ exports.confirmTimetable = async (req, res) => {
     // Save the new exams
     const savedExams = [];
     for (const exam of exams) {
-      const subject = await Subject.findOne({ subjectCode: exam.subjectCode });
+      if (!exam.subjectCode || exam.subjectCode.trim() === '') {
+        console.warn(`⚠️  Skipping empty schedule entry for date ${exam.examDate}`);
+        continue;
+      }
+
+      const subject = await Subject.findOne({ 
+        subjectCode: exam.subjectCode 
+      });
+      
       if (!subject) {
-        console.warn(`Subject with code ${exam.subjectCode} not found during confirm`);
+        console.warn(`⚠️  Skipping exam: Subject code "${exam.subjectCode}" not found in database. This may indicate a bug in the Scheduling Agent generating an invalid code.`);
         continue;
       }
 
@@ -2088,6 +2239,41 @@ exports.confirmTimetable = async (req, res) => {
         status: 'scheduled',
       });
       savedExams.push(examDoc);
+    }
+
+    // Trigger notifications for HODs about published timetable
+    try {
+      const hodUsers = await User.find({ role: 'hod' }).lean();
+      if (savedExams.length > 0) {
+        const dates = savedExams.map(e => new Date(e.examDate)).sort((a, b) => a - b);
+        const startDateStr = dates[0].toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const endDateStr = dates[dates.length - 1].toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        for (const hod of hodUsers) {
+          if (hod.email) {
+            await sendNotification({
+              recipientId: hod._id,
+              recipientRole: 'hod',
+              type: 'timetable_published',
+              title: `Exam Timetable Published - Semester ${semester}`,
+              message: `The examination timetable for Semester ${semester} has been published.`,
+              email: hod.email,
+              recipientName: hod.name,
+              data: {
+                department: hod.department || 'All Departments',
+                examsCount: savedExams.length,
+                dateRange: {
+                  start: startDateStr,
+                  end: endDateStr
+                },
+                academicYear: '2023-2024'
+              }
+            });
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.error('Error sending timetable publication notifications:', notifErr);
     }
 
     res.json({
@@ -2223,8 +2409,11 @@ exports.runHallAllocationAgentSeparate = async (req, res) => {
         }
       }
 
+      let savedAllocations = [];
       if (allocationDocs.length > 0) {
-        await HallAllocation.insertMany(allocationDocs);
+        savedAllocations = await HallAllocation.insertMany(allocationDocs);
+        // Trigger notifications for student hall tickets
+        triggerPostPipelineNotifications(exams, savedAllocations, []);
       }
 
       // Update AgentRun
@@ -2270,7 +2459,7 @@ exports.runInvigilatorAgentSeparate = async (req, res) => {
 
     // Fetch exams, faculty, and hall allocations
     const exams = await Exam.find({ _id: { $in: examIds } }).populate('subjectId').lean();
-    const faculty = await Faculty.find().lean();
+    const faculty = await getEligibleFacultyForInvigilation();
     const hallAllocations = await HallAllocation.find({ examId: { $in: examIds } }).lean();
 
     if (exams.length === 0) {
@@ -2395,8 +2584,11 @@ exports.runInvigilatorAgentSeparate = async (req, res) => {
         }
       }
 
+      let savedAssignments = [];
       if (assignmentDocs.length > 0) {
-        await InvigilatorAssignment.insertMany(assignmentDocs);
+        savedAssignments = await InvigilatorAssignment.insertMany(assignmentDocs);
+        // Trigger notifications for invigilator duties
+        triggerPostPipelineNotifications(exams, [], savedAssignments);
       }
 
       // Update AgentRun

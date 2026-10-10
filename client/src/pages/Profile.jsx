@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Edit2, Key, Shield, Calendar, CheckCircle } from 'lucide-react';
+import { User, Edit2, Key, Shield, Calendar, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
+const ROLE_DASHBOARD_MAP = {
+  admin: '/admin/dashboard',
+  examcell: '/examcell/dashboard',
+  faculty: '/faculty/dashboard',
+  student: '/student/dashboard',
+  hod: '/hod/dashboard',
+  principal: '/principal/dashboard',
+};
+
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  const handleBack = () => {
+    const dashboardPath = ROLE_DASHBOARD_MAP[user?.role] || '/login';
+    navigate(dashboardPath);
+  };
   
   const [profileData, setProfileData] = useState({
     email: user?.email || '',
@@ -99,6 +115,39 @@ const Profile = () => {
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       {/* Page Header */}
       <div style={{ marginBottom: '32px' }}>
+        {/* Back Button */}
+        <button
+          onClick={handleBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 14px',
+            backgroundColor: 'transparent',
+            color: 'var(--color-text-secondary)',
+            border: '1.5px solid #E0E0E0',
+            borderRadius: '8px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginBottom: '16px',
+            transition: 'all 150ms ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-navy)';
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.borderColor = 'var(--color-navy)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = 'var(--color-text-secondary)';
+            e.currentTarget.style.borderColor = '#E0E0E0';
+          }}
+        >
+          <ArrowLeft size={15} />
+          Back to Dashboard
+        </button>
+
         <h1 style={{
           fontFamily: 'var(--font-display)',
           fontSize: '1.75rem',

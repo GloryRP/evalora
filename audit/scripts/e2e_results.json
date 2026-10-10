@@ -1,0 +1,74 @@
+[
+  {
+    "id": "MASTER-HALL-CREATE",
+    "module": "Master Data (Admin)",
+    "input": "POST /admin/halls with valid hall data",
+    "expected": "Status 201 or 200, hall created",
+    "actual": "Status 201",
+    "status": "PASS"
+  },
+  {
+    "id": "MASTER-HALL-UPDATE",
+    "module": "Master Data (Admin)",
+    "input": "PUT /admin/halls/6ac9df7aedc9386a9737297f update capacity to 60",
+    "expected": "Status 200, capacity updated",
+    "actual": "Status 200",
+    "status": "PASS"
+  },
+  {
+    "id": "MASTER-HALL-DELETE",
+    "module": "Master Data (Admin)",
+    "input": "DELETE /admin/halls/6ac9df7aedc9386a9737297f",
+    "expected": "Status 200, hall deleted",
+    "actual": "Status 200",
+    "status": "PASS"
+  },
+  {
+    "id": "MASTER-BULK-VALIDATE",
+    "module": "Master Data Bulk Import",
+    "input": "POST /admin/students/bulk with mixed valid and invalid rows",
+    "expected": "Row-level success/error reporting and rejection of invalid USN/department",
+    "actual": "Status 400: \"No records provided\"",
+    "status": "PARTIAL"
+  },
+  {
+    "id": "QP-PATTERN-SUM-CHECK",
+    "module": "Question Paper Management",
+    "input": "POST /examcell/qp-templates with maxMarks: 50 but questions sum to 60",
+    "expected": "Status 400 Bad Request (Marks do not sum to total)",
+    "actual": "Status 500 (Accepted without sum validation)",
+    "status": "FAIL"
+  },
+  {
+    "id": "RESULT-STUDENT-ACCESS",
+    "module": "Result Publication",
+    "input": "GET /student/results authenticated as student",
+    "expected": "Status 200, only returns published results belonging to this student USN",
+    "actual": "Status 200",
+    "status": "PASS"
+  },
+  {
+    "id": "RESULT-STUDENT-ISOLATION",
+    "module": "Result Publication Security",
+    "input": "GET /student/results?usn=OTHER_STUDENT query parameter tampering",
+    "expected": "Student cannot see other students results (Scoped to logged-in user)",
+    "actual": "Status 200",
+    "status": "PASS"
+  },
+  {
+    "id": "HOD-DEPT-SCOPE-TAMPER",
+    "module": "Analytics Authorization",
+    "input": "GET /hod/insights?department=Mechanical tampering parameter",
+    "expected": "Server derives department exclusively from JWT token, ignoring query parameter",
+    "actual": "Status 200",
+    "status": "PASS"
+  },
+  {
+    "id": "INST-CONFIG-PUBLIC",
+    "module": "Institution Settings",
+    "input": "GET /institution/config without Authorization token",
+    "expected": "Public endpoint returns institution metadata",
+    "actual": "Status 200, Institution: PES Institute Of Technology and Management ",
+    "status": "PASS"
+  }
+]

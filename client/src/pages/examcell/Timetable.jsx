@@ -80,8 +80,14 @@ const Timetable = () => {
 
   // Construct tabular spans for date and slots
   const tableRows = useMemo(() => {
+    const validExams = exams.filter(exam => 
+      exam.subjectId && 
+      exam.subjectId.subjectCode && 
+      exam.subjectId.subjectName
+    );
+
     const groups = {};
-    exams.forEach(exam => {
+    validExams.forEach(exam => {
       const dateStr = new Date(exam.examDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
       const timeStr = `${exam.startTime} to ${exam.endTime}`;
       if (!groups[dateStr]) groups[dateStr] = {};

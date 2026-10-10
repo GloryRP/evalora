@@ -126,17 +126,18 @@ const sendResultEmail = async (studentUser, result, instName) => {
       </div>
     `;
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: studentUser.email,
       subject: `Results Published - Semester ${result.semester} - ${instName}`,
       html: emailHtml,
     });
 
-    console.log(`✓ Email notification sent to ${studentUser.email} for USN ${result.usn}`);
+    console.log(`✓ Email sent successfully to ${studentUser.email} — messageId: ${info.messageId}`);
 
   } catch (err) {
-    console.error(`⚠️ Error sending result email to ${studentUser.email}:`, err.message);
+    console.error(`✗ EMAIL SEND FAILED for ${studentUser.email}:`, err.message);
+    console.error('Full error:', err);
   }
 };
 
@@ -194,17 +195,18 @@ const sendHODSummaryEmail = async (hodUser, semester, deptName, passRate, avgSgp
       </div>
     `;
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: hodUser.email,
-      subject: `Results Published Summary - Semester ${semester} - ${deptName} - ${instName}`,
+      subject: `Summary: Semester ${semester} Results Published - ${deptName} - ${instName}`,
       html: emailHtml,
     });
 
-    console.log(`✓ HOD Summary email sent to ${hodUser.email}`);
+    console.log(`✓ Email sent successfully to HOD ${hodUser.email} — messageId: ${info.messageId}`);
 
   } catch (err) {
-    console.error(`⚠️ Error sending HOD summary email to ${hodUser.email}:`, err.message);
+    console.error(`✗ EMAIL SEND FAILED for HOD ${hodUser.email}:`, err.message);
+    console.error('Full error:', err);
   }
 };
 

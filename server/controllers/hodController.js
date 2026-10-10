@@ -1,10 +1,11 @@
-/**
- * HOD Controller - Department-specific Head of Department operations
- * All data is filtered by HOD's department automatically
- */
 const User = require('../models/User');
+const Student = require('../models/Student');
+const Faculty = require('../models/Faculty');
+const Exam = require('../models/Exam');
 const Result = require('../models/Result');
 const AnswerScript = require('../models/AnswerScript');
+const Subject = require('../models/Subject');
+const Department = require('../models/Department');
 
 /**
  * Get HOD profile information
@@ -13,7 +14,7 @@ exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId, 'name username department email role');
     
-    if (!user.department) {
+    if (!user || !user.department) {
       return res.status(400).json({
         success: false,
         message: 'Department not assigned to this HOD. Contact Admin.',
@@ -60,53 +61,89 @@ exports.getHodDepartment = async (req) => {
  * Get HOD insights - department-specific performance data
  */
 exports.getInsights = async (req, res) => {
+  console.log('HOD insights requested by:', req.user.userId, 'role:', req.user.role);
+
   try {
     const hodUser = await User.findById(req.user.userId, 'department name');
-    const department = hodUser?.department;
+    console.log('HOD department resolved as:', hodUser?.department);
 
-    if (!department) {
+    if (!hodUser?.department) {
+      console.warn('⚠️  HOD user has no department set!');
       return res.status(400).json({
         success: false,
         message: 'HOD department not configured. Contact Admin.'
       });
     }
 
+    const department = hodUser.department;
     const { semester, academicYear } = req.query;
 
+    // Resolve department aliases from Department collection
+    const deptDoc = await Department.findOne({
+      $or: [
+        { departmentName: { $regex: new RegExp('^' + department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } },
+        { departmentCode: { $regex: new RegExp('^' + department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } },
+        { aliases: { $in: [department] } }
+      ]
+    }).lean();
+
+    const aliases = deptDoc?.aliases?.length ? deptDoc.aliases : [department];
+
+    // Find all subjects belonging to this department
+    const subjectFilter = { department: { $in: aliases } };
+    if (semester && semester !== 'all') {
+      subjectFilter.semester = parseInt(semester);
+    }
+    const deptSubjects = await Subject.find(subjectFilter).lean();
+    const deptSubjectIds = deptSubjects.map(s => s._id);
+    const deptSubjectCodes = deptSubjects.map(s => s.subjectCode);
+
     // Build filter for published results
-    const filter = {
-      department: department,
+    const resultFilter = {
+      $or: [
+        { department: { $in: aliases } },
+        { 'subjectResults.subjectCode': { $in: deptSubjectCodes } }
+      ],
       isPublished: true
     };
 
     if (semester && semester !== 'all') {
-      filter.semester = parseInt(semester);
+      resultFilter.semester = parseInt(semester);
     }
     if (academicYear && academicYear !== 'all') {
-      filter.academicYear = academicYear;
+      resultFilter.academicYear = academicYear;
     }
 
     // Fetch published results
-    const results = await Result.find(filter)
+    const results = await Result.find(resultFilter)
       .populate('studentId', 'name usn department semester')
       .lean();
 
     // Fetch answer scripts for evaluation stats
-    const scriptFilter = { department: department };
-    if (semester && semester !== 'all') {
-      scriptFilter.semester = parseInt(semester);
-    }
+    const allScripts = await AnswerScript.find({
+      subjectId: { $in: deptSubjectIds }
+    }).populate('subjectId').populate('studentId').lean();
 
-    const allScripts = await AnswerScript.find(scriptFilter).lean();
-    const evaluatedScripts = allScripts.filter(s => s.isEvaluated === true);
+    const evaluatedScripts = allScripts.filter(s => s.status === 'evaluated' || s.status === 'published' || s.isEvaluated === true);
 
-    // Compute summary statistics
+    // Script evaluation stats
+    const evaluatedWithMarks = evaluatedScripts.filter(s => s.marksObtained !== null && s.marksObtained !== undefined);
+    const totalMarks = evaluatedWithMarks.reduce((sum, s) => sum + (s.marksObtained || 0), 0);
+    const scriptAvgMarks = evaluatedWithMarks.length > 0
+      ? Math.round((totalMarks / evaluatedWithMarks.length) * 10) / 10
+      : 0;
+    const scriptPassCount = evaluatedWithMarks.filter(s => s.marksObtained >= 40).length;
+    const scriptPassRate = evaluatedWithMarks.length > 0
+      ? Math.round((scriptPassCount / evaluatedWithMarks.length) * 100 * 10) / 10
+      : 0;
+
+    // Compute summary statistics from Result records
     const totalStudents = results.length;
     const passCount = results.filter(r => r.overallResult === 'PASS').length;
     const failCount = totalStudents - passCount;
     const passRate = totalStudents > 0 
       ? Math.round((passCount / totalStudents) * 100 * 10) / 10
-      : 0;
+      : scriptPassRate;
 
     const avgSGPA = totalStudents > 0
       ? Math.round((results.reduce((sum, r) => sum + (r.sgpa || 0), 0) / totalStudents) * 100) / 100
@@ -120,11 +157,9 @@ exports.getInsights = async (req, res) => {
       ? Math.min(...results.map(r => r.sgpa || 0))
       : 0;
 
-    // Total marks for scripts
-    const totalMarks = evaluatedScripts.reduce((sum, s) => sum + (s.marksObtained || 0), 0);
-    const averageMarks = evaluatedScripts.length > 0
-      ? Math.round((totalMarks / evaluatedScripts.length) * 10) / 10
-      : 0;
+    const averageMarks = results.length > 0
+      ? Math.round((results.reduce((sum, r) => sum + (r.totalMarks || 0), 0) / totalStudents) * 10) / 10
+      : scriptAvgMarks;
 
     // SEE Performance (Final exam results)
     const seePerformance = results.map(r => ({
@@ -141,8 +176,7 @@ exports.getInsights = async (req, res) => {
       })) || []
     }));
 
-    // CIE Performance (internal marks - mock data for now)
-    // In a real system, this would come from internal assessment records
+    // CIE Performance (internal marks)
     const ciePerformance = seePerformance.map(s => ({
       usn: s.usn,
       name: s.name,
@@ -174,39 +208,87 @@ exports.getInsights = async (req, res) => {
     });
 
     // Subject-wise statistics
-    const subjectMap = {};
-    results.forEach(result => {
-      result.subjectResults?.forEach(sr => {
-        const code = sr.subjectCode;
-        if (!subjectMap[code]) {
-          subjectMap[code] = {
-            subjectCode: code,
-            subjectName: sr.subjectName,
-            semester: sr.semester || 1,
-            total: 0,
-            passed: 0,
-            totalMarks: 0,
-            maxMarks: 0
-          };
-        }
-        subjectMap[code].total++;
-        if (sr.isPassed) subjectMap[code].passed++;
-        subjectMap[code].totalMarks += (sr.marksObtained || 0);
-        subjectMap[code].maxMarks += (sr.maxMarks || 0);
+    let subjectWise = [];
+    if (results.length > 0) {
+      const subjectMap = {};
+      results.forEach(result => {
+        result.subjectResults?.forEach(sr => {
+          const code = sr.subjectCode;
+          if (!subjectMap[code]) {
+            subjectMap[code] = {
+              subjectCode: code,
+              subjectName: sr.subjectName,
+              semester: sr.semester || result.semester || 1,
+              total: 0,
+              passed: 0,
+              totalMarks: 0,
+              maxMarks: 0,
+              highest: 0,
+              lowest: 100,
+              failures: 0
+            };
+          }
+          subjectMap[code].total++;
+          if (sr.isPassed) subjectMap[code].passed++;
+          else subjectMap[code].failures++;
+          const marks = sr.marksObtained || 0;
+          subjectMap[code].totalMarks += marks;
+          subjectMap[code].maxMarks += (sr.maxMarks || 100);
+          if (marks > subjectMap[code].highest) subjectMap[code].highest = marks;
+          if (marks < subjectMap[code].lowest) subjectMap[code].lowest = marks;
+        });
       });
-    });
 
-    const subjectWise = Object.values(subjectMap).map(s => ({
-      ...s,
-      passPercentage: s.total > 0 
-        ? Math.round((s.passed / s.total) * 100)
-        : 0,
-      avgMarks: s.total > 0 
-        ? Math.round((s.totalMarks / s.total) * 10) / 10
-        : 0,
-      evaluated: s.passed,
-      passRate: s.total > 0 ? Math.round((s.passed / s.total) * 100) : 0
-    }));
+      subjectWise = Object.values(subjectMap).map(s => ({
+        ...s,
+        passPercentage: s.total > 0 ? Math.round((s.passed / s.total) * 100) : 0,
+        avgMarks: s.total > 0 ? Math.round((s.totalMarks / s.total) * 10) / 10 : 0,
+        evaluated: s.total,
+        passRate: s.total > 0 ? Math.round((s.passed / s.total) * 100) : 0,
+        lowest: s.lowest === 100 && s.total === 0 ? 0 : s.lowest
+      }));
+    } else {
+      // Build course breakdown from deptSubjects and AnswerScripts when Results are not computed yet
+      const scriptSubMap = {};
+      deptSubjects.forEach(s => {
+        scriptSubMap[s._id.toString()] = {
+          subjectCode: s.subjectCode,
+          subjectName: s.subjectName,
+          semester: s.semester,
+          total: 0,
+          evaluated: 0,
+          passed: 0,
+          totalMarks: 0,
+          highest: 0,
+          lowest: 100,
+          failures: 0
+        };
+      });
+
+      allScripts.forEach(s => {
+        const subId = s.subjectId?._id?.toString() || s.subjectId?.toString();
+        if (scriptSubMap[subId]) {
+          scriptSubMap[subId].total++;
+          if (s.status === 'evaluated' || s.status === 'published' || s.isEvaluated) {
+            scriptSubMap[subId].evaluated++;
+            const marks = s.marksObtained || 0;
+            scriptSubMap[subId].totalMarks += marks;
+            if (marks >= 40) scriptSubMap[subId].passed++;
+            else scriptSubMap[subId].failures++;
+            if (marks > scriptSubMap[subId].highest) scriptSubMap[subId].highest = marks;
+            if (marks < scriptSubMap[subId].lowest) scriptSubMap[subId].lowest = marks;
+          }
+        }
+      });
+
+      subjectWise = Object.values(scriptSubMap).map(s => ({
+        ...s,
+        passPercentage: s.evaluated > 0 ? Math.round((s.passed / s.evaluated) * 100) : 0,
+        avgMarks: s.evaluated > 0 ? Math.round((s.totalMarks / s.evaluated) * 10) / 10 : 0,
+        passRate: s.evaluated > 0 ? Math.round((s.passed / s.evaluated) * 100) : 0,
+        lowest: s.evaluated === 0 ? 0 : s.lowest
+      }));
+    }
 
     // Slow learners (risk students)
     const slowLearners = seePerformance
@@ -253,15 +335,14 @@ exports.getInsights = async (req, res) => {
         gradeDistribution,
         subjectWise,
         slowLearners,
-        // Alias for backward compatibility
         courseBreakdown: subjectWise
       }
     });
   } catch (error) {
-    console.error('Error getting HOD insights:', error);
+    console.error('HOD insights error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get insights',
+      message: 'Failed to fetch insights',
       error: error.message
     });
   }

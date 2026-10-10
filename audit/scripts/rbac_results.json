@@ -1,0 +1,479 @@
+{
+  "logins": {
+    "admin": {
+      "status": "PASS",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1OWYiLCJ1c2VybmFtZSI6IkFETUlOMSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc5MTYxNDMzMiwiZXhwIjoxNzkxNjQzMTMyfQ.dniOSmtXrkQrn4jKByFL1rUe78RSlujEKeJB8Jn8yK4",
+      "expHours": 8,
+      "decodedRole": "admin"
+    },
+    "examcell": {
+      "status": "PASS",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTAiLCJ1c2VybmFtZSI6IkVYQU1DRUxMMSIsInJvbGUiOiJleGFtY2VsbCIsImlhdCI6MTc5MTYxNDMzMiwiZXhwIjoxNzkxNjQzMTMyfQ.IJImEoKO8ZQz-cswQqVx-ulolV7hgTKZ1VCTsAM74nQ",
+      "expHours": 8,
+      "decodedRole": "examcell"
+    },
+    "faculty": {
+      "status": "PASS",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTEiLCJ1c2VybmFtZSI6IkZBQ1VMVFkxIiwicm9sZSI6ImZhY3VsdHkiLCJpYXQiOjE3OTE2MTQzMzIsImV4cCI6MTc5MTY0MzEzMn0.-Dp8bxpMsdp-qNqCqS_B2IO-gYhwqfg-JRKo1hR8YjI",
+      "expHours": 8,
+      "decodedRole": "faculty"
+    },
+    "student": {
+      "status": "PASS",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTIiLCJ1c2VybmFtZSI6IlNUVURFTlQxIiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3OTE2MTQzMzIsImV4cCI6MTc5MTY0MzEzMn0.syF5cbiG9pGQKoW79kFH9maMJ0g0lEx-zWsN6h7ptwg",
+      "expHours": 8,
+      "decodedRole": "student"
+    },
+    "hod": {
+      "status": "PASS",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTZhMzU4ZjcxY2MzYWU3ODcwYjg0MWYiLCJ1c2VybmFtZSI6IkhPRF9DU0UiLCJyb2xlIjoiaG9kIiwiaWF0IjoxNzkxNjE0MzMyLCJleHAiOjE3OTE2NDMxMzJ9.leaSUy6ZwQDcQVSIG3dhtaJYGr8qGAAQIkkJ4K8ixMU",
+      "expHours": 8,
+      "decodedRole": "hod"
+    },
+    "principal": {
+      "status": "PASS",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTQiLCJ1c2VybmFtZSI6IlBSSU5DSVBBTDEiLCJyb2xlIjoicHJpbmNpcGFsIiwiaWF0IjoxNzkxNjE0MzMyLCJleHAiOjE3OTE2NDMxMzJ9.a8zzfDPkSl4uCiDYuNbPTw75upIk-0ztbcmoj2y9YCY",
+      "expHours": 8,
+      "decodedRole": "principal"
+    }
+  },
+  "tokenExpiry": {},
+  "authFailures": {},
+  "matrix": {},
+  "noSqlInjection": {},
+  "cors": {},
+  "testCases": [
+    {
+      "id": "AUTH-ADMIN",
+      "module": "Authentication",
+      "input": "Login as admin (ADMIN1)",
+      "expected": "Status 200, JWT token returned with 8h expiry",
+      "actual": "Status 200, Token duration: 8h",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-EXAMCELL",
+      "module": "Authentication",
+      "input": "Login as examcell (EXAMCELL1)",
+      "expected": "Status 200, JWT token returned with 8h expiry",
+      "actual": "Status 200, Token duration: 8h",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-FACULTY",
+      "module": "Authentication",
+      "input": "Login as faculty (FACULTY1)",
+      "expected": "Status 200, JWT token returned with 8h expiry",
+      "actual": "Status 200, Token duration: 8h",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-STUDENT",
+      "module": "Authentication",
+      "input": "Login as student (STUDENT1)",
+      "expected": "Status 200, JWT token returned with 8h expiry",
+      "actual": "Status 200, Token duration: 8h",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-HOD",
+      "module": "Authentication",
+      "input": "Login as hod (HOD_CSE)",
+      "expected": "Status 200, JWT token returned with 8h expiry",
+      "actual": "Status 200, Token duration: 8h",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-PRINCIPAL",
+      "module": "Authentication",
+      "input": "Login as principal (PRINCIPAL1)",
+      "expected": "Status 200, JWT token returned with 8h expiry",
+      "actual": "Status 200, Token duration: 8h",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-FAIL-WRONG-PASS",
+      "module": "Authentication",
+      "input": "Invalid password on login",
+      "expected": "Status 401 Unauthorized",
+      "actual": "Status 401",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-FAIL-MISSING-TOKEN",
+      "module": "Authentication",
+      "input": "Request to /admin/stats without Authorization header",
+      "expected": "Status 401 Unauthorized",
+      "actual": "Status 401",
+      "status": "PASS"
+    },
+    {
+      "id": "AUTH-FAIL-TAMPERED-TOKEN",
+      "module": "Authentication",
+      "input": "Request with tampered JWT token",
+      "expected": "Status 401 Unauthorized",
+      "actual": "Status 401",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-Admin_Stats",
+      "module": "RBAC Authorization",
+      "input": "admin accesses Admin Stats (http://localhost:5000/api/v1/admin/stats)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-Admin_Stats",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses Admin Stats (http://localhost:5000/api/v1/admin/stats)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-Admin_Stats",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses Admin Stats (http://localhost:5000/api/v1/admin/stats)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-Admin_Stats",
+      "module": "RBAC Authorization",
+      "input": "student accesses Admin Stats (http://localhost:5000/api/v1/admin/stats)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-Admin_Stats",
+      "module": "RBAC Authorization",
+      "input": "hod accesses Admin Stats (http://localhost:5000/api/v1/admin/stats)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-Admin_Stats",
+      "module": "RBAC Authorization",
+      "input": "principal accesses Admin Stats (http://localhost:5000/api/v1/admin/stats)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-Admin_Students_List",
+      "module": "RBAC Authorization",
+      "input": "admin accesses Admin Students List (http://localhost:5000/api/v1/admin/students)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-Admin_Students_List",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses Admin Students List (http://localhost:5000/api/v1/admin/students)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-Admin_Students_List",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses Admin Students List (http://localhost:5000/api/v1/admin/students)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-Admin_Students_List",
+      "module": "RBAC Authorization",
+      "input": "student accesses Admin Students List (http://localhost:5000/api/v1/admin/students)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-Admin_Students_List",
+      "module": "RBAC Authorization",
+      "input": "hod accesses Admin Students List (http://localhost:5000/api/v1/admin/students)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-Admin_Students_List",
+      "module": "RBAC Authorization",
+      "input": "principal accesses Admin Students List (http://localhost:5000/api/v1/admin/students)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-ExamCell_Exams",
+      "module": "RBAC Authorization",
+      "input": "admin accesses ExamCell Exams (http://localhost:5000/api/v1/examcell/exams)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-ExamCell_Exams",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses ExamCell Exams (http://localhost:5000/api/v1/examcell/exams)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-ExamCell_Exams",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses ExamCell Exams (http://localhost:5000/api/v1/examcell/exams)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-ExamCell_Exams",
+      "module": "RBAC Authorization",
+      "input": "student accesses ExamCell Exams (http://localhost:5000/api/v1/examcell/exams)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-ExamCell_Exams",
+      "module": "RBAC Authorization",
+      "input": "hod accesses ExamCell Exams (http://localhost:5000/api/v1/examcell/exams)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-ExamCell_Exams",
+      "module": "RBAC Authorization",
+      "input": "principal accesses ExamCell Exams (http://localhost:5000/api/v1/examcell/exams)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-Faculty_Duties",
+      "module": "RBAC Authorization",
+      "input": "admin accesses Faculty Duties (http://localhost:5000/api/v1/faculty/duties)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-Faculty_Duties",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses Faculty Duties (http://localhost:5000/api/v1/faculty/duties)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-Faculty_Duties",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses Faculty Duties (http://localhost:5000/api/v1/faculty/duties)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-Faculty_Duties",
+      "module": "RBAC Authorization",
+      "input": "student accesses Faculty Duties (http://localhost:5000/api/v1/faculty/duties)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-Faculty_Duties",
+      "module": "RBAC Authorization",
+      "input": "hod accesses Faculty Duties (http://localhost:5000/api/v1/faculty/duties)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-Faculty_Duties",
+      "module": "RBAC Authorization",
+      "input": "principal accesses Faculty Duties (http://localhost:5000/api/v1/faculty/duties)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-Student_Results",
+      "module": "RBAC Authorization",
+      "input": "admin accesses Student Results (http://localhost:5000/api/v1/student/results)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-Student_Results",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses Student Results (http://localhost:5000/api/v1/student/results)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-Student_Results",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses Student Results (http://localhost:5000/api/v1/student/results)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-Student_Results",
+      "module": "RBAC Authorization",
+      "input": "student accesses Student Results (http://localhost:5000/api/v1/student/results)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-Student_Results",
+      "module": "RBAC Authorization",
+      "input": "hod accesses Student Results (http://localhost:5000/api/v1/student/results)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-Student_Results",
+      "module": "RBAC Authorization",
+      "input": "principal accesses Student Results (http://localhost:5000/api/v1/student/results)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-HOD_Insights",
+      "module": "RBAC Authorization",
+      "input": "admin accesses HOD Insights (http://localhost:5000/api/v1/hod/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-HOD_Insights",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses HOD Insights (http://localhost:5000/api/v1/hod/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-HOD_Insights",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses HOD Insights (http://localhost:5000/api/v1/hod/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-HOD_Insights",
+      "module": "RBAC Authorization",
+      "input": "student accesses HOD Insights (http://localhost:5000/api/v1/hod/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-HOD_Insights",
+      "module": "RBAC Authorization",
+      "input": "hod accesses HOD Insights (http://localhost:5000/api/v1/hod/insights)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-HOD_Insights",
+      "module": "RBAC Authorization",
+      "input": "principal accesses HOD Insights (http://localhost:5000/api/v1/hod/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-ADMIN-Principal_Insights",
+      "module": "RBAC Authorization",
+      "input": "admin accesses Principal Insights (http://localhost:5000/api/v1/principal/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-EXAMCELL-Principal_Insights",
+      "module": "RBAC Authorization",
+      "input": "examcell accesses Principal Insights (http://localhost:5000/api/v1/principal/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-FACULTY-Principal_Insights",
+      "module": "RBAC Authorization",
+      "input": "faculty accesses Principal Insights (http://localhost:5000/api/v1/principal/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-STUDENT-Principal_Insights",
+      "module": "RBAC Authorization",
+      "input": "student accesses Principal Insights (http://localhost:5000/api/v1/principal/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-HOD-Principal_Insights",
+      "module": "RBAC Authorization",
+      "input": "hod accesses Principal Insights (http://localhost:5000/api/v1/principal/insights)",
+      "expected": "403 Forbidden",
+      "actual": "Status 403",
+      "status": "PASS"
+    },
+    {
+      "id": "RBAC-PRINCIPAL-Principal_Insights",
+      "module": "RBAC Authorization",
+      "input": "principal accesses Principal Insights (http://localhost:5000/api/v1/principal/insights)",
+      "expected": "200 OK",
+      "actual": "Status 200",
+      "status": "PASS"
+    },
+    {
+      "id": "SEC-NOSQL-1",
+      "module": "Security Injection",
+      "input": "Payload: {\"username\":{\"$gt\":\"\"},\"password\":{\"$gt\":\"\"}}",
+      "expected": "Rejection (400 or 401)",
+      "actual": "Status 401",
+      "status": "PASS"
+    },
+    {
+      "id": "SEC-NOSQL-2",
+      "module": "Security Injection",
+      "input": "Payload: {\"username\":\"ADMIN1\",\"password\":{\"$gt\":\"\"}}",
+      "expected": "Rejection (400 or 401)",
+      "actual": "Status 500",
+      "status": "FAIL"
+    },
+    {
+      "id": "SEC-NOSQL-3",
+      "module": "Security Injection",
+      "input": "Payload: {\"username\":{\"$ne\":null},\"password\":{\"$ne\":null}}",
+      "expected": "Rejection (400 or 401)",
+      "actual": "Status 401",
+      "status": "PASS"
+    }
+  ]
+}

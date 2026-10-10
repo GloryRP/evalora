@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 const HodDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedSem, setSelectedSem] = useState('all');
   const [activeTab, setActiveTab] = useState('see'); // 'cie' (internal) or 'see' (external final)
   const [aiReport, setAiReport] = useState(null);
@@ -23,19 +24,26 @@ const HodDashboard = () => {
 
   useEffect(() => {
     fetchInsights();
+  }, [selectedSem]);
+
+  useEffect(() => {
     fetchInstitutionDetails();
   }, []);
 
   const fetchInsights = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/hod/insights');
-      if (response.data?.success) {
-        setData(response.data.data);
+      setError(null);
+      const res = await api.get('/hod/insights', {
+        params: { semester: selectedSem }
+      });
+      if (res.data?.success) {
+        setData(res.data.data);
       }
-    } catch (error) {
-      console.error('Error fetching HOD insights:', error);
-      toast.error('Failed to load HOD insights');
+    } catch (err) {
+      console.error('HOD insights fetch failed:', err.response?.data || err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to load HOD insights');
+      toast.error(err.response?.data?.message || 'Failed to load HOD insights');
     } finally {
       setLoading(false);
     }
@@ -224,6 +232,14 @@ const HodDashboard = () => {
 
   if (loading) {
     return <div style={{ padding: '2rem' }}><LoadingSkeleton count={5} /></div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 24, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, margin: 24 }}>
+        <strong>Failed to load dashboard data:</strong> {error}
+      </div>
+    );
   }
 
   if (!data) {

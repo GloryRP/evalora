@@ -92,9 +92,12 @@ class SchedulingAgent:
             except Exception:
                 return time_str
 
-        # Generate schedulable entities
+        # Generate schedulable entities (only for valid subjects with non-empty subjectCode)
         schedulable_entities = []
         for sub in subjects:
+            code = (sub.get("subjectCode") or "").strip()
+            if not code:
+                continue
             if component in ["theory", "both"] and needs_theory_exam(sub, exam_category):
                 schedulable_entities.append({
                     "subject": sub,
@@ -114,12 +117,20 @@ class SchedulingAgent:
 
         scheduled_exams = []
         semester_slot_pointer = {}
+        scheduled_entity_keys = set()
         
         for entity in schedulable_entities:
             sub = entity["subject"]
             comp_type = entity["component_type"]
             sem = sub.get("semester", 1)
-            sub_code = sub.get("subjectCode")
+            sub_code = (sub.get("subjectCode") or "").strip()
+            subject_id = str(sub.get("_id") or sub.get("id") or "")
+
+            # Prevent duplicate scheduling of the exact same subject entity
+            entity_key = f"{subject_id}_{comp_type}"
+            if entity_key in scheduled_entity_keys:
+                print(f"[SCHEDULING AGENT] Skipping already scheduled entity: {sub_code} ({comp_type})")
+                continue
             
             if sem not in semester_slot_pointer:
                 semester_slot_pointer[sem] = {
@@ -155,9 +166,8 @@ class SchedulingAgent:
                 
             end_time = add_hours_to_time(start_time, duration)
             
-            subject_id = sub.get("_id") or sub.get("id")
             exam = {
-                "subjectId": str(subject_id),
+                "subjectId": subject_id,
                 "subjectCode": sub_code,
                 "subjectName": sub.get("subjectName", ""),
                 "examDate": curr_date.isoformat(),
@@ -170,12 +180,20 @@ class SchedulingAgent:
             }
             
             scheduled_exams.append(exam)
+            scheduled_entity_keys.add(entity_key)
             
             # Update state pointer
             semester_slot_pointer[sem] = {
                 "date": next_date,
                 "session": next_session
             }
+
+        # Detailed logging before returning schedule
+        print("\n=== SCHEDULING AGENT FINAL SCHEDULE OUTPUT ===")
+        print(f"Total exams scheduled: {len(scheduled_exams)}")
+        for idx, ex in enumerate(scheduled_exams, start=1):
+            print(f"  [{idx}] Date: {ex['examDate']} | Time: {ex['startTime']}-{ex['endTime']} | Code: '{ex['subjectCode']}' | Subject: '{ex['subjectName']}' | Dept: '{ex['department']}' | Sem: {ex['semester']} | Type: {ex['componentType']}")
+        print("==============================================\n")
                 
         return {
             "scheduled_exams": scheduled_exams,

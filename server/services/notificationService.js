@@ -8,6 +8,15 @@ const nodemailer = require('nodemailer');
 const Notification = require('../models/Notification');
 const InstitutionConfig = require('../models/InstitutionConfig');
 
+console.log('=== SMTP CONFIG CHECK ===');
+console.log('SMTP_HOST:', process.env.SMTP_HOST || 'MISSING');
+console.log('SMTP_PORT:', process.env.SMTP_PORT || 'MISSING');
+console.log('SMTP_USER:', process.env.SMTP_USER ? 
+  process.env.SMTP_USER.substring(0,3) + '***' : 'MISSING');
+console.log('SMTP_PASS:', process.env.SMTP_PASS ? 
+  'SET (hidden)' : 'MISSING');
+console.log('==========================');
+
 /**
  * Main notification function - handles all notification types
  * @param {Object} params - Notification parameters
@@ -30,8 +39,9 @@ const sendNotification = async ({
   recipientName,
   data = {},
 }) => {
+  console.log(`\n📧 sendNotification CALLED — type: ${type}, to: ${email}, role: ${recipientRole}`);
   try {
-    console.log(`\n=== SENDING NOTIFICATION ===`);
+    console.log(`=== SENDING NOTIFICATION ===`);
     console.log(`Type: ${type}`);
     console.log(`Recipient: ${recipientName} (${recipientRole})`);
     console.log(`Email: ${email}`);
@@ -137,23 +147,24 @@ const sendNotification = async ({
         },
       });
 
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: email,
         subject: emailSubject,
         html: emailHtml,
       });
 
+      console.log(`✓ Email sent successfully to ${email} — messageId: ${info.messageId}`);
+
       // STEP 5: Update notification - email sent successfully
       await Notification.findByIdAndUpdate(notification._id, {
         emailSent: true,
         emailSentAt: new Date(),
       });
-
-      console.log(`✓ Email sent to ${email}`);
     } catch (emailError) {
       // STEP 6: Error handling - log but don't throw
-      console.error(`⚠️  Email failed to ${email}:`, emailError.message);
+      console.error(`✗ EMAIL SEND FAILED for ${email}:`, emailError.message);
+      console.error('Full error:', emailError);
       
       await Notification.findByIdAndUpdate(notification._id, {
         emailSent: false,
