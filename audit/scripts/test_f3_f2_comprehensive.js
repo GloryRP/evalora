@@ -116,6 +116,7 @@ async function run() {
       startTime: '09:00',
       endTime: '10:30',
       semester: 3,
+      academicYear: '2025-2026',
       examType: 'internal1',
       status: 'scheduled'
     });
@@ -418,6 +419,7 @@ async function run() {
     startTime: '09:00',
     endTime: '10:30',
     semester: 3,
+    academicYear: '2025-2026',
     examType: 'internal2',
     status: 'scheduled'
   });

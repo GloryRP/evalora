@@ -1,0 +1,26 @@
+{
+  "test": "Test B: Missing Internal 2 Script",
+  "inputs": {
+    "internal1": 40,
+    "internal2": "MISSING / NOT SUBMITTED",
+    "external": 80
+  },
+  "systemBehavior": {
+    "errorThrown": false,
+    "skipped": false,
+    "defaultedToZero": true,
+    "codeLocation": "server/controllers/resultController.js:274",
+    "internal2ValueUsed": 0,
+    "cieCalculated": 20,
+    "expectedCIEIfOnlyInt1OrBestOf": 40,
+    "seeScaled": 40,
+    "finalScore": 60,
+    "maxMarks": 100
+  },
+  "auditFindings": {
+    "issue": "Silent zero default for missing internal exam",
+    "description": "When a student is missing Internal 2 (due to absence, medical exemption, or delayed faculty evaluation), the system does NOT throw an error, does NOT skip the subject, and does NOT flag the incomplete state. Instead, line 274 silently leaves internal2 as 0. This results in the student CIE being calculated as (40 + 0) / 2 = 20/50 instead of 40/50.",
+    "isMisleadingToStudent": true,
+    "studentImpact": "The student sees a reduced final score of 60/100 instead of 80/100, without any notification that an entire internal assessment was recorded as zero. On the student result card, it appears as a legitimate B+ grade rather than an incomplete result requiring exam cell inquiry."
+  }
+}

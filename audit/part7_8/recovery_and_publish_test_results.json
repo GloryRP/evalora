@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-10-25T05:31:15.682Z",
+  "baselineCounts": {
+    "users": 153,
+    "students": 136,
+    "faculties": 9,
+    "subjects": 15,
+    "scripts": 1,
+    "results": 0,
+    "notifications": 287
+  },
+  "recoveryFlow": {
+    "before": {
+      "message": "Results successfully computed for 2 students (1 incomplete)",
+      "incompleteStudents": [
+        {
+          "studentId": "6add9423f0fc04447a81f499",
+          "usn": "4PM23TST001",
+          "name": "Test Student 001",
+          "incompleteSubjects": [
+            {
+              "subjectCode": "TST501",
+              "subjectName": "System Architecture",
+              "missingAssessments": [
+                "Internal 2"
+              ]
+            }
+          ]
+        }
+      ],
+      "student001": {
+        "usn": "4PM23TST001",
+        "overallResult": "INCOMPLETE",
+        "isProvisional": true,
+        "hasIncompleteSubjects": true,
+        "sgpa": 10,
+        "cgpa": 9.56,
+        "totalCredits": 5,
+        "tst501": {
+          "result": "INCOMPLETE",
+          "grade": "Incomplete",
+          "gradePoint": null,
+          "missingAssessments": [
+            "Internal 2"
+          ]
+        }
+      }
+    },
+    "publishAllBlocked": {
+      "blocked": true,
+      "message": "Cannot publish all results: 1 student(s) have incomplete subject evaluations: 4PM23TST001 (TST501). Complete the missing evaluations or choose 'Publish Complete Results Only'."
+    },
+    "after": {
+      "recoveryStatus": "PASS",
+      "publishAllSuccess": "PASS",
+      "recomputeMessage": "Results successfully computed for 2 students (0 incomplete)",
+      "student001": {
+        "overallResult": "PASS",
+        "isProvisional": false,
+        "hasIncompleteSubjects": false,
+        "totalCredits": 9,
+        "sgpa": 10,
+        "cgpa": 9.69,
+        "tst501": {
+          "grade": "O",
+          "gradePoint": 10,
+          "result": "PASS"
+        },
+        "isPublished": true
+      }
+    }
+  },
+  "publishCompleteOnly": {
+    "status": "PASS",
+    "httpStatus": 200,
+    "publishedCount": 1,
+    "heldBackCount": 1,
+    "student002Published": true,
+    "student001Published": false,
+    "student002NotificationSent": true,
+    "student001NotificationSent": false
+  },
+  "uiScreenshots": [
+    {
+      "view": "Exam Cell Publish Results Screen",
+      "file": "01_examcell_publish_results.png",
+      "elements": [
+        "Incomplete Badge",
+        "Publish Complete Only Button",
+        "Publish All Results Button"
+      ]
+    },
+    {
+      "view": "Student My Results Screen (Incomplete / Provisional)",
+      "file": "02_student_my_results_incomplete.png",
+      "elements": [
+        "Provisional Results Warning Banner",
+        "Result incomplete Badge",
+        "Result incomplete for TST501",
+        "SGPA (Provisional)"
+      ]
+    },
+    {
+      "view": "Student My Results Screen (Fully Recovered)",
+      "file": "03_student_my_results_recovered.png",
+      "elements": [
+        "PASS Badge",
+        "SGPA 10.00",
+        "CGPA 9.69",
+        "Grade O in TST501",
+        "No Provisional Warning"
+      ]
+    }
+  ],
+  "finalCounts": {
+    "users": 153,
+    "students": 136,
+    "faculties": 9,
+    "subjects": 15,
+    "scripts": 1,
+    "results": 0,
+    "notifications": 287
+  },
+  "parityCheck": true
+}

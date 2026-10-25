@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Eye, CheckCircle2, AlertTriangle, FileText, CheckSquare, Square } from 'lucide-react';
+import { Send, Eye, CheckCircle2, AlertTriangle, FileText, CheckSquare, Square, RefreshCw } from 'lucide-react';
 import api from '../../lib/api';
 import Button from '../../components/ui/Button';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
@@ -110,6 +110,23 @@ const PublishResults = () => {
       return;
     }
 
+    // Check if any results are incomplete
+    const incompleteResults = readyToPublish.filter(r => 
+      r.overallResult === 'INCOMPLETE' || 
+      r.isProvisional || 
+      r.hasIncompleteSubjects ||
+      r.subjectResults?.some(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')
+    );
+
+    if (incompleteResults.length > 0) {
+      const incompleteList = incompleteResults.map(r => {
+        const subs = r.subjectResults?.filter(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete').map(s => s.subjectCode).join(', ');
+        return `${r.usn} (${subs || 'Incomplete'})`;
+      }).join('; ');
+      toast.error(`Cannot Publish All: ${incompleteResults.length} student(s) have incomplete subjects: ${incompleteList}. Use "Publish Complete Results Only" instead.`, { duration: 6000 });
+      return;
+    }
+
     if (!confirm(`Publish results for all ${readyToPublish.length} students in Semester ${semester}? Students will receive email and in-app grade cards instantly.`)) {
       return;
     }
@@ -131,6 +148,47 @@ const PublishResults = () => {
     } catch (error) {
       console.error('Publish error:', error);
       toast.error(error.response?.data?.message || 'Failed to publish results');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  // Publish Complete Results Only
+  const handlePublishCompleteOnly = async () => {
+    const completeReady = readyToPublish.filter(r => 
+      r.overallResult !== 'INCOMPLETE' && 
+      !r.isProvisional && 
+      !r.hasIncompleteSubjects &&
+      !r.subjectResults?.some(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')
+    );
+
+    if (completeReady.length === 0) {
+      toast.error('No fully completed results available to publish.');
+      return;
+    }
+
+    if (!confirm(`Publish results for the ${completeReady.length} fully completed students? (Incomplete students will remain unpublished until marks are submitted)`)) {
+      return;
+    }
+
+    try {
+      setPublishing(true);
+      const payload = {
+        semester: parseInt(semester),
+        academicYear,
+        publishCompleteOnly: true
+      };
+      if (department) payload.department = department;
+
+      const response = await api.post('/results/publish', payload);
+      if (response.data?.success) {
+        toast.success(response.data.message);
+        setPublishedCount(response.data.count);
+        fetchResults();
+      }
+    } catch (error) {
+      console.error('Publish complete only error:', error);
+      toast.error(error.response?.data?.message || 'Failed to publish complete results');
     } finally {
       setPublishing(false);
     }
@@ -160,6 +218,7 @@ const PublishResults = () => {
           }
         } catch (err) {
           console.error(`Failed to publish single result ID ${id}:`, err);
+          toast.error(err.response?.data?.message || `Failed to publish result ${id}`);
         }
       }
 
@@ -332,11 +391,29 @@ const PublishResults = () => {
                       </td>
                       <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontWeight: '600' }}>{r.usn}</td>
                       <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: 'var(--color-navy)' }}>{r.studentId?.name || 'Jane Smith'}</td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700' }}>{r.sgpa.toFixed(2)}</td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700', color: 'var(--color-gold)' }}>{r.cgpa.toFixed(2)}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700' }}>
+                        {r.isProvisional || r.overallResult === 'INCOMPLETE' ? (
+                          <div>
+                            <span>{r.sgpa !== undefined && r.sgpa !== null ? r.sgpa.toFixed(2) : '-'}</span>
+                            <span style={{ display: 'block', fontSize: '0.7rem', color: '#d97706', fontWeight: 'bold' }}>Provisional</span>
+                          </div>
+                        ) : (
+                          r.sgpa !== undefined && r.sgpa !== null ? r.sgpa.toFixed(2) : '-'
+                        )}
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700', color: 'var(--color-gold)' }}>
+                        {r.isProvisional || r.overallResult === 'INCOMPLETE' ? (
+                          <div>
+                            <span>{r.cgpa !== undefined && r.cgpa !== null ? r.cgpa.toFixed(2) : '-'}</span>
+                            <span style={{ display: 'block', fontSize: '0.7rem', color: '#d97706', fontWeight: 'bold' }}>Provisional</span>
+                          </div>
+                        ) : (
+                          r.cgpa !== undefined && r.cgpa !== null ? r.cgpa.toFixed(2) : '-'
+                        )}
+                      </td>
                       <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                        <Badge variant={r.overallResult === 'PASS' ? 'success' : 'danger'}>
-                          {r.overallResult}
+                        <Badge variant={r.overallResult === 'PASS' ? 'success' : (r.overallResult === 'INCOMPLETE' ? 'warning' : 'danger')}>
+                          {r.overallResult === 'INCOMPLETE' ? 'Result incomplete' : r.overallResult}
                         </Badge>
                       </td>
                       <td style={{ padding: '0.75rem 1rem', color: failedSubjects !== 'None' ? '#ef4444' : '#666', fontWeight: failedSubjects !== 'None' ? '600' : '400' }}>
@@ -368,7 +445,27 @@ const PublishResults = () => {
       </div>
 
       {/* Buttons bar */}
-      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={handlePublishCompleteOnly}
+          disabled={publishing || readyToPublish.length === 0}
+          style={{
+            border: '2px solid #2D7A5F',
+            background: '#F0FDF4',
+            color: '#2D7A5F',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '6px',
+            fontWeight: '700',
+            cursor: readyToPublish.length > 0 ? 'pointer' : 'not-allowed',
+            fontSize: '0.95rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <CheckCircle2 size={16} /> Publish Complete Results Only
+        </button>
+
         <button
           onClick={handlePublishSelected}
           disabled={publishing || Object.values(selectedIds).filter(Boolean).length === 0}
@@ -452,21 +549,32 @@ const PublishResults = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {activeResult.subjectResults.map((sub, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #EEE' }}>
-                        <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>{sub.subjectCode}</td>
-                        <td style={{ padding: '0.6rem', fontWeight: '600' }}>{sub.subjectName}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.credits}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.marksObtained} / {sub.maxMarks}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--color-gold)' }}>{sub.grade}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.gradePoint}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>
-                          <Badge variant={sub.result === 'PASS' ? 'success' : 'danger'}>
-                            {sub.result}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {activeResult.subjectResults.map((sub, idx) => {
+                      const isInc = sub.isIncomplete || sub.result === 'INCOMPLETE' || sub.grade === 'Incomplete';
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #EEE', background: isInc ? '#FFFBEB' : 'transparent' }}>
+                          <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>{sub.subjectCode}</td>
+                          <td style={{ padding: '0.6rem', fontWeight: '600' }}>{sub.subjectName}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.credits}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                            {isInc ? (
+                              <span style={{ color: '#d97706', fontStyle: 'italic', fontWeight: '600' }}>Result incomplete</span>
+                            ) : (
+                              `${sub.marksObtained} / ${sub.maxMarks}`
+                            )}
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 'bold', color: isInc ? '#d97706' : 'var(--color-gold)' }}>
+                            {isInc ? 'Incomplete' : sub.grade}
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>{isInc ? '-' : sub.gradePoint}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                            <Badge variant={sub.result === 'PASS' ? 'success' : (isInc ? 'warning' : 'danger')}>
+                              {isInc ? 'Result incomplete' : sub.result}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

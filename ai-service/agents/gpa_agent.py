@@ -53,8 +53,31 @@ class GPAAgent:
                 total_credits = 0.0
                 total_grade_points = 0.0
                 student_failed = False
+                student_has_incomplete = False
 
                 for sub in student.get("subjects", []):
+                    # Check if subject evaluation is incomplete
+                    if sub.get("isIncomplete"):
+                        student_has_incomplete = True
+                        subject_results.append({
+                            "examId": sub.get("examId"),
+                            "subjectId": sub.get("subjectId"),
+                            "subjectCode": sub.get("subjectCode"),
+                            "subjectName": sub.get("subjectName"),
+                            "credits": sub.get("credits", 4),
+                            "maxMarks": sub.get("maxMarks", 100.0),
+                            "marksObtained": None,
+                            "percentage": None,
+                            "grade": "Incomplete",
+                            "gradePoint": None,
+                            "gradePointsEarned": 0.0,
+                            "isPassed": False,
+                            "isIncomplete": True,
+                            "missingAssessments": sub.get("missingAssessments", []),
+                            "result": "INCOMPLETE"
+                        })
+                        continue
+
                     marks_obtained = sub.get("marksObtained", 0.0)
                     max_marks = sub.get("maxMarks", 100.0)
                     credits = sub.get("credits", 4)
@@ -98,20 +121,27 @@ class GPAAgent:
                         "gradePoint": grade_point,
                         "gradePointsEarned": grade_points_earned,
                         "isPassed": is_passed,
+                        "isIncomplete": False,
                         "result": "PASS" if is_passed else "FAIL"
                     })
 
                     total_credits += credits
                     total_grade_points += grade_points_earned
 
-                # Compute SGPA
+                # Compute SGPA (only on completed subjects)
                 if total_credits > 0:
                     sgpa = total_grade_points / total_credits
                 else:
                     sgpa = 0.0
                 sgpa = round(sgpa, 2)
 
-                overall_result = "FAIL" if student_failed else "PASS"
+                if student_has_incomplete:
+                    overall_result = "INCOMPLETE"
+                elif student_failed:
+                    overall_result = "FAIL"
+                else:
+                    overall_result = "PASS"
+
                 if overall_result == "PASS":
                     pass_count += 1
                 else:
@@ -134,6 +164,8 @@ class GPAAgent:
                     "totalCredits": total_credits,
                     "totalGradePoints": total_grade_points,
                     "sgpa": sgpa,
+                    "isProvisional": student_has_incomplete,
+                    "hasIncompleteSubjects": student_has_incomplete,
                     "overallResult": overall_result
                 })
 

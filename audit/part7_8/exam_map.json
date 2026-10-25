@@ -1,0 +1,178 @@
+{
+  "TST401": {
+    "internal1": {
+      "subjectId": "6add77a3073b9a303112eb26",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 4,
+      "examType": "internal1",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb2a",
+      "createdAt": "2026-10-25T03:29:39.911Z",
+      "updatedAt": "2026-10-25T03:29:39.911Z",
+      "__v": 0
+    },
+    "internal2": {
+      "subjectId": "6add77a3073b9a303112eb26",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 4,
+      "examType": "internal2",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb2b",
+      "createdAt": "2026-10-25T03:29:39.927Z",
+      "updatedAt": "2026-10-25T03:29:39.927Z",
+      "__v": 0
+    },
+    "external": {
+      "subjectId": "6add77a3073b9a303112eb26",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "12:30",
+      "semester": 4,
+      "examType": "external",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb2c",
+      "createdAt": "2026-10-25T03:29:39.929Z",
+      "updatedAt": "2026-10-25T03:29:39.929Z",
+      "__v": 0
+    }
+  },
+  "TST501": {
+    "internal1": {
+      "subjectId": "6add77a3073b9a303112eb27",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 5,
+      "examType": "internal1",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb2d",
+      "createdAt": "2026-10-25T03:29:39.931Z",
+      "updatedAt": "2026-10-25T03:29:39.931Z",
+      "__v": 0
+    },
+    "internal2": {
+      "subjectId": "6add77a3073b9a303112eb27",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 5,
+      "examType": "internal2",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb2e",
+      "createdAt": "2026-10-25T03:29:39.932Z",
+      "updatedAt": "2026-10-25T03:29:39.932Z",
+      "__v": 0
+    },
+    "external": {
+      "subjectId": "6add77a3073b9a303112eb27",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "12:30",
+      "semester": 5,
+      "examType": "external",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb2f",
+      "createdAt": "2026-10-25T03:29:39.934Z",
+      "updatedAt": "2026-10-25T03:29:39.934Z",
+      "__v": 0
+    }
+  },
+  "TST502": {
+    "internal1": {
+      "subjectId": "6add77a3073b9a303112eb28",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 5,
+      "examType": "internal1",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb30",
+      "createdAt": "2026-10-25T03:29:39.935Z",
+      "updatedAt": "2026-10-25T03:29:39.935Z",
+      "__v": 0
+    },
+    "internal2": {
+      "subjectId": "6add77a3073b9a303112eb28",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 5,
+      "examType": "internal2",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb31",
+      "createdAt": "2026-10-25T03:29:39.937Z",
+      "updatedAt": "2026-10-25T03:29:39.937Z",
+      "__v": 0
+    },
+    "external": {
+      "subjectId": "6add77a3073b9a303112eb28",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "12:30",
+      "semester": 5,
+      "examType": "external",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb32",
+      "createdAt": "2026-10-25T03:29:39.939Z",
+      "updatedAt": "2026-10-25T03:29:39.939Z",
+      "__v": 0
+    }
+  },
+  "TST503": {
+    "internal1": {
+      "subjectId": "6add77a3073b9a303112eb29",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 5,
+      "examType": "internal1",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb33",
+      "createdAt": "2026-10-25T03:29:39.940Z",
+      "updatedAt": "2026-10-25T03:29:39.940Z",
+      "__v": 0
+    },
+    "internal2": {
+      "subjectId": "6add77a3073b9a303112eb29",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "semester": 5,
+      "examType": "internal2",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb34",
+      "createdAt": "2026-10-25T03:29:39.942Z",
+      "updatedAt": "2026-10-25T03:29:39.942Z",
+      "__v": 0
+    },
+    "external": {
+      "subjectId": "6add77a3073b9a303112eb29",
+      "examDate": "2099-11-15T09:30:00.000Z",
+      "startTime": "09:30",
+      "endTime": "12:30",
+      "semester": 5,
+      "examType": "external",
+      "componentType": "theory",
+      "status": "completed",
+      "_id": "6add77a3073b9a303112eb35",
+      "createdAt": "2026-10-25T03:29:39.943Z",
+      "updatedAt": "2026-10-25T03:29:39.943Z",
+      "__v": 0
+    }
+  }
+}

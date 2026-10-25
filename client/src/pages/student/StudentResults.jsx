@@ -96,6 +96,9 @@ const StudentResults = () => {
     if (grade === 'P') {
       return { ...base, background: '#E8F0FE', color: '#1A73E8' };
     }
+    if (grade === 'Incomplete') {
+      return { ...base, background: '#FEF3C7', color: '#B45309' };
+    }
     return { ...base, background: '#FCE8E6', color: '#C5221F' }; // F Grade
   };
 
@@ -276,13 +279,13 @@ const StudentResults = () => {
                           <span style={{ fontSize: '0.85rem', color: '#666' }}>
                             AY {result.academicYear}
                           </span>
-                          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-navy)' }}>
-                            SGPA: {result.sgpa.toFixed(2)}
+                          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: (result.isProvisional || result.overallResult === 'INCOMPLETE') ? '#d97706' : 'var(--color-navy)' }}>
+                            SGPA: {result.sgpa !== undefined && result.sgpa !== null ? result.sgpa.toFixed(2) : '-'} {(result.isProvisional || result.overallResult === 'INCOMPLETE') && '(Provisional)'}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <Badge variant={result.overallResult === 'PASS' ? 'success' : 'danger'}>
-                            {result.overallResult}
+                          <Badge variant={result.overallResult === 'PASS' ? 'success' : (result.overallResult === 'INCOMPLETE' ? 'warning' : 'danger')}>
+                            {result.overallResult === 'INCOMPLETE' ? 'Result incomplete' : result.overallResult}
                           </Badge>
                           {isExpanded ? <ChevronUp size={18} color="#666" /> : <ChevronDown size={18} color="#666" />}
                         </div>
@@ -306,24 +309,33 @@ const StudentResults = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {result.subjectResults.map((sub, idx) => (
-                                  <tr key={idx} style={{ borderBottom: '1px solid #EEE' }}>
-                                    <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>{sub.subjectCode}</td>
-                                    <td style={{ padding: '0.6rem', fontWeight: '600' }}>{sub.subjectName}</td>
-                                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.credits}</td>
-                                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.marksObtained} / {sub.maxMarks}</td>
-                                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.percentage}%</td>
-                                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>
-                                      <span style={getGradeBadgeStyle(sub.grade)}>{sub.grade}</span>
-                                    </td>
-                                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.gradePoint}</td>
-                                    <td style={{ padding: '0.6rem', textAlign: 'center' }}>
-                                      <Badge variant={sub.result === 'PASS' ? 'success' : 'danger'}>
-                                        {sub.result}
-                                      </Badge>
-                                    </td>
-                                  </tr>
-                                ))}
+                                {result.subjectResults.map((sub, idx) => {
+                                  const isInc = sub.isIncomplete || sub.result === 'INCOMPLETE' || sub.grade === 'Incomplete';
+                                  return (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #EEE', background: isInc ? '#FFFBEB' : 'transparent' }}>
+                                      <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>{sub.subjectCode}</td>
+                                      <td style={{ padding: '0.6rem', fontWeight: '600' }}>{sub.subjectName}</td>
+                                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.credits}</td>
+                                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                                        {isInc ? (
+                                          <span style={{ color: '#d97706', fontStyle: 'italic', fontWeight: '600' }}>Result incomplete</span>
+                                        ) : (
+                                          `${sub.marksObtained} / ${sub.maxMarks}`
+                                        )}
+                                      </td>
+                                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>{isInc ? '-' : `${sub.percentage}%`}</td>
+                                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                                        <span style={getGradeBadgeStyle(isInc ? 'Incomplete' : sub.grade)}>{isInc ? 'Incomplete' : sub.grade}</span>
+                                      </td>
+                                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>{isInc ? '-' : sub.gradePoint}</td>
+                                      <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                                        <Badge variant={sub.result === 'PASS' ? 'success' : (isInc ? 'warning' : 'danger')}>
+                                          {isInc ? 'Result incomplete' : sub.result}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
@@ -341,7 +353,10 @@ const StudentResults = () => {
                           }}>
                             <span>Total Credits Earned: {result.totalCredits}</span>
                             <span>Total Grade Points: {result.totalGradePoints}</span>
-                            <span>SGPA: {result.sgpa.toFixed(2)}</span>
+                            <span>
+                              SGPA: {result.sgpa !== undefined && result.sgpa !== null ? result.sgpa.toFixed(2) : '-'}
+                              {(result.isProvisional || result.overallResult === 'INCOMPLETE') && ' (Provisional — excludes incomplete subjects)'}
+                            </span>
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#FEF7E0', border: '1px solid #FFEBAA', padding: '0.75rem', borderRadius: '6px', marginTop: '1rem', fontSize: '0.8rem', color: '#B06000' }}>

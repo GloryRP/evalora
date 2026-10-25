@@ -1,0 +1,190 @@
+{
+  "4PM23TST001": {
+    "usn": "4PM23TST001",
+    "actualSGPA": 10,
+    "expectedSGPA": 10,
+    "sgpaMatch": true,
+    "actualCGPA": 9.69,
+    "expectedCGPA": 9.69,
+    "cgpaMatch": true,
+    "actualOverall": "PASS",
+    "expectedOverall": "PASS",
+    "overallMatch": true,
+    "subjects": [
+      {
+        "code": "TST501",
+        "actualMarks": 91,
+        "expectedMarks": 91,
+        "marksMatch": true,
+        "actualGrade": "O",
+        "expectedGrade": "O",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      },
+      {
+        "code": "TST502",
+        "actualMarks": 91,
+        "expectedMarks": 91,
+        "marksMatch": true,
+        "actualGrade": "O",
+        "expectedGrade": "O",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      },
+      {
+        "code": "TST503",
+        "actualMarks": 94,
+        "expectedMarks": 94,
+        "marksMatch": true,
+        "actualGrade": "O",
+        "expectedGrade": "O",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      }
+    ]
+  },
+  "4PM23TST002": {
+    "usn": "4PM23TST002",
+    "actualSGPA": 6.67,
+    "expectedSGPA": 6.67,
+    "sgpaMatch": true,
+    "actualCGPA": 6.77,
+    "expectedCGPA": 6.77,
+    "cgpaMatch": true,
+    "actualOverall": "PASS",
+    "expectedOverall": "PASS",
+    "overallMatch": true,
+    "subjects": [
+      {
+        "code": "TST501",
+        "actualMarks": 60,
+        "expectedMarks": 60,
+        "marksMatch": true,
+        "actualGrade": "B+",
+        "expectedGrade": "B+",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      },
+      {
+        "code": "TST502",
+        "actualMarks": 58,
+        "expectedMarks": 58,
+        "marksMatch": true,
+        "actualGrade": "B",
+        "expectedGrade": "B",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      },
+      {
+        "code": "TST503",
+        "actualMarks": 69,
+        "expectedMarks": 69,
+        "marksMatch": true,
+        "actualGrade": "B+",
+        "expectedGrade": "B+",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      }
+    ]
+  },
+  "4PM23TST003": {
+    "usn": "4PM23TST003",
+    "actualSGPA": 3.56,
+    "expectedSGPA": 3.56,
+    "sgpaMatch": true,
+    "actualCGPA": 3.56,
+    "expectedCGPA": 3.56,
+    "cgpaMatch": true,
+    "actualOverall": "FAIL",
+    "expectedOverall": "FAIL",
+    "overallMatch": true,
+    "subjects": [
+      {
+        "code": "TST501",
+        "actualMarks": 40,
+        "expectedMarks": 40,
+        "marksMatch": true,
+        "actualGrade": "P",
+        "expectedGrade": "P",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      },
+      {
+        "code": "TST502",
+        "actualMarks": 39,
+        "expectedMarks": 39,
+        "marksMatch": true,
+        "actualGrade": "F",
+        "expectedGrade": "F",
+        "gradeMatch": true,
+        "actualResult": "FAIL",
+        "expectedResult": "FAIL",
+        "resultMatch": true
+      },
+      {
+        "code": "TST503",
+        "actualMarks": 70,
+        "expectedMarks": 70,
+        "marksMatch": true,
+        "actualGrade": "A",
+        "expectedGrade": "A",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      }
+    ]
+  },
+  "4PM23TST004": {
+    "usn": "4PM23TST004",
+    "actualSGPA": 3,
+    "expectedSGPA": 3,
+    "sgpaMatch": true,
+    "actualCGPA": 3,
+    "expectedCGPA": 3,
+    "cgpaMatch": true,
+    "actualOverall": "FAIL",
+    "expectedOverall": "FAIL",
+    "overallMatch": true,
+    "subjects": [
+      {
+        "code": "TST501",
+        "actualMarks": 0,
+        "expectedMarks": 0,
+        "marksMatch": true,
+        "actualGrade": "F",
+        "expectedGrade": "F",
+        "gradeMatch": true,
+        "actualResult": "FAIL",
+        "expectedResult": "FAIL",
+        "resultMatch": true
+      },
+      {
+        "code": "TST502",
+        "actualMarks": 60,
+        "expectedMarks": 60,
+        "marksMatch": true,
+        "actualGrade": "B+",
+        "expectedGrade": "B+",
+        "gradeMatch": true,
+        "actualResult": "PASS",
+        "expectedResult": "PASS",
+        "resultMatch": true
+      }
+    ]
+  }
+}

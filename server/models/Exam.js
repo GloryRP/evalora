@@ -28,6 +28,11 @@ const examSchema = new mongoose.Schema({
     min: 1,
     max: 8,
   },
+  academicYear: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   examType: {
     type: String,
     enum: ['internal1', 'internal2', 'external', 'makeup'],
@@ -50,5 +55,6 @@ const examSchema = new mongoose.Schema({
 // Index for efficient queries
 examSchema.index({ examDate: 1, startTime: 1 });
 examSchema.index({ semester: 1, status: 1 });
+examSchema.index({ semester: 1, academicYear: 1 });
 
 module.exports = mongoose.model('Exam', examSchema);

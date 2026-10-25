@@ -213,11 +213,29 @@ const ResultsView = () => {
                     <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: 'var(--color-navy)' }}>{r.studentId?.name || 'Jane Smith'}</td>
                     <td style={{ padding: '0.75rem 1rem', color: '#555' }}>{r.department}</td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>{r.semester}</td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700' }}>{r.sgpa.toFixed(2)}</td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700', color: 'var(--color-gold)' }}>{r.cgpa.toFixed(2)}</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700' }}>
+                      {r.isProvisional || r.overallResult === 'INCOMPLETE' ? (
+                        <div>
+                          <span>{r.sgpa !== undefined && r.sgpa !== null ? r.sgpa.toFixed(2) : '-'}</span>
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: '#d97706', fontWeight: 'bold' }}>Provisional</span>
+                        </div>
+                      ) : (
+                        r.sgpa !== undefined && r.sgpa !== null ? r.sgpa.toFixed(2) : '-'
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: '700', color: 'var(--color-gold)' }}>
+                      {r.isProvisional || r.overallResult === 'INCOMPLETE' ? (
+                        <div>
+                          <span>{r.cgpa !== undefined && r.cgpa !== null ? r.cgpa.toFixed(2) : '-'}</span>
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: '#d97706', fontWeight: 'bold' }}>Provisional</span>
+                        </div>
+                      ) : (
+                        r.cgpa !== undefined && r.cgpa !== null ? r.cgpa.toFixed(2) : '-'
+                      )}
+                    </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                      <Badge variant={r.overallResult === 'PASS' ? 'success' : 'danger'}>
-                        {r.overallResult}
+                      <Badge variant={r.overallResult === 'PASS' ? 'success' : (r.overallResult === 'INCOMPLETE' ? 'warning' : 'danger')}>
+                        {r.overallResult === 'INCOMPLETE' ? 'Result incomplete' : r.overallResult}
                       </Badge>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
@@ -315,21 +333,32 @@ const ResultsView = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {activeResult.subjectResults.map((sub, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #EEE' }}>
-                        <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>{sub.subjectCode}</td>
-                        <td style={{ padding: '0.6rem', fontWeight: '600' }}>{sub.subjectName}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.credits}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.marksObtained} / {sub.maxMarks}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--color-gold)' }}>{sub.grade}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.gradePoint}</td>
-                        <td style={{ padding: '0.6rem', textAlign: 'center' }}>
-                          <Badge variant={sub.result === 'PASS' ? 'success' : 'danger'}>
-                            {sub.result}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {activeResult.subjectResults.map((sub, idx) => {
+                      const isInc = sub.isIncomplete || sub.result === 'INCOMPLETE' || sub.grade === 'Incomplete';
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #EEE', background: isInc ? '#FFFBEB' : 'transparent' }}>
+                          <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>{sub.subjectCode}</td>
+                          <td style={{ padding: '0.6rem', fontWeight: '600' }}>{sub.subjectName}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>{sub.credits}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                            {isInc ? (
+                              <span style={{ color: '#d97706', fontStyle: 'italic', fontWeight: '600' }}>Result incomplete</span>
+                            ) : (
+                              `${sub.marksObtained} / ${sub.maxMarks}`
+                            )}
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 'bold', color: isInc ? '#d97706' : 'var(--color-gold)' }}>
+                            {isInc ? 'Incomplete' : sub.grade}
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>{isInc ? '-' : sub.gradePoint}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                            <Badge variant={sub.result === 'PASS' ? 'success' : (isInc ? 'warning' : 'danger')}>
+                              {isInc ? 'Result incomplete' : sub.result}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

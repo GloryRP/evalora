@@ -1,0 +1,213 @@
+{
+  "timestamp": "2026-10-25T06:57:36.424Z",
+  "tests": [
+    {
+      "testId": "TEST-1-MISSING-INTERNAL-2",
+      "scenario": "Student missing Internal 2 assessment for TST501",
+      "expected": {
+        "subjectIncomplete": true,
+        "grade": "Incomplete",
+        "result": "INCOMPLETE",
+        "missingAssessments": [
+          "Internal 2"
+        ],
+        "excludedFromCredits": true,
+        "totalCredits": 5,
+        "sgpa": 9,
+        "isProvisional": true,
+        "overallResult": "INCOMPLETE"
+      },
+      "actual": {
+        "subjectIncomplete": true,
+        "grade": "Incomplete",
+        "result": "INCOMPLETE",
+        "missingAssessments": [
+          "Internal 2"
+        ],
+        "totalCredits": 5,
+        "sgpa": 9,
+        "isProvisional": true,
+        "overallResult": "INCOMPLETE"
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-2-MISSING-SUBJECT",
+      "scenario": "Student enrolled in Sem 5 with zero scripts for TST503",
+      "expected": {
+        "subjectIncomplete": true,
+        "grade": "Incomplete",
+        "result": "INCOMPLETE",
+        "missingAssessments": [
+          "Internal 1",
+          "Internal 2",
+          "External"
+        ],
+        "excludedFromCredits": true,
+        "totalCredits": 7,
+        "sgpa": 10,
+        "isProvisional": true,
+        "overallResult": "INCOMPLETE"
+      },
+      "actual": {
+        "subjectIncomplete": true,
+        "grade": "Incomplete",
+        "result": "INCOMPLETE",
+        "missingAssessments": [
+          "Internal 1",
+          "Internal 2",
+          "External"
+        ],
+        "totalCredits": 7,
+        "sgpa": 10,
+        "isProvisional": true,
+        "overallResult": "INCOMPLETE"
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-3-MISSING-EXTERNAL",
+      "scenario": "Student missing External exam for TST501",
+      "expected": {
+        "subjectIncomplete": true,
+        "grade": "Incomplete",
+        "result": "INCOMPLETE",
+        "missingAssessments": [
+          "External"
+        ],
+        "totalCredits": 5,
+        "sgpa": 9,
+        "isProvisional": true,
+        "overallResult": "INCOMPLETE"
+      },
+      "actual": {
+        "subjectIncomplete": true,
+        "grade": "Incomplete",
+        "result": "INCOMPLETE",
+        "missingAssessments": [
+          "External"
+        ],
+        "totalCredits": 5,
+        "sgpa": 9,
+        "isProvisional": true,
+        "overallResult": "INCOMPLETE"
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-4-COMPLETE-STUDENT-UNCHANGED",
+      "scenario": "Complete student with all assessments submitted and evaluated",
+      "expected": {
+        "allSubjectsComplete": true,
+        "allGradesO": true,
+        "overallResult": "PASS",
+        "isProvisional": false,
+        "totalCredits": 9,
+        "sgpa": 10,
+        "cgpa": 9.69
+      },
+      "actual": {
+        "allSubjectsComplete": true,
+        "allGradesO": true,
+        "overallResult": "PASS",
+        "isProvisional": false,
+        "totalCredits": 9,
+        "sgpa": 10,
+        "cgpa": 9.69
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-5-CGPA-TWO-SEMESTERS-INCOMPLETE",
+      "scenario": "Cumulative CGPA across Sem 4 (4 cr, 36 pts) and Sem 5 (7 cr completed, 1 sub 2 cr incomplete)",
+      "expected": {
+        "sem5CompletedCredits": 7,
+        "sem5GradePoints": 70,
+        "sem5ProvisionalSgpa": 10,
+        "cumulativeCredits": 11,
+        "cumulativeGradePoints": 106,
+        "provisionalCgpa": 9.64,
+        "isProvisional": true
+      },
+      "actual": {
+        "sem5CompletedCredits": 7,
+        "sem5GradePoints": 70,
+        "sem5ProvisionalSgpa": 10,
+        "provisionalCgpa": 9.64,
+        "isProvisional": true
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-6-BLOCK-PUBLISH-ALL",
+      "scenario": "Attempting to Publish All Results when incomplete evaluations exist in the cohort",
+      "expected": {
+        "httpStatus": 400,
+        "blockedByIncomplete": true,
+        "messageContainsIncomplete": true
+      },
+      "actual": {
+        "blocked": true,
+        "blockedByIncomplete": true,
+        "message": "Cannot publish all results: 4 student(s) have incomplete subject evaluations: 4PM23TST002 (TST501); 4PM23TST003 (TST503); 4PM23TST004 (TST501); 4PM23TST005 (TST503). Complete the missing evaluations or choose 'Publish Complete Results Only'."
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-7-PUBLISH-COMPLETE-ONLY",
+      "scenario": "Publish Complete Results Only publishes only complete students and withholds incomplete",
+      "expected": {
+        "httpStatus": 200,
+        "publishedCount": 1,
+        "heldBackCount": 4,
+        "student001Published": true,
+        "incompleteHeldBack": true
+      },
+      "actual": {
+        "httpStatus": 200,
+        "publishedCount": 1,
+        "heldBackCount": 4,
+        "student001Published": true,
+        "incompleteHeldBack": true
+      },
+      "status": "PASS"
+    },
+    {
+      "testId": "TEST-8-STUDENT-MY-RESULTS-VIEW",
+      "scenario": "Student 001 views their published results in /my-results",
+      "expected": {
+        "httpStatus": 200,
+        "sem5Found": true,
+        "sgpa": 10,
+        "cgpa": 9.69,
+        "overallResult": "PASS"
+      },
+      "actual": {
+        "httpStatus": 200,
+        "sem5Found": true,
+        "sgpa": 10,
+        "cgpa": 9.69,
+        "overallResult": "PASS"
+      },
+      "status": "PASS"
+    }
+  ],
+  "baselineCounts": {
+    "users": 157,
+    "students": 138,
+    "faculties": 11,
+    "subjects": 17,
+    "scripts": 1,
+    "results": 1,
+    "notifications": 289
+  },
+  "finalCounts": {
+    "users": 157,
+    "students": 138,
+    "faculties": 11,
+    "subjects": 17,
+    "scripts": 1,
+    "results": 1,
+    "notifications": 289
+  }
+}

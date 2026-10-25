@@ -21,8 +21,10 @@ const subjectResultSchema = new mongoose.Schema({
   isPassed: Boolean,
   result: { 
     type: String, 
-    enum: ['PASS', 'FAIL'] 
-  }
+    enum: ['PASS', 'FAIL', 'INCOMPLETE'] 
+  },
+  isIncomplete: { type: Boolean, default: false },
+  missingAssessments: [{ type: String }]
 });
 
 const resultSchema = new mongoose.Schema({
@@ -43,9 +45,11 @@ const resultSchema = new mongoose.Schema({
   totalGradePoints: Number,
   sgpa: Number,
   cgpa: Number,
+  isProvisional: { type: Boolean, default: false },
+  hasIncompleteSubjects: { type: Boolean, default: false },
   overallResult: { 
     type: String, 
-    enum: ['PASS', 'FAIL', 'WITHHELD'] 
+    enum: ['PASS', 'FAIL', 'WITHHELD', 'INCOMPLETE', 'PROVISIONAL'] 
   },
 
   // Publishing

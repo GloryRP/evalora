@@ -1,0 +1,82 @@
+{
+  "suite": "Part 8: Student Views & Security Audit",
+  "timestamp": "2026-10-25T03:33:30.567Z",
+  "tests": [
+    {
+      "testId": "STUDENT_001_VIEW_ALL_RESULTS",
+      "endpoint": "GET /api/v1/results/my-results",
+      "status": "PASS",
+      "httpStatus": 200,
+      "semestersReturned": [
+        4,
+        5
+      ],
+      "evidence": "Returned 2 published semesters (Semesters 4 and 5)."
+    },
+    {
+      "testId": "STUDENT_001_VIEW_SEM5_DETAILS",
+      "endpoint": "GET /api/v1/results/my-results/5",
+      "status": "PASS",
+      "httpStatus": 200,
+      "data": {
+        "sgpa": 10,
+        "cgpa": 9.69,
+        "overallResult": "PASS",
+        "subjectsCount": 3
+      },
+      "evidence": "SGPA: 10, CGPA: 9.69, Overall: PASS"
+    },
+    {
+      "testId": "STUDENT_003_BOUNDARY_ACCURACY",
+      "endpoint": "GET /api/v1/results/my-results/5",
+      "status": "PASS",
+      "details": {
+        "s1_40marks": "40/100 -> Grade P (PASS)",
+        "s2_39marks": "39/100 -> Grade F (FAIL)",
+        "s3_70marks": "70/100 -> Grade A (PASS)",
+        "overall": "FAIL",
+        "sgpa": 3.56
+      },
+      "evidence": "S1 (40%) PASSED with Grade P; S2 (39%) FAILED with Grade F; Overall result marked FAIL."
+    },
+    {
+      "testId": "STUDENT_004_ZERO_AND_ABSENT_HANDLING",
+      "endpoint": "GET /api/v1/results/my-results/5",
+      "status": "PASS",
+      "details": {
+        "s1_zeros": "0/100 Grade F (FAIL)",
+        "s2_normal": "60/100 Grade B+ (PASS)",
+        "s3_absent": "Absent/Omitted from subject list",
+        "sgpa": 3,
+        "overall": "FAIL"
+      },
+      "evidence": "S1 calculated with 0 marks (Grade F, GP 0); S3 omitted because student had no answer scripts; overall marked FAIL."
+    },
+    {
+      "testId": "STUDENT_005_EMPTY_STATE",
+      "endpoint": "GET /api/v1/results/my-results and /my-results/5",
+      "status": "PASS",
+      "resultsCount": 0,
+      "sem5Status": 404,
+      "evidence": "Returned 0 published results for student with no exams. Single semester endpoint returned status: 404"
+    },
+    {
+      "testId": "RBAC_STUDENT_IDOR_EXAMCELL_ENDPOINT",
+      "endpoint": "GET /api/v1/results/:studentId",
+      "status": "PASS",
+      "evidence": "Status 403 Forbidden. Student role is blocked by authorize(\"examcell\") middleware."
+    },
+    {
+      "testId": "RBAC_STUDENT_COMPUTE_BLOCKED",
+      "endpoint": "POST /api/v1/results/compute",
+      "status": "PASS",
+      "evidence": "Status 403 Forbidden. Student role blocked by authorize(\"examcell\") middleware."
+    },
+    {
+      "testId": "AUTH_MISSING_TOKEN_BLOCKED",
+      "endpoint": "GET /api/v1/results/my-results",
+      "status": "PASS",
+      "evidence": "Status 401 Unauthorized. Access denied without JWT token."
+    }
+  ]
+}

@@ -1801,7 +1801,7 @@ exports.getEvaluationsForReview = async (req, res) => {
  */
 exports.publishResults = async (req, res) => {
   try {
-    const { semester, department } = req.body;
+    const { semester, department, academicYear } = req.body;
 
     if (!semester) {
       return res.status(400).json({ success: false, message: 'Semester is required to publish results' });
@@ -1815,13 +1815,17 @@ exports.publishResults = async (req, res) => {
         populate: { path: 'subjectId' }
       });
 
-    // Filter to get only scripts for the selected semester
-    const semesterScripts = allScripts.filter(s => s.examId && s.examId.semester === parseInt(semester));
+    // Filter to get only scripts for the selected semester and optional academicYear (D-2 fix)
+    const semesterScripts = allScripts.filter(s => {
+      if (!s.examId || s.examId.semester !== parseInt(semester)) return false;
+      if (academicYear && s.examId.academicYear && s.examId.academicYear !== academicYear) return false;
+      return true;
+    });
 
     if (semesterScripts.length === 0) {
       return res.status(400).json({ 
         success: false, 
-        message: `No answer scripts found for Semester ${semester}.` 
+        message: `No answer scripts found for Semester ${semester}${academicYear ? ' (' + academicYear + ')' : ''}.` 
       });
     }
 
@@ -1857,9 +1861,10 @@ exports.publishResults = async (req, res) => {
     const publishedIds = [];
 
     for (const script of relevantScripts) {
-      script.status = 'published';
-      script.publishedAt = new Date();
-      await script.save();
+      await AnswerScript.updateOne(
+        { _id: script._id },
+        { status: 'published', publishedAt: new Date() }
+      );
       publishedIds.push(script._id);
 
       // Trigger student notification for published result

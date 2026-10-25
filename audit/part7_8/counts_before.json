@@ -1,0 +1,13 @@
+{
+  "database": "examdb",
+  "timestamp": "2026-10-25T08:40:00+05:30",
+  "counts": {
+    "users": 151,
+    "students": 135,
+    "faculties": 8,
+    "subjects": 14,
+    "scripts": 0,
+    "results": 0,
+    "notifications": 340
+  }
+}

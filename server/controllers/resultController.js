@@ -31,20 +31,22 @@ const sendResultEmail = async (studentUser, result, instName) => {
     });
 
     const isPass = result.overallResult === 'PASS';
-    const statusColor = isPass ? '#2D7A5F' : '#ef4444';
+    const isIncompleteOverall = result.overallResult === 'INCOMPLETE' || result.isProvisional;
+    const statusColor = isPass ? '#2D7A5F' : (isIncompleteOverall ? '#d97706' : '#ef4444');
 
     const rows = result.subjectResults.map((r, i) => {
-      const rowBg = r.grade === 'F' ? '#FEE2E2' : (i % 2 === 0 ? 'white' : '#f8f9fa');
+      const isSubIncomplete = r.result === 'INCOMPLETE' || r.isIncomplete || r.grade === 'Incomplete';
+      const rowBg = isSubIncomplete ? '#FEF3C7' : (r.grade === 'F' ? '#FEE2E2' : (i % 2 === 0 ? 'white' : '#f8f9fa'));
       return `
         <tr style="background:${rowBg}">
           <td style="padding:10px; border:1px solid #dee2e6;">${r.subjectName}</td>
           <td style="padding:10px; border:1px solid #dee2e6; text-align:center; font-family:monospace;">${r.subjectCode}</td>
           <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${r.credits}</td>
-          <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${r.marksObtained} / ${r.maxMarks}</td>
-          <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${r.percentage}%</td>
-          <td style="padding:10px; border:1px solid #dee2e6; text-align:center; font-weight:bold; color:#C9A227;">${r.grade}</td>
-          <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${r.gradePoint}</td>
-          <td style="padding:10px; border:1px solid #dee2e6; text-align:center; font-weight:bold; color:${r.result === 'PASS' ? '#2D7A5F' : '#ef4444'}">${r.result}</td>
+          <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${isSubIncomplete ? '<span style="color:#d97706; font-style:italic;">Result incomplete</span>' : `${r.marksObtained} / ${r.maxMarks}`}</td>
+          <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${isSubIncomplete ? '-' : `${r.percentage}%`}</td>
+          <td style="padding:10px; border:1px solid #dee2e6; text-align:center; font-weight:bold; color:${isSubIncomplete ? '#d97706' : '#C9A227'};">${isSubIncomplete ? 'Incomplete' : r.grade}</td>
+          <td style="padding:10px; border:1px solid #dee2e6; text-align:center;">${isSubIncomplete ? '-' : r.gradePoint}</td>
+          <td style="padding:10px; border:1px solid #dee2e6; text-align:center; font-weight:bold; color:${r.result === 'PASS' ? '#2D7A5F' : (isSubIncomplete ? '#d97706' : '#ef4444')}">${isSubIncomplete ? 'Result incomplete' : r.result}</td>
         </tr>
       `;
     }).join('');
@@ -77,22 +79,24 @@ const sendResultEmail = async (studentUser, result, instName) => {
             </table>
           </div>
 
-          <div style="display:flex; justify-content:space-around; background:#f0f4f8; border:1px solid #d0dbe5; border-radius:6px; padding:16px; margin:20px 0; text-align:center;">
-            <div style="flex:1;">
-              <div style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase;">SGPA</div>
-              <div style="font-size:24px; font-weight:bold; color:#1E3A5F; margin-top:4px;">${result.sgpa.toFixed(2)}</div>
-            </div>
-            <div style="flex:1; border-left:1px solid #d0dbe5; border-right:1px solid #d0dbe5;">
-              <div style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase;">Cumulative GPA</div>
-              <div style="font-size:24px; font-weight:bold; color:#1E3A5F; margin-top:4px;">${result.cgpa.toFixed(2)}</div>
-            </div>
-            <div style="flex:1;">
-              <div style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase;">Overall Result</div>
-              <div style="font-size:16px; font-weight:bold; color:white; background:${statusColor}; display:inline-block; padding:4px 12px; border-radius:4px; margin-top:8px; text-transform:uppercase;">
-                ${result.overallResult}
-              </div>
-            </div>
-          </div>
+          <table style="width:100%; border-collapse:collapse; background:#f0f4f8; border:1px solid #d0dbe5; border-radius:6px; margin:20px 0;">
+            <tr>
+              <td style="width:33.33%; padding:16px 12px; text-align:center; border-right:1px solid #d0dbe5; vertical-align:top;">
+                <div style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:0.05em;">SGPA</div>
+                <div style="font-size:26px; font-weight:bold; color:#1E3A5F; margin-top:6px;">${result.sgpa.toFixed(2)}</div>
+              </td>
+              <td style="width:33.33%; padding:16px 12px; text-align:center; border-right:1px solid #d0dbe5; vertical-align:top;">
+                <div style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:0.05em;">Cumulative GPA</div>
+                <div style="font-size:26px; font-weight:bold; color:#1E3A5F; margin-top:6px;">${result.cgpa.toFixed(2)}</div>
+              </td>
+              <td style="width:33.33%; padding:16px 12px; text-align:center; vertical-align:top;">
+                <div style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:0.05em;">Overall Result</div>
+                <div style="margin-top:8px;">
+                  <span style="font-size:16px; font-weight:bold; color:white; background:${statusColor}; display:inline-block; padding:5px 14px; border-radius:4px; text-transform:uppercase;">${result.overallResult}</span>
+                </div>
+              </td>
+            </tr>
+          </table>
 
           <h3 style="color:#1E3A5F; border-bottom: 2px solid #C9A227; padding-bottom: 8px; margin-top:24px;">Subject-wise Breakdown</h3>
           <table style="width:100%; border-collapse:collapse; font-size: 13px; margin-bottom:20px;">
@@ -115,7 +119,7 @@ const sendResultEmail = async (studentUser, result, instName) => {
 
           <div style="background:#fff3cd; border:1px solid #ffc107; padding:12px; margin:16px 0; border-radius:4px; font-size:13px; color:#856404; line-height:1.5;">
             <strong>Important Notice:</strong><br/>
-            Login to the portal to view your detailed results and performance analysis. Contact Exam Cell for re-evaluation requests within 7 days of result publication.
+            Login to the portal to view your detailed results and performance analysis. Contact the Exam Cell for any queries about your result.
           </div>
         </div>
 
@@ -222,28 +226,43 @@ exports.computeResults = async (req, res) => {
       return res.status(400).json({ success: false, message: 'semester and academicYear are required' });
     }
 
-    // Find all evaluated answer scripts
+    // Find all evaluated answer scripts — filter by semester AND academicYear at DB level (D-2 fix)
     const scripts = await AnswerScript.find({ status: { $in: ['evaluated', 'published'] } })
       .populate('studentId')
       .populate({
         path: 'examId',
+        match: {
+          semester: parseInt(semester),
+          ...(academicYear ? {
+            $or: [
+              { academicYear: academicYear },
+              { academicYear: { $in: ['', null] } }
+            ]
+          } : {})
+        },
         populate: { path: 'subjectId' }
       });
 
-    // Filter by semester and optionally department
+    // Filter in-memory: keep only scripts where examId populated (matches semester+academicYear) and dept
     let filteredScripts = scripts.filter(s => {
       if (!s.studentId || !s.examId || !s.examId.subjectId) return false;
       
-      const semMatch = s.examId.semester === parseInt(semester);
       const deptMatch = !department || 
         s.studentId.department?.trim().toLowerCase() === department.trim().toLowerCase();
       
-      return semMatch && deptMatch;
+      return deptMatch;
     });
 
     if (filteredScripts.length === 0) {
       return res.status(404).json({ success: false, message: 'No evaluated answer scripts found for the selected criteria' });
     }
+
+    // Find all subjects defined for this semester (and department if specified)
+    const subQuery = { semester: parseInt(semester) };
+    if (department) {
+      subQuery.department = { $regex: new RegExp('^' + department.trim() + '$', 'i') };
+    }
+    const semesterSubjects = await Subject.find(subQuery);
 
     // Group scripts by student
     const studentRawScripts = {};
@@ -260,25 +279,40 @@ exports.computeResults = async (req, res) => {
     });
 
     const studentsInput = [];
+    const incompleteStudentsList = [];
+
     for (const studentId of Object.keys(studentRawScripts)) {
       const { student, scripts } = studentRawScripts[studentId];
       
+      // Collect all subjects for this student (all semester subjects + any in student's scripts)
+      const allSubjectMap = {};
+      semesterSubjects.forEach(sub => {
+        allSubjectMap[sub._id.toString()] = sub;
+      });
+      scripts.forEach(s => {
+        if (s.examId?.subjectId) {
+          allSubjectMap[s.examId.subjectId._id.toString()] = s.examId.subjectId;
+        }
+      });
+
       // Group scripts by subject ID
       const subjectScripts = {};
+      for (const subId of Object.keys(allSubjectMap)) {
+        subjectScripts[subId] = {
+          subject: allSubjectMap[subId],
+          internal1: null,
+          internal2: null,
+          external: null,
+          representativeExamId: null
+        };
+      }
+
       scripts.forEach(s => {
-        const subId = s.examId.subjectId._id.toString();
-        if (!subjectScripts[subId]) {
-          subjectScripts[subId] = {
-            subject: s.examId.subjectId,
-            internal1: 0,
-            internal2: 0,
-            external: 0,
-            representativeExamId: s.examId._id
-          };
-        }
+        const subId = s.examId?.subjectId?._id?.toString();
+        if (!subId || !subjectScripts[subId]) return;
         
         const examType = s.examId.examType;
-        const marks = s.marksObtained || 0;
+        const marks = (s.marksObtained !== null && s.marksObtained !== undefined) ? s.marksObtained : null;
         
         if (examType === 'internal1') {
           subjectScripts[subId].internal1 = marks;
@@ -287,30 +321,68 @@ exports.computeResults = async (req, res) => {
         } else {
           // external, makeup or regular
           subjectScripts[subId].external = marks;
-          subjectScripts[subId].representativeExamId = s.examId._id;
         }
+        subjectScripts[subId].representativeExamId = s.examId._id;
       });
       
       const subjectsPayload = [];
+      const studentIncompleteSubs = [];
+
       for (const subId of Object.keys(subjectScripts)) {
         const item = subjectScripts[subId];
-        
-        // VTU: CIE = (internal1 + internal2) / 2 (since each internal is out of 50)
-        const cie = (item.internal1 + item.internal2) / 2;
-        
-        // VTU: SEE = external (out of 100) scaled to 50
-        const seeScaled = item.external / 2;
-        
-        const finalScore = cie + seeScaled;
-        
-        subjectsPayload.push({
-          examId: item.representativeExamId.toString(),
-          subjectId: item.subject._id.toString(),
-          subjectCode: item.subject.subjectCode,
-          subjectName: item.subject.subjectName,
-          credits: item.subject.credits || 4,
-          maxMarks: 100, // Final combined max marks is 100
-          marksObtained: Math.round(finalScore * 100) / 100
+
+        // Stop defaulting missing Internal 1, Internal 2 or External to 0!
+        const missing = [];
+        if (item.internal1 === null || item.internal1 === undefined) missing.push('Internal 1');
+        if (item.internal2 === null || item.internal2 === undefined) missing.push('Internal 2');
+        if (item.external === null || item.external === undefined) missing.push('External');
+
+        if (missing.length > 0) {
+          studentIncompleteSubs.push({
+            subjectCode: item.subject.subjectCode,
+            subjectName: item.subject.subjectName,
+            missingAssessments: missing
+          });
+
+          subjectsPayload.push({
+            examId: item.representativeExamId ? item.representativeExamId.toString() : null,
+            subjectId: item.subject._id.toString(),
+            subjectCode: item.subject.subjectCode,
+            subjectName: item.subject.subjectName,
+            credits: item.subject.credits || 4,
+            maxMarks: 100,
+            marksObtained: null,
+            isIncomplete: true,
+            missingAssessments: missing
+          });
+        } else {
+          // VTU: CIE = (internal1 + internal2) / 2 (since each internal is out of 50)
+          const cie = (item.internal1 + item.internal2) / 2;
+          
+          // VTU: SEE = external (out of 100) scaled to 50
+          const seeScaled = item.external / 2;
+          
+          const finalScore = cie + seeScaled;
+          
+          subjectsPayload.push({
+            examId: item.representativeExamId ? item.representativeExamId.toString() : null,
+            subjectId: item.subject._id.toString(),
+            subjectCode: item.subject.subjectCode,
+            subjectName: item.subject.subjectName,
+            credits: item.subject.credits || 4,
+            maxMarks: 100, // Final combined max marks is 100
+            marksObtained: Math.round(finalScore * 100) / 100,
+            isIncomplete: false
+          });
+        }
+      }
+
+      if (studentIncompleteSubs.length > 0) {
+        incompleteStudentsList.push({
+          studentId: student._id.toString(),
+          usn: student.usn,
+          name: student.name,
+          incompleteSubjects: studentIncompleteSubs
         });
       }
       
@@ -383,6 +455,7 @@ exports.computeResults = async (req, res) => {
       });
 
       // Compute CGPA: CGPA = sum(gradePoint*credits) / sum(credits)
+      // Note: Incomplete subjects are excluded from r.totalGradePoints and r.totalCredits
       let totalPoints = r.totalGradePoints;
       let totalCredits = r.totalCredits;
 
@@ -406,6 +479,8 @@ exports.computeResults = async (req, res) => {
           totalGradePoints: r.totalGradePoints,
           sgpa: r.sgpa,
           cgpa: cgpa,
+          isProvisional: !!(r.isProvisional || r.overallResult === 'INCOMPLETE'),
+          hasIncompleteSubjects: !!(r.hasIncompleteSubjects || r.overallResult === 'INCOMPLETE'),
           overallResult: r.overallResult,
           computedAt: new Date(),
           computedBy: 'GPA_AGENT',
@@ -427,7 +502,9 @@ exports.computeResults = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Results successfully computed for ${savedResults.length} students`,
+      message: `Results successfully computed for ${savedResults.length} students (${incompleteStudentsList.length} incomplete)`,
+      incompleteStudents: incompleteStudentsList,
+      hasIncompleteResults: incompleteStudentsList.length > 0,
       summary: agentResponse.data.summary,
       data: savedResults
     });
@@ -489,7 +566,7 @@ exports.getStudentResults = async (req, res) => {
  */
 exports.publishResults = async (req, res) => {
   try {
-    const { semester, academicYear, department } = req.body;
+    const { semester, academicYear, department, publishCompleteOnly } = req.body;
 
     if (!semester || !academicYear) {
       return res.status(400).json({ success: false, message: 'semester and academicYear are required' });
@@ -510,12 +587,57 @@ exports.publishResults = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No unpublished computed results found matching the criteria' });
     }
 
+    // Identify results with incomplete evaluations
+    const incompleteResults = results.filter(r => 
+      r.overallResult === 'INCOMPLETE' || 
+      r.isProvisional || 
+      r.hasIncompleteSubjects ||
+      r.subjectResults?.some(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')
+    );
+
+    // Block "Publish All Results" while any subject is incomplete
+    if (incompleteResults.length > 0 && !publishCompleteOnly) {
+      const incompleteDetails = incompleteResults.map(r => {
+        const incSubs = r.subjectResults
+          ?.filter(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')
+          .map(s => s.subjectCode);
+        return `${r.usn} (${incSubs && incSubs.length > 0 ? incSubs.join(', ') : 'Incomplete Evaluation'})`;
+      });
+
+      return res.status(400).json({
+        success: false,
+        blockedByIncomplete: true,
+        message: `Cannot publish all results: ${incompleteResults.length} student(s) have incomplete subject evaluations: ${incompleteDetails.join('; ')}. Complete the missing evaluations or choose 'Publish Complete Results Only'.`,
+        incompleteStudents: incompleteDetails
+      });
+    }
+
+    // Determine target results to publish
+    let resultsToPublish = results;
+    if (publishCompleteOnly) {
+      resultsToPublish = results.filter(r => 
+        r.overallResult !== 'INCOMPLETE' && 
+        !r.isProvisional && 
+        !r.hasIncompleteSubjects &&
+        !r.subjectResults?.some(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')
+      );
+
+      if (resultsToPublish.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No fully completed results available to publish'
+        });
+      }
+    }
+
     const config = await InstitutionConfig.findOne() || {};
     const instName = config.institutionName || 'Examination System';
     const publishedAt = new Date();
 
+    const targetIds = resultsToPublish.map(r => r._id);
+
     // Bulk update database fields
-    await Result.updateMany(query, {
+    await Result.updateMany({ _id: { $in: targetIds } }, {
       isPublished: true,
       publishedAt,
       publishedBy: req.user.userId,
@@ -524,7 +646,7 @@ exports.publishResults = async (req, res) => {
     let passCount = 0;
     let totalSgpa = 0;
 
-    for (const result of results) {
+    for (const result of resultsToPublish) {
       if (result.overallResult === 'PASS') passCount++;
       totalSgpa += (result.sgpa || 0);
 
@@ -547,9 +669,9 @@ exports.publishResults = async (req, res) => {
     }
 
     // Send HOD summary alerts
-    const passRate = results.length > 0 ? (passCount / results.length) * 100 : 0;
-    const classAvgSgpa = results.length > 0 ? (totalSgpa / results.length) : 0;
-    const deptName = department || results[0].department;
+    const passRate = resultsToPublish.length > 0 ? (passCount / resultsToPublish.length) * 100 : 0;
+    const classAvgSgpa = resultsToPublish.length > 0 ? (totalSgpa / resultsToPublish.length) : 0;
+    const deptName = department || resultsToPublish[0].department;
 
     const hodUser = await User.findOne({ role: 'hod', department: { $regex: new RegExp('^' + deptName + '$', 'i') } });
     if (hodUser) {
@@ -567,8 +689,9 @@ exports.publishResults = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Successfully published results for ${results.length} students`,
-      count: results.length,
+      message: `Successfully published results for ${resultsToPublish.length} students${publishCompleteOnly ? ' (complete results only)' : ''}`,
+      count: resultsToPublish.length,
+      heldBackCount: results.length - resultsToPublish.length
     });
 
   } catch (error) {
@@ -592,6 +715,19 @@ exports.publishSingleResult = async (req, res) => {
 
     if (result.isPublished) {
       return res.status(400).json({ success: false, message: 'Result is already published' });
+    }
+
+    // Check if result has incomplete evaluations
+    const hasIncomplete = result.overallResult === 'INCOMPLETE' || 
+                          result.isProvisional || 
+                          result.hasIncompleteSubjects ||
+                          result.subjectResults?.some(s => s.result === 'INCOMPLETE' || s.isIncomplete);
+
+    if (hasIncomplete && !req.body.forcePublish) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot publish result for student USN ${result.usn}: has incomplete subject evaluations. Provide forcePublish=true to override.`
+      });
     }
 
     const config = await InstitutionConfig.findOne() || {};
@@ -618,12 +754,12 @@ exports.publishSingleResult = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Successfully published result for student ${result.usn}`,
-      data: result,
+      message: `Result successfully published for student ${result.usn}`,
+      data: result
     });
   } catch (error) {
     console.error('Error publishing single result:', error);
-    res.status(500).json({ success: false, message: 'Failed to publish result', error: error.message });
+    res.status(500).json({ success: false, message: 'Failed to publish single result', error: error.message });
   }
 };
 
