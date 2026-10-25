@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import traceback
@@ -11,6 +11,7 @@ from agents.hall_allocation_agent import HallAllocationAgent
 from agents.invigilator_agent import InvigilatorAgent
 from agents.gpa_agent import GPAAgent
 from agents.analytics_agent import AnalyticsAgent
+from agents.evaluation_agent import EvaluationAgent
 
 app = FastAPI(title="Exam Automation AI Service", version="1.0.0")
 
@@ -51,38 +52,55 @@ hall_allocation_agent = HallAllocationAgent()
 invigilator_agent = InvigilatorAgent()
 gpa_agent = GPAAgent()
 analytics_agent = AnalyticsAgent()
+evaluation_agent = EvaluationAgent()
 orchestrator = Orchestrator(scheduling_agent, hall_allocation_agent, invigilator_agent)
 
 # Pydantic models for request/response
 class SubjectInput(BaseModel):
-    _id: str
+    id: Optional[str] = Field(default="", alias="_id")
     subjectCode: str
-    subjectName: str
-    department: str
+    subjectName: Optional[str] = ""
+    department: Optional[str] = "General"
     semester: int
-    credits: int
+    credits: Optional[int] = 3
     subjectType: Optional[str] = "theory"
     examConfig: Optional[Dict[str, Any]] = None
+    model_config = {"populate_by_name": True}
 
 class StudentInput(BaseModel):
-    _id: str
+    id: Optional[str] = Field(default="", alias="_id")
     usn: str
-    name: str
-    department: str
+    name: Optional[str] = ""
+    department: Optional[str] = "General"
     semester: int
+    model_config = {"populate_by_name": True}
 
 class FacultyInput(BaseModel):
-    _id: str
+    id: Optional[str] = Field(default="", alias="_id")
     employeeId: str
     name: str
     department: str
     designation: str
     subjectsAssigned: Optional[List[str]] = []
+    model_config = {"populate_by_name": True}
 
 class HallInput(BaseModel):
-    _id: str
+    id: Optional[str] = Field(default="", alias="_id")
     hallName: str
     capacity: int
+    model_config = {"populate_by_name": True}
+
+class ScriptInput(BaseModel):
+    scriptId: Optional[str] = None
+    studentId: Optional[str] = None
+    evaluatorId: Optional[str] = None
+    marksObtained: float
+    questionMarks: Optional[List[Dict[str, Any]]] = []
+
+class EvaluateInput(BaseModel):
+    scripts: List[ScriptInput]
+    maxMarks: float
+    passMarkPercentage: float  # from GradingScheme — required; Node returns 400 if missing
 
 class PipelineInput(BaseModel):
     subjects: List[SubjectInput]
@@ -94,8 +112,8 @@ class PipelineInput(BaseModel):
 class ScheduleInput(BaseModel):
     subjects: List[SubjectInput]
     start_date: str
-    exam_category: str
-    component: str
+    exam_category: Optional[str] = "internal1"
+    component: Optional[str] = "theory"
     constraints: Optional[Dict[str, Any]] = {}
 
 class HallAllocationInput(BaseModel):
@@ -151,6 +169,14 @@ def schedule_exams(data: ScheduleInput):
             "timestamp": datetime.utcnow().isoformat(),
             "result": result
         }
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": str(ve),
+                "agent": "scheduling"
+            }
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -168,8 +194,8 @@ def allocate_halls(data: HallAllocationInput):
     Assigns students to halls with anti-malpractice spacing
     """
     try:
-        students_dict = [student.dict() for student in data.students]
-        halls_dict = [hall.dict() for hall in data.halls]
+        students_dict = [student.model_dump(by_alias=True) if hasattr(student, 'model_dump') else student.dict(by_alias=True) for student in data.students]
+        halls_dict = [hall.model_dump(by_alias=True) if hasattr(hall, 'model_dump') else hall.dict(by_alias=True) for hall in data.halls]
         
         result = hall_allocation_agent.run(
             data.exams,
@@ -223,6 +249,35 @@ def assign_invigilators(data: InvigilatorInput):
                 "error": str(e),
                 "traceback": traceback.format_exc(),
                 "agent": "invigilator"
+            }
+        )
+
+@app.post("/agents/evaluate")
+def evaluate_scripts(data: EvaluateInput):
+    """
+    Run evaluation statistics and outlier detection agent (F9)
+    """
+    try:
+        scripts_dict = [s.dict() for s in data.scripts]
+        pass_mark = (data.passMarkPercentage / 100.0) * data.maxMarks
+        result = evaluation_agent.run(
+            scripts=scripts_dict,
+            max_marks=data.maxMarks,
+            pass_mark=pass_mark
+        )
+        return {
+            "success": True,
+            "agent": "evaluation",
+            "timestamp": datetime.utcnow().isoformat(),
+            "result": result
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "agent": "evaluation"
             }
         )
 
@@ -354,7 +409,7 @@ def run_full_pipeline(data: PipelineInput):
         print(f"{'='*60}\n")
         
         raise HTTPException(
-            status_code=500,
+            status_code=400 if isinstance(e, ValueError) else 500,
             detail={
                 "error": str(e),
                 "traceback": traceback.format_exc(),

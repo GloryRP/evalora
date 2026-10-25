@@ -1,24 +1,24 @@
 # AI Pipeline Performance & Constraint Validation
 
-Generated: 2026-10-10T06:44:45.496Z
+Generated: 2026-10-10T13:11:10.113Z
 
 ## Dataset Size Used (Semester 5)
-- **Subjects**: 12
-- **Students**: 13
-- **Faculty**: 10
-- **Halls**: 6
+- **Subjects**: 35
+- **Students**: 418
+- **Faculty**: 33
+- **Halls**: 16
 
 ## Pipeline Latency (5 Consecutive Runs)
 
 | Run # | Status Code | Execution Time (ms) | Result Status |
 |-------|-------------|---------------------|---------------|
-| Run 1 | 200 | **21 ms** | ✅ Success |
-| Run 2 | 200 | **24 ms** | ✅ Success |
-| Run 3 | 200 | **24 ms** | ✅ Success |
-| Run 4 | 200 | **24 ms** | ✅ Success |
-| Run 5 | 200 | **23 ms** | ✅ Success |
+| Run 1 | 200 | **535 ms** | ✅ Success |
+| Run 2 | 200 | **1035 ms** | ✅ Success |
+| Run 3 | 200 | **793 ms** | ✅ Success |
+| Run 4 | 200 | **735 ms** | ✅ Success |
+| Run 5 | 200 | **666 ms** | ✅ Success |
 
-**Average Pipeline Execution Time**: `23 ms` (~0.02 seconds)
+**Average Pipeline Execution Time**: `753 ms` (~0.75 seconds)
 
 ## Validation of Persisted Constraints
 
@@ -29,7 +29,7 @@ Generated: 2026-10-10T06:44:45.496Z
 | **c) Exactly one seat per student per exam (no duplicates)** | ✅ PASS | No duplicate seats per student per exam |
 | **d) No HOD in invigilator pool & no same-dept invigilator** | ✅ PASS | HOD assigned: false, Same-dept assigned: false |
 | **e) No invigilator double-booked in same slot** | ❌ FAIL | Double booking for faculty 6a67619d48abfd1ebf566bac at undefined 09:00 |
-| **f) Morning and Afternoon slot usage** | ✅ PASS | Morning slots: 1, Afternoon slots: 0 |
+| **f) Morning and Afternoon slot usage** | ✅ PASS | Morning slots: 12, Afternoon slots: 0 |
 
 ## Direct FastAPI Agent Verification
 

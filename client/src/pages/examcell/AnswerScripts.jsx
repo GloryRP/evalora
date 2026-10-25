@@ -65,6 +65,35 @@ const AnswerScripts = () => {
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentStats, setAgentStats] = useState(null);
 
+  // Unlock Modal states (F3 Unlock feature)
+  const [unlockingScript, setUnlockingScript] = useState(null);
+  const [unlockReason, setUnlockReason] = useState('');
+  const [submittingUnlock, setSubmittingUnlock] = useState(false);
+
+  const handleUnlockSubmit = async (e) => {
+    e.preventDefault();
+    if (!unlockingScript || !unlockReason.trim()) {
+      toast.error('A reason for unlocking is required.');
+      return;
+    }
+    try {
+      setSubmittingUnlock(true);
+      const res = await api.post(`/faculty/evaluations/${unlockingScript._id}/unlock`, {
+        reason: unlockReason.trim()
+      });
+      if (res.data?.success) {
+        toast.success(res.data.message || 'Answer script unlocked successfully');
+        setUnlockingScript(null);
+        setUnlockReason('');
+        await refreshScripts();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to unlock answer script');
+    } finally {
+      setSubmittingUnlock(false);
+    }
+  };
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -844,28 +873,69 @@ const AnswerScripts = () => {
                             )}
                           </td>
                           <td className="p-3 text-center">
-                            <Badge variant={
-                              script.status === 'published' ? 'gold' :
-                              script.status === 'evaluated' ? 'emerald' :
-                              script.status === 'assigned' ? 'navy' : 'secondary'
-                            }>
-                              {script.status}
-                            </Badge>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                              <Badge variant={
+                                script.status === 'published' ? 'gold' :
+                                script.status === 'evaluated' ? 'emerald' :
+                                script.status === 'assigned' ? 'navy' : 'secondary'
+                              }>
+                                {script.status}
+                              </Badge>
+                              {script.isLocked && (
+                                <span style={{
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: '#FEF3C7',
+                                  color: '#92400E',
+                                  border: '1px solid #FCD34D'
+                                }}>
+                                  🔒 Locked
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3 text-center">
-                            {!script.evaluatorId ? (
-                              <button
-                                onClick={() => handleAssignEvaluator(script._id)}
-                                disabled={assigningId === script._id}
-                                className="px-3 py-1 bg-[#1E3A5F] text-white text-xs font-semibold rounded-lg hover:bg-[#152a46] transition disabled:opacity-50"
-                              >
-                                {assigningId === script._id ? 'Assigning...' : 'Assign'}
-                              </button>
-                            ) : (
-                              <span className="text-xs text-gray-400 font-medium">
-                                {script.status === 'assigned' ? 'Awaiting evaluation' : 'Valuation complete'}
-                              </span>
-                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                              {!script.evaluatorId ? (
+                                <button
+                                  onClick={() => handleAssignEvaluator(script._id)}
+                                  disabled={assigningId === script._id}
+                                  className="px-3 py-1 bg-[#1E3A5F] text-white text-xs font-semibold rounded-lg hover:bg-[#152a46] transition disabled:opacity-50"
+                                >
+                                  {assigningId === script._id ? 'Assigning...' : 'Assign'}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-400 font-medium">
+                                  {script.status === 'assigned' ? 'Awaiting evaluation' : 'Valuation complete'}
+                                </span>
+                              )}
+                              {script.isLocked && (
+                                <button
+                                  onClick={() => {
+                                    setUnlockingScript(script);
+                                    setUnlockReason('');
+                                  }}
+                                  style={{
+                                    padding: '4px 10px',
+                                    backgroundColor: '#D97706',
+                                    color: 'white',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'background-color 150ms ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B45309'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#D97706'}
+                                  title="Unlock script to permit re-evaluation"
+                                >
+                                  Unlock
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1440,6 +1510,128 @@ const AnswerScripts = () => {
                   {publishing ? 'Publishing...' : 'Confirm & Publish'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Unlock Script Modal (ExamCell Authorization) ── */}
+        {unlockingScript && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(3px)',
+            padding: '16px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '460px',
+              width: '100%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FEF3C7',
+                  color: '#D97706',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  fontWeight: 700
+                }}>
+                  🔓
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-navy)', margin: 0 }}>
+                    Unlock Answer Script
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                    Candidate: {unlockingScript.studentId?.usn || 'N/A'} ({unlockingScript.studentId?.name || 'N/A'})
+                  </p>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.85rem', color: '#4B5563', lineHeight: 1.5, marginBottom: '16px' }}>
+                Unlocking this answer script allows the assigned evaluator to re-open it and revise submitted marks. Please state an audit reason for unlocking.
+              </p>
+
+              <form onSubmit={handleUnlockSubmit}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#4B5563', marginBottom: '6px' }}>
+                  Unlock Reason <span style={{ color: '#DC2626' }}>*</span>
+                </label>
+                <textarea
+                  value={unlockReason}
+                  onChange={(e) => setUnlockReason(e.target.value)}
+                  placeholder="e.g. Re-evaluation requested by HOD due to total recount error"
+                  rows={3}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1.5px solid #D1D5DB',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                    marginBottom: '20px'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--color-navy)'}
+                  onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}
+                />
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUnlockingScript(null);
+                      setUnlockReason('');
+                    }}
+                    disabled={submittingUnlock}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: 'white',
+                      color: '#4B5563',
+                      border: '1.5px solid #D1D5DB',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingUnlock || !unlockReason.trim()}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: '#D97706',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      cursor: submittingUnlock || !unlockReason.trim() ? 'not-allowed' : 'pointer',
+                      opacity: submittingUnlock || !unlockReason.trim() ? 0.6 : 1
+                    }}
+                  >
+                    {submittingUnlock ? 'Unlocking...' : 'Authorize Unlock'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

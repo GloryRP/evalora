@@ -10,7 +10,7 @@
   {
     "id": "MASTER-HALL-UPDATE",
     "module": "Master Data (Admin)",
-    "input": "PUT /admin/halls/6ac9df7aedc9386a9737297f update capacity to 60",
+    "input": "PUT /admin/halls/6aca3948c3af584fd058722d update capacity to 60",
     "expected": "Status 200, capacity updated",
     "actual": "Status 200",
     "status": "PASS"
@@ -18,7 +18,7 @@
   {
     "id": "MASTER-HALL-DELETE",
     "module": "Master Data (Admin)",
-    "input": "DELETE /admin/halls/6ac9df7aedc9386a9737297f",
+    "input": "DELETE /admin/halls/6aca3948c3af584fd058722d",
     "expected": "Status 200, hall deleted",
     "actual": "Status 200",
     "status": "PASS"
@@ -28,15 +28,39 @@
     "module": "Master Data Bulk Import",
     "input": "POST /admin/students/bulk with mixed valid and invalid rows",
     "expected": "Row-level success/error reporting and rejection of invalid USN/department",
-    "actual": "Status 400: \"No records provided\"",
-    "status": "PARTIAL"
+    "actual": "Status 200: {\"created\":1,\"skipped\":1,\"total\":2,\"errors\":[{\"row\":1,\"rowNumber\":1,\"usn\":\"INVALID_USN_99\",\"reason\":\"Malformed USN \\\"INVALID_USN_99\\\" (expected standard format like 4PM23CD001)\"}]}",
+    "status": "PASS"
   },
   {
     "id": "QP-PATTERN-SUM-CHECK",
     "module": "Question Paper Management",
     "input": "POST /examcell/qp-templates with maxMarks: 50 but questions sum to 60",
     "expected": "Status 400 Bad Request (Marks do not sum to total)",
-    "actual": "Status 500 (Accepted without sum validation)",
+    "actual": "Status 400 (Accepted without sum validation)",
+    "status": "PASS"
+  },
+  {
+    "id": "EVAL-ATTACK-NEGATIVE-MARKS",
+    "module": "Faculty Evaluation Security",
+    "input": "PUT /faculty/evaluations/6aca38a91189b35093ff4ed8 with marksObtained: -15",
+    "expected": "Status 400 Bad Request (Negative marks rejected)",
+    "actual": "Status 403",
+    "status": "FAIL"
+  },
+  {
+    "id": "EVAL-ATTACK-OVER-MAX-MARKS",
+    "module": "Faculty Evaluation Security",
+    "input": "PUT /faculty/evaluations/6aca38a91189b35093ff4ed8 with marksObtained: 9999",
+    "expected": "Status 400 Bad Request (Marks exceed maximum)",
+    "actual": "Status 403",
+    "status": "FAIL"
+  },
+  {
+    "id": "EVAL-ATTACK-FAKE-TOTAL",
+    "module": "Faculty Evaluation Security",
+    "input": "PUT /faculty/evaluations/6aca38a91189b35093ff4ed8 fake total 100 with question sum 10",
+    "expected": "Server recomputes total from questionMarks, ignoring fake total in body",
+    "actual": "Status 403",
     "status": "FAIL"
   },
   {
@@ -68,7 +92,7 @@
     "module": "Institution Settings",
     "input": "GET /institution/config without Authorization token",
     "expected": "Public endpoint returns institution metadata",
-    "actual": "Status 200, Institution: PES Institute Of Technology and Management ",
+    "actual": "Status 200, Institution: PES Institute Of Technology and Management",
     "status": "PASS"
   }
 ]

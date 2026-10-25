@@ -141,6 +141,7 @@ router.get('/evaluations', verifyToken, authorize('faculty'), async (req, res) =
       comments: script.comments,
       examId: script.examId?._id || script.examId,
       examType: script.examId?.examType || 'internal1',
+      isLocked: script.isLocked || false,
     }));
 
     res.json({

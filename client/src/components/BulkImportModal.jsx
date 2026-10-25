@@ -382,25 +382,42 @@ const BulkImportModal = ({ type, onClose, onSuccess }) => {
                 </div>
               </div>
 
-              {/* Error list */}
+              {/* Per-Row Import Breakdown */}
               {result.errors?.length > 0 && (
                 <div style={{ borderRadius: '8px', border: '1px solid #FECACA', overflow: 'hidden' }}>
-                  <div style={{ padding: '10px 16px', backgroundColor: '#FEE2E2', borderBottom: '1px solid #FECACA' }}>
-                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#991B1B' }}>Skipped Records</p>
+                  <div style={{ padding: '10px 16px', backgroundColor: '#FEE2E2', borderBottom: '1px solid #FECACA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#991B1B', margin: 0 }}>Per-Row Results (Skipped / Errors)</p>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#991B1B', backgroundColor: '#FECACA', padding: '2px 8px', borderRadius: '10px' }}>
+                      {result.errors.length} failed
+                    </span>
                   </div>
-                  <div style={{ overflowX: 'auto', maxHeight: '192px', overflowY: 'auto' }}>
+                  <div style={{ overflowX: 'auto', maxHeight: '220px', overflowY: 'auto' }}>
                     <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
-                      <thead style={{ backgroundColor: '#FEE2E2' }}>
+                      <thead style={{ backgroundColor: '#FDF2F2' }}>
                         <tr>
-                          <th style={{ padding: '8px 16px', textAlign: 'left', color: '#991B1B', fontWeight: 600 }}>ID</th>
-                          <th style={{ padding: '8px 16px', textAlign: 'left', color: '#991B1B', fontWeight: 600 }}>Reason</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#991B1B', fontWeight: 600, width: '60px' }}>Row</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#991B1B', fontWeight: 600, width: '100px' }}>Identifier</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#991B1B', fontWeight: 600, width: '80px' }}>Status</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#991B1B', fontWeight: 600 }}>Reason / Error Details</th>
                         </tr>
                       </thead>
                       <tbody>
                         {result.errors.map((e, i) => (
-                          <tr key={i} style={{ borderTop: '1px solid #FECACA' }}>
-                            <td style={{ padding: '8px 16px', fontFamily: 'monospace', color: 'var(--color-text)' }}>{e[config.idField] || e.usn || e.employeeId || e.departmentCode || '—'}</td>
-                            <td style={{ padding: '8px 16px', color: 'var(--color-text-secondary)' }}>{e.reason}</td>
+                          <tr key={i} style={{ borderTop: '1px solid #FECACA', backgroundColor: i % 2 === 0 ? 'white' : '#FFF5F5' }}>
+                            <td style={{ padding: '8px 12px', fontWeight: 700, color: '#991B1B' }}>
+                              #{e.rowNumber || e.row || (i + 1)}
+                            </td>
+                            <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text)' }}>
+                              {e[config.idField] || e.employeeId || e.usn || e.departmentCode || '—'}
+                            </td>
+                            <td style={{ padding: '8px 12px' }}>
+                              <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '2px 6px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 700 }}>
+                                SKIPPED
+                              </span>
+                            </td>
+                            <td style={{ padding: '8px 12px', color: '#4B5563', lineHeight: 1.4 }}>
+                              {e.reason}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

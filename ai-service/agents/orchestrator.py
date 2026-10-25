@@ -49,10 +49,8 @@ class Orchestrator:
         
         # Step 1: Schedule exams
         print("Step 1: Running scheduling agent...")
+        # F6: Pass startDate directly without silent fallback so scheduling agent validates it
         start_date = constraints.get("startDate")
-        if not start_date:
-            from datetime import datetime
-            start_date = datetime.now().date().isoformat()
             
         exam_category = constraints.get("examCategory", "internal1")
         component = constraints.get("component", "theory")
@@ -90,17 +88,25 @@ class Orchestrator:
         invigilator_assignments = invigilator_result.get("invigilator_assignments", [])
         
         # Combine results
+        unseated_count = allocation_result.get("unseated_count", 0)
+        summary = {
+            "exams_scheduled": len(scheduled_exams),
+            "students_allocated": len(hall_allocations),
+            "invigilators_assigned": len(invigilator_assignments),
+            "halls_used": allocation_result.get("halls_used", 0),
+            "faculty_utilized": invigilator_result.get("faculty_utilized", 0),
+            "unseated_count": unseated_count,
+        }
+        if allocation_result.get("warning"):
+            summary["warning"] = allocation_result.get("warning")
+
         return {
             "scheduled_exams": scheduled_exams,
             "hall_allocations": hall_allocations,
             "invigilator_assignments": invigilator_assignments,
-            "summary": {
-                "exams_scheduled": len(scheduled_exams),
-                "students_allocated": len(hall_allocations),
-                "invigilators_assigned": len(invigilator_assignments),
-                "halls_used": allocation_result.get("halls_used", 0),
-                "faculty_utilized": invigilator_result.get("faculty_utilized", 0),
-            },
+            "unseated_students": allocation_result.get("unseated_students", []),
+            "unseated_count": unseated_count,
+            "summary": summary,
             "metadata": {
                 "scheduling": scheduling_result,
                 "allocation": allocation_result,

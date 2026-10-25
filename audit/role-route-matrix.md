@@ -1,6 +1,6 @@
 # Role-Route Authorization Matrix
 
-Generated: 2026-10-10T06:38:53.075Z
+Generated: 2026-10-10T13:11:20.782Z
 
 | Protected Endpoint | Required Role | Admin | Exam Cell | Faculty | Student | HOD | Principal |
 |--------------------|---------------|-------|-----------|---------|---------|-----|-----------|

@@ -417,6 +417,14 @@ exports.computeResults = async (req, res) => {
       savedResults.push(resultDoc);
     }
 
+    // Clear isResultStale on all scripts whose results have now been freshly computed
+    if (filteredScripts.length > 0) {
+      await AnswerScript.updateMany(
+        { _id: { $in: filteredScripts.map(s => s._id) } },
+        { isResultStale: false }
+      );
+    }
+
     res.json({
       success: true,
       message: `Results successfully computed for ${savedResults.length} students`,

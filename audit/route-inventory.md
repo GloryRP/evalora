@@ -1,13 +1,13 @@
 # API Route Inventory - Evalora Backend
 
-Generated: 2026-10-10T06:35:55.385Z
-Total Routes Discovered: 139
+Generated: 2026-10-10T13:08:40.393Z
+Total Routes Discovered: 142
 
 ## Summary Statistics
-- **Total Routes**: 139
+- **Total Routes**: 142
 - **Public Routes (No Authentication)**: 6
-- **Authenticated (Any Valid Token)**: 47
-- **Strict Role Restricted**: 86
+- **Authenticated (Any Valid Token)**: 49
+- **Strict Role Restricted**: 87
 
 ## Public Routes (Unauthenticated)
 
@@ -99,6 +99,8 @@ Total Routes Discovered: 139
 | **GET** | `/api/v1/examcell/qp-templates` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
 | **GET** | `/api/v1/examcell/qp-templates/:examType` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
 | **POST** | `/api/v1/examcell/qp-templates` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
+| **PUT** | `/api/v1/examcell/qp-templates` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
+| **PUT** | `/api/v1/examcell/qp-templates/:examType` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
 | **GET** | `/api/v1/examcell/question-papers` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
 | **POST** | `/api/v1/examcell/question-papers` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
 | **GET** | `/api/v1/examcell/question-papers/exam/:examId` | `examcell.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
@@ -111,6 +113,7 @@ Total Routes Discovered: 139
 | **PUT** | `/api/v1/faculty/question-papers/:paperId/submit` | `faculty.js` | Yes | `faculty` | ✅ Restricted |
 | **PUT** | `/api/v1/faculty/question-papers/:paperId/upload` | `faculty.js` | Yes | `faculty` | ✅ Restricted |
 | **PUT** | `/api/v1/faculty/evaluations/publish-class/:examId` | `faculty.js` | Yes | `faculty` | ✅ Restricted |
+| **POST** | `/api/v1/faculty/evaluations/:scriptId/unlock` | `faculty.js` | Yes | `admin,examcell` | ✅ Restricted |
 | **GET** | `/api/v1/file-proxy` | `fileProxy.js` | Yes | `Any logged-in role` | ℹ️ Any authenticated user |
 | **GET** | `/api/v1/hod/profile` | `hod.js` | Yes | `hod` | ✅ Restricted |
 | **GET** | `/api/v1/hod/insights` | `hod.js` | Yes | `hod` | ✅ Restricted |

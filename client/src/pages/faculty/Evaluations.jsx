@@ -223,7 +223,8 @@ const Evaluations = () => {
       }
     } catch (error) {
       console.error('Submission error:', error);
-      toast.error('Failed to submit evaluation');
+      const errorMsg = error.response?.data?.message || 'Failed to submit evaluation';
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -513,6 +514,40 @@ const Evaluations = () => {
 
                 {ev.status === 'published' ? (
                   <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>Published</span>
+                ) : ev.isLocked ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '4px', 
+                      fontSize: '0.75rem', 
+                      fontWeight: 600, 
+                      padding: '4px 8px', 
+                      borderRadius: '6px', 
+                      backgroundColor: '#FEF3C7', 
+                      color: '#92400E',
+                      border: '1px solid #FCD34D'
+                    }}>
+                      🔒 Locked
+                    </span>
+                    <button
+                      onClick={() => toast.error('This answer script is locked and cannot be edited. Contact the Exam Cell to unlock it.')}
+                      style={{
+                        background: '#9CA3AF',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'not-allowed',
+                        boxShadow: 'none',
+                      }}
+                      title="Script is locked. Contact Exam Cell to unlock."
+                    >
+                      Locked
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => handleOpenEvaluate(ev)}

@@ -692,8 +692,8 @@ exports.saveDraft = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Submission not found' });
     }
 
-    if (['selected', 'archived', 'rejected'].includes(submission.status)) {
-      return res.status(400).json({ success: false, message: 'Cannot edit this submission' });
+    if (submission.isLocked || ['selected', 'archived', 'rejected'].includes(submission.status)) {
+      return res.status(400).json({ success: false, message: 'Cannot edit this submission because it is locked or final selected' });
     }
 
     submission.submittedQuestions = submittedQuestions || [];
@@ -730,9 +730,9 @@ exports.submit = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Submission deadline has passed. Contact Exam Cell.' });
     }
 
-    // Check status
-    if (['selected', 'archived'].includes(submission.status)) {
-      return res.status(400).json({ success: false, message: 'Cannot submit this paper' });
+    // Check status or lock
+    if (submission.isLocked || ['selected', 'archived'].includes(submission.status)) {
+      return res.status(400).json({ success: false, message: 'Cannot submit this paper because it is locked or final selected' });
     }
 
     // Validate all questions have content

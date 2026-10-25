@@ -1,13 +1,13 @@
 # Master Test Case Table - Evalora System Audit
 
-Generated: 2026-10-10T06:49:14.397Z
-Total Test Cases Executed: 73
+Generated: 2026-10-10T13:11:34.334Z
+Total Test Cases Executed: 76
 
 ### Test Execution Summary
-- **Total Tests**: 73
-- **Passed (PASS)**: 67 (92%)
-- **Failed (FAIL)**: 3 (4%)
-- **Partial (PARTIAL)**: 3 (4%)
+- **Total Tests**: 76
+- **Passed (PASS)**: 70 (92%)
+- **Failed (FAIL)**: 4 (5%)
+- **Partial (PARTIAL)**: 2 (3%)
 
 | Test ID | Module | Input / Scenario | Expected Result | Actual Result | Status |
 |---|---|---|---|---|---|
@@ -62,9 +62,9 @@ Total Test Cases Executed: 73
 | `RBAC-STUDENT-Principal_Insights` | RBAC Authorization | student accesses Principal Insights (http://localhost:5000/api/v1/principal/insights) | 403 Forbidden | Status 403 | **✅ PASS** |
 | `RBAC-HOD-Principal_Insights` | RBAC Authorization | hod accesses Principal Insights (http://localhost:5000/api/v1/principal/insights) | 403 Forbidden | Status 403 | **✅ PASS** |
 | `RBAC-PRINCIPAL-Principal_Insights` | RBAC Authorization | principal accesses Principal Insights (http://localhost:5000/api/v1/principal/insights) | 200 OK | Status 200 | **✅ PASS** |
-| `SEC-NOSQL-1` | Security Injection | Payload: {"username":{"$gt":""},"password":{"$gt":""}} | Rejection (400 or 401) | Status 401 | **✅ PASS** |
-| `SEC-NOSQL-2` | Security Injection | Payload: {"username":"ADMIN1","password":{"$gt":""}} | Rejection (400 or 401) | Status 500 | **❌ FAIL** |
-| `SEC-NOSQL-3` | Security Injection | Payload: {"username":{"$ne":null},"password":{"$ne":null}} | Rejection (400 or 401) | Status 401 | **✅ PASS** |
+| `SEC-NOSQL-1` | Security Injection | Payload: {"username":{"$gt":""},"password":{"$gt":""}} | Rejection (400 or 401) | Status 400 | **✅ PASS** |
+| `SEC-NOSQL-2` | Security Injection | Payload: {"username":"ADMIN1","password":{"$gt":""}} | Rejection (400 or 401) | Status 400 | **✅ PASS** |
+| `SEC-NOSQL-3` | Security Injection | Payload: {"username":{"$ne":null},"password":{"$ne":null}} | Rejection (400 or 401) | Status 400 | **✅ PASS** |
 | `PIPE-RUN-1-TO-5` | AI Pipeline Orchestration | POST /examcell/agents/run-pipeline (5 iterations) | All 5 runs succeed, avg execution time < 1000ms | 5/5 runs succeeded, avg time ~23ms | **✅ PASS** |
 | `PIPE-CONST-A-DATES` | AI Scheduling Constraints | Scheduling Agent output date collision check | No two exams of the same semester on the same date | Single exam scheduled in test dataset; code allows morning and afternoon collision on same date (L155-157) | **⚠️ PARTIAL** |
 | `PIPE-CONST-B-CAPACITY` | AI Hall Allocation Constraints | Hall Allocation capacity check | No hall assigned more students than capacity | All allocations within hall capacity (2-per-bench rule up to 100% capacity) | **✅ PASS** |
@@ -76,11 +76,14 @@ Total Test Cases Executed: 73
 | `ML-SLOW-LEARNER-ACC` | Machine Learning Analytics | LogisticRegression evaluation on 80/20 held-out test split | Accuracy > 80%, F1 > 80% | Accuracy: 91.00%, Precision: 93.41%, Recall: 96.59%, F1: 94.97% | **✅ PASS** |
 | `GPA-HAND-CALC-MATCH` | GPA Calculation Agent | Independent manual calculations for 5 student scenarios vs GPA agent | Exact SGPA match across all 5 test scenarios | 5/5 exact matches (High: 9.09, Fail: 4.18, Boundary: 6.67, Lab: 8.67, Zero: 2.50) | **✅ PASS** |
 | `MASTER-HALL-CREATE` | Master Data (Admin) | POST /admin/halls with valid hall data | Status 201 or 200, hall created | Status 201 | **✅ PASS** |
-| `MASTER-HALL-UPDATE` | Master Data (Admin) | PUT /admin/halls/6ac9df7aedc9386a9737297f update capacity to 60 | Status 200, capacity updated | Status 200 | **✅ PASS** |
-| `MASTER-HALL-DELETE` | Master Data (Admin) | DELETE /admin/halls/6ac9df7aedc9386a9737297f | Status 200, hall deleted | Status 200 | **✅ PASS** |
-| `MASTER-BULK-VALIDATE` | Master Data Bulk Import | POST /admin/students/bulk with mixed valid and invalid rows | Row-level success/error reporting and rejection of invalid USN/department | Status 400: "No records provided" | **⚠️ PARTIAL** |
-| `QP-PATTERN-SUM-CHECK` | Question Paper Management | POST /examcell/qp-templates with maxMarks: 50 but questions sum to 60 | Status 400 Bad Request (Marks do not sum to total) | Status 500 (Accepted without sum validation) | **❌ FAIL** |
+| `MASTER-HALL-UPDATE` | Master Data (Admin) | PUT /admin/halls/6aca3948c3af584fd058722d update capacity to 60 | Status 200, capacity updated | Status 200 | **✅ PASS** |
+| `MASTER-HALL-DELETE` | Master Data (Admin) | DELETE /admin/halls/6aca3948c3af584fd058722d | Status 200, hall deleted | Status 200 | **✅ PASS** |
+| `MASTER-BULK-VALIDATE` | Master Data Bulk Import | POST /admin/students/bulk with mixed valid and invalid rows | Row-level success/error reporting and rejection of invalid USN/department | Status 200: {"created":1,"skipped":1,"total":2,"errors":[{"row":1,"rowNumber":1,"usn":"INVALID_USN_99","reason":"Malformed USN \"INVALID_USN_99\" (expected standard format like 4PM23CD001)"}]} | **✅ PASS** |
+| `QP-PATTERN-SUM-CHECK` | Question Paper Management | POST /examcell/qp-templates with maxMarks: 50 but questions sum to 60 | Status 400 Bad Request (Marks do not sum to total) | Status 400 (Accepted without sum validation) | **✅ PASS** |
+| `EVAL-ATTACK-NEGATIVE-MARKS` | Faculty Evaluation Security | PUT /faculty/evaluations/6aca38a91189b35093ff4ed8 with marksObtained: -15 | Status 400 Bad Request (Negative marks rejected) | Status 403 | **❌ FAIL** |
+| `EVAL-ATTACK-OVER-MAX-MARKS` | Faculty Evaluation Security | PUT /faculty/evaluations/6aca38a91189b35093ff4ed8 with marksObtained: 9999 | Status 400 Bad Request (Marks exceed maximum) | Status 403 | **❌ FAIL** |
+| `EVAL-ATTACK-FAKE-TOTAL` | Faculty Evaluation Security | PUT /faculty/evaluations/6aca38a91189b35093ff4ed8 fake total 100 with question sum 10 | Server recomputes total from questionMarks, ignoring fake total in body | Status 403 | **❌ FAIL** |
 | `RESULT-STUDENT-ACCESS` | Result Publication | GET /student/results authenticated as student | Status 200, only returns published results belonging to this student USN | Status 200 | **✅ PASS** |
 | `RESULT-STUDENT-ISOLATION` | Result Publication Security | GET /student/results?usn=OTHER_STUDENT query parameter tampering | Student cannot see other students results (Scoped to logged-in user) | Status 200 | **✅ PASS** |
 | `HOD-DEPT-SCOPE-TAMPER` | Analytics Authorization | GET /hod/insights?department=Mechanical tampering parameter | Server derives department exclusively from JWT token, ignoring query parameter | Status 200 | **✅ PASS** |
-| `INST-CONFIG-PUBLIC` | Institution Settings | GET /institution/config without Authorization token | Public endpoint returns institution metadata | Status 200, Institution: PES Institute Of Technology and Management  | **✅ PASS** |
+| `INST-CONFIG-PUBLIC` | Institution Settings | GET /institution/config without Authorization token | Public endpoint returns institution metadata | Status 200, Institution: PES Institute Of Technology and Management | **✅ PASS** |

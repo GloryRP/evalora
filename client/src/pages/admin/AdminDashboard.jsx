@@ -1,7 +1,7 @@
 /**
- * Admin Dashboard - Revamped Professional Interface
- * Features: High-definition stat cards, interactive distribution chart, streamlined quick access, activity timeline, and system health status.
- * Preserves all underlying functionality, stats endpoints, and navigation links.
+ * Admin Dashboard - Premium Interface
+ * Visual redesign: gradient stat cards, richer chart section, polished status cards.
+ * All underlying functionality, stats endpoints, and navigation links preserved.
  */
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -10,77 +10,79 @@ import {
   GraduationCap, Users, Building2, BookOpen,
   TrendingUp, ArrowRight, RefreshCw, Activity,
   Database, Cpu, Mail, CheckCircle2, Calendar,
-  Sparkles, ShieldCheck, Layers
+  Sparkles, ShieldCheck, Layers, ChevronRight
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-// Modern Stat Card component with clean borders and subtle hover lift
-const StatCard = ({ icon: Icon, label, value, link, navigate, badgeText, iconBg, iconColor }) => (
+// ── Premium Stat Card ─────────────────────────────────────────────────────────
+const StatCard = ({ icon: Icon, label, value, link, navigate, badgeText, accentColor, accentLight, iconGradient }) => (
   <div
     onClick={() => link && navigate(link)}
-    className={`group bg-white p-5 lg:p-6 transition-all duration-200 w-full min-w-0 ${
-      link ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md' : ''
-    }`}
     style={{
-      borderRadius: '12px',
+      background: 'white',
+      borderRadius: '20px',
       border: '1px solid #E2E8F0',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+      overflow: 'hidden',
+      cursor: link ? 'pointer' : 'default',
+      transition: 'transform 200ms ease, box-shadow 200ms ease',
+      position: 'relative',
     }}
+    onMouseEnter={e => { if (link) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; }}}
+    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
   >
-    <div className="flex items-start justify-between gap-3">
-      <div className="space-y-2 min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase truncate">
-            {label}
-          </span>
-          {badgeText && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
-              {badgeText}
+    {/* Coloured top accent strip */}
+    <div style={{ height: '4px', background: iconGradient }} />
+
+    <div style={{ padding: '22px 24px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#94A3B8' }}>
+              {label}
             </span>
+            {badgeText && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '2px 9px', borderRadius: '20px', fontSize: '0.625rem', fontWeight: 700, background: accentLight, color: accentColor, border: `1px solid ${accentColor}33` }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, animation: 'pulse 2s ease infinite' }} />
+                {badgeText}
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#1E3A5F', margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {value !== undefined && value !== null ? value.toLocaleString() : '—'}
+          </p>
+          {link && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: 700, color: accentColor }}>
+              <span>View details</span>
+              <ChevronRight size={13} />
+            </div>
           )}
         </div>
-        
-        <p className="text-2xl lg:text-3xl font-extrabold text-[#1E3A5F] tracking-tight font-display">
-          {value !== undefined && value !== null ? value.toLocaleString() : '—'}
-        </p>
 
-        {link && (
-          <div className="inline-flex items-center text-xs font-semibold text-slate-500 group-hover:text-[#1E3A5F] transition-colors gap-1 pt-1">
-            <span>View details</span>
-            <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-          </div>
-        )}
-      </div>
-
-      <div 
-        className={`w-11 h-11 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center shrink-0 border ${iconBg} ${iconColor}`}
-      >
-        <Icon size={22} strokeWidth={2.2} />
+        {/* Icon badge */}
+        <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: iconGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 14px ${accentColor}33` }}>
+          <Icon size={24} strokeWidth={2} style={{ color: 'white' }} />
+        </div>
       </div>
     </div>
   </div>
 );
 
-// Custom Tooltip for bar chart
+// ── Custom Bar Chart Tooltip ──────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div 
-        className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 shadow-xl text-xs space-y-1"
-        style={{ borderRadius: '10px', border: '1px solid #334155' }}
-      >
-        <p className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
-          <Building2 size={14} className="text-blue-400" />
-          {label}
+      <div style={{ background: '#0F172A', color: 'white', padding: '12px 16px', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', border: '1px solid #1E293B', fontSize: '0.8125rem' }}>
+        <p style={{ fontWeight: 700, color: '#CBD5E1', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Building2 size={13} style={{ color: '#60A5FA' }} /> {label}
         </p>
-        <div className="flex items-center gap-2 pt-1">
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          <span className="text-slate-300 font-medium">Enrolled Students:</span>
-          <span className="font-bold text-blue-300 text-sm">{payload[0].value}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#60A5FA' }} />
+          <span style={{ color: '#94A3B8', fontWeight: 500 }}>Students:</span>
+          <span style={{ fontWeight: 800, color: '#93C5FD', fontSize: '1rem' }}>{payload[0].value}</span>
         </div>
       </div>
     );
@@ -88,6 +90,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// ── Main Component ────────────────────────────────────────────────────────────
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -110,8 +113,9 @@ const AdminDashboard = () => {
       value: stats?.studentCount,
       link: '/admin/students',
       badgeText: 'Enrolled',
-      iconBg: 'bg-blue-50 border-blue-100',
-      iconColor: 'text-blue-600',
+      accentColor: '#2563EB',
+      accentLight: '#EFF6FF',
+      iconGradient: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
     },
     {
       icon: Users,
@@ -119,8 +123,9 @@ const AdminDashboard = () => {
       value: stats?.facultyCount,
       link: '/admin/faculty',
       badgeText: 'Active',
-      iconBg: 'bg-emerald-50 border-emerald-100',
-      iconColor: 'text-emerald-600',
+      accentColor: '#059669',
+      accentLight: '#ECFDF5',
+      iconGradient: 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
     },
     {
       icon: Building2,
@@ -128,388 +133,257 @@ const AdminDashboard = () => {
       value: stats?.departmentCount,
       link: '/admin/departments',
       badgeText: 'Configured',
-      iconBg: 'bg-purple-50 border-purple-100',
-      iconColor: 'text-purple-600',
+      accentColor: '#7C3AED',
+      accentLight: '#F5F3FF',
+      iconGradient: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
     },
   ];
 
   const quickLinks = [
-    { label: 'Manage Students', icon: GraduationCap, path: '/admin/students', desc: 'Add, edit, bulk import student records', iconBg: 'bg-blue-50 text-blue-600 border-blue-100' },
-    { label: 'Manage Faculty', icon: Users, path: '/admin/faculty', desc: 'Manage faculty members and assignments', iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { label: 'Departments', icon: Building2, path: '/admin/departments', desc: 'Configure academic departments', iconBg: 'bg-purple-50 text-purple-600 border-purple-100' },
-    { label: 'Subjects', icon: BookOpen, path: '/admin/subjects', desc: 'Set up course subjects and credits', iconBg: 'bg-amber-50 text-amber-600 border-amber-100' },
+    { label: 'Manage Students', icon: GraduationCap, path: '/admin/students', desc: 'Add, edit, bulk import student records', gradient: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', light: '#EFF6FF', color: '#1D4ED8' },
+    { label: 'Manage Faculty', icon: Users, path: '/admin/faculty', desc: 'Manage faculty members and assignments', gradient: 'linear-gradient(135deg,#10B981,#047857)', light: '#ECFDF5', color: '#047857' },
+    { label: 'Departments', icon: Building2, path: '/admin/departments', desc: 'Configure academic departments', gradient: 'linear-gradient(135deg,#8B5CF6,#6D28D9)', light: '#F5F3FF', color: '#6D28D9' },
+    { label: 'Subjects', icon: BookOpen, path: '/admin/subjects', desc: 'Set up course subjects and credits', gradient: 'linear-gradient(135deg,#F59E0B,#D97706)', light: '#FFFBEB', color: '#B45309' },
   ];
 
   const activities = [
-    { title: 'System Database Initialized', desc: 'Seeded default departments & test credentials', time: 'Just now', icon: Database, iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { title: 'AI Evaluation Microservice', desc: 'OCR & Automated grading model active on port 8000', time: 'Active', icon: Cpu, iconBg: 'bg-blue-50 text-blue-600 border-blue-100' },
-    { title: 'Exam Halls Configured', desc: 'Seeded Hall A (100) & Hall B (80) seating capacity', time: 'Ready', icon: Layers, iconBg: 'bg-purple-50 text-purple-600 border-purple-100' },
+    { title: 'System Database Initialized', desc: 'Seeded default departments & test credentials', time: 'Just now', icon: Database, gradient: 'linear-gradient(135deg,#10B981,#047857)', color: '#059669' },
+    { title: 'AI Evaluation Microservice', desc: 'OCR & Automated grading model active on port 8000', time: 'Active', icon: Cpu, gradient: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#2563EB' },
+    { title: 'Exam Halls Configured', desc: 'Seeded Hall A (100) & Hall B (80) seating capacity', time: 'Ready', icon: Layers, gradient: 'linear-gradient(135deg,#8B5CF6,#6D28D9)', color: '#7C3AED' },
   ];
 
-  const barColors = ['#1E3A5F', '#2563EB', '#10B981', '#8B5CF6', '#F59E0B'];
+  const barColors = ['#2563EB', '#10B981', '#8B5CF6', '#F59E0B', '#1E3A5F'];
+
+  const systemServices = [
+    { label: 'Database Engine', sub: 'MongoDB • Connected', icon: Database, status: 'Connected', gradient: 'linear-gradient(135deg,#10B981,#047857)', bg: '#F0FDF4', border: '#BBF7D0', statusBg: '#DCFCE7', statusColor: '#065F46' },
+    { label: 'AI Evaluation Service', sub: 'FastAPI • Port 8000', icon: Cpu, status: 'Running', gradient: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', bg: '#EFF6FF', border: '#BFDBFE', statusBg: '#DBEAFE', statusColor: '#1E40AF' },
+    { label: 'Email Gateway', sub: 'SMTP • Configured', icon: Mail, status: 'Configured', gradient: 'linear-gradient(135deg,#6366F1,#4338CA)', bg: '#EEF2FF', border: '#C7D2FE', statusBg: '#E0E7FF', statusColor: '#3730A3' },
+  ];
 
   return (
-    <div className="w-full space-y-6">
+    <div style={{ width: '100%' }}>
 
       {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-              <Sparkles size={12} className="text-blue-600" />
-              Admin Portal
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '28px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '20px', fontSize: '0.6875rem', fontWeight: 700, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+              <Sparkles size={11} /> Admin Portal
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '20px', fontSize: '0.6875rem', fontWeight: 700, background: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10B981', animation: 'ping 1.5s ease infinite' }} />
               System Operational
             </span>
           </div>
-          
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-[#1E3A5F] tracking-tight font-display">
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#1E3A5F', margin: '0 0 6px', letterSpacing: '-0.025em' }}>
             Admin Dashboard
           </h1>
-          
-          <p className="text-xs sm:text-sm text-slate-500 flex flex-wrap items-center gap-2 pt-0.5">
-            <Calendar size={14} className="text-slate-400 shrink-0" />
-            <span>{new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-            <span className="text-slate-300">•</span>
-            <span className="font-medium text-slate-600">Administrator</span>
+          <p style={{ fontSize: '0.875rem', color: '#64748B', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={14} style={{ color: '#94A3B8', flexShrink: 0 }} />
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <span style={{ color: '#CBD5E1' }}>·</span>
+            <span style={{ fontWeight: 600, color: '#475569' }}>Administrator</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
-            style={{
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-            }}
-          >
-            <RefreshCw size={15} className={`text-slate-500 ${isFetching ? 'animate-spin text-blue-600' : ''}`} />
-            <span>Refresh</span>
-          </button>
-        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', background: 'white', border: '1.5px solid #E2E8F0', borderRadius: '12px', color: '#475569', fontWeight: 600, fontSize: '0.875rem', cursor: isFetching ? 'not-allowed' : 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all 150ms', opacity: isFetching ? 0.7 : 1 }}
+          onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
+          onMouseLeave={e => e.currentTarget.style.background = 'white'}>
+          <RefreshCw size={15} style={{ color: isFetching ? '#3B82F6' : '#94A3B8', animation: isFetching ? 'spin 1s linear infinite' : 'none' }} />
+          Refresh
+        </button>
       </div>
 
-      {/* ── Stat Cards Grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
+      {/* ── Stat Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
         {isLoading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="h-28 bg-slate-100 animate-pulse w-full"
-                style={{ borderRadius: '12px', border: '1px solid #E2E8F0' }}
-              />
+              <div key={i} style={{ height: '140px', borderRadius: '20px', background: '#F1F5F9', animation: 'pulse 2s ease infinite', border: '1px solid #E2E8F0' }} />
             ))
-          : statCards.map((card) => (
+          : statCards.map(card => (
               <StatCard key={card.label} {...card} navigate={navigate} />
             ))}
       </div>
 
-      {/* ── Chart + Quick Links Section ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      {/* ── Chart + Quick Links ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', marginBottom: '24px' }}>
 
-        {/* Bar Chart Container */}
-        <div 
-          className="lg:col-span-7 xl:col-span-8 bg-white p-5 lg:p-6 flex flex-col justify-between w-full min-w-0"
-          style={{
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-5 gap-3">
-            <div className="min-w-0">
-              <h2 className="text-base lg:text-lg font-bold text-slate-900 flex items-center gap-2 font-display truncate">
-                Students per Department
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5 truncate">Current enrollment distribution</p>
+        {/* Bar Chart Card */}
+        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', padding: '28px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#1E3A5F', margin: '0 0 4px', letterSpacing: '-0.01em' }}>Students per Department</h2>
+              <p style={{ fontSize: '0.78125rem', color: '#94A3B8', margin: 0, fontWeight: 500 }}>Current enrollment distribution</p>
             </div>
-            <div 
-              className="w-9 h-9 bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100 text-blue-600"
-              style={{ borderRadius: '10px' }}
-            >
-              <TrendingUp size={18} />
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
+              <TrendingUp size={18} style={{ color: 'white' }} />
             </div>
           </div>
 
           {isLoading ? (
-            <div className="h-60 bg-slate-100 animate-pulse w-full" style={{ borderRadius: '10px' }} />
+            <div style={{ height: '240px', borderRadius: '12px', background: '#F1F5F9', animation: 'pulse 2s ease infinite' }} />
           ) : stats?.studentsByDepartment?.length > 0 ? (
-            <div className="w-full pt-2">
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={stats.studentsByDepartment} barSize={36} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2563EB" stopOpacity={0.9} />
-                      <stop offset="100%" stopColor="#1E3A5F" stopOpacity={0.95} />
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={stats.studentsByDepartment} barSize={38} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+                <defs>
+                  {barColors.map((c, i) => (
+                    <linearGradient key={i} id={`bar${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={c} stopOpacity={0.95} />
+                      <stop offset="100%" stopColor={c} stopOpacity={0.7} />
                     </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                  <XAxis 
-                    dataKey="department" 
-                    tick={{ fontSize: 12, fill: '#64748B', fontWeight: 500 }} 
-                    axisLine={false} 
-                    tickLine={false} 
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12, fill: '#64748B', fontWeight: 500 }} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    allowDecimals={false} 
-                  />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(30,58,95,0.04)', radius: 6 }} />
-                  <Bar dataKey="count" fill="url(#barGradient)" radius={[6, 6, 0, 0]}>
-                    {stats.studentsByDepartment.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={barColors[index % barColors.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                <XAxis dataKey="department" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 600 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(30,58,95,0.04)', radius: 8 }} />
+                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                  {stats.studentsByDepartment.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={`url(#bar${index % barColors.length})`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           ) : (
-            <div 
-              className="h-60 flex flex-col items-center justify-center text-center text-slate-400 bg-slate-50/50 w-full"
-              style={{ borderRadius: '10px', border: '1px dashed #CBD5E1' }}
-            >
-              <GraduationCap size={40} className="text-slate-300 mb-2 stroke-[1.5]" />
-              <p className="font-semibold text-slate-700">No student enrollment data</p>
-              <p className="text-xs text-slate-500 mt-1">Student data will display here once added</p>
+            <div style={{ height: '240px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', background: '#F8FAFC', border: '1px dashed #CBD5E1' }}>
+              <GraduationCap size={42} style={{ color: '#CBD5E1', marginBottom: '10px' }} />
+              <p style={{ fontWeight: 700, color: '#64748B', margin: '0 0 4px' }}>No enrollment data yet</p>
+              <p style={{ fontSize: '0.78125rem', color: '#94A3B8', margin: 0 }}>Student data will appear here once added</p>
             </div>
           )}
         </div>
 
-        {/* Quick Access Container */}
-        <div 
-          className="lg:col-span-5 xl:col-span-4 bg-white p-5 lg:p-6 flex flex-col justify-between w-full min-w-0"
-          style={{
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div>
-            <div className="flex items-center justify-between mb-5 gap-3">
-              <div className="min-w-0">
-                <h2 className="text-base lg:text-lg font-bold text-slate-900 font-display">Quick Access</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Shortcuts to core portals</p>
-              </div>
-              <div 
-                className="w-8 h-8 bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 border border-slate-200"
-                style={{ borderRadius: '8px' }}
-              >
-                <Layers size={16} />
-              </div>
+        {/* Quick Access Card */}
+        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', padding: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#1E3A5F', margin: '0 0 4px', letterSpacing: '-0.01em' }}>Quick Access</h2>
+              <p style={{ fontSize: '0.78125rem', color: '#94A3B8', margin: 0, fontWeight: 500 }}>Shortcuts to core portals</p>
             </div>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0' }}>
+              <Layers size={16} style={{ color: '#64748B' }} />
+            </div>
+          </div>
 
-            <div className="space-y-3 w-full">
-              {quickLinks.map(({ label, icon: Icon, path, desc, iconBg }) => (
-                <button
-                  key={path}
-                  onClick={() => navigate(path)}
-                  className="w-full flex items-center gap-3 p-3 bg-white text-left group transition-all duration-200 hover:bg-slate-50/80 cursor-pointer min-w-0"
-                  style={{
-                    borderRadius: '10px',
-                    border: '1px solid #E2E8F0',
-                  }}
-                >
-                  <div 
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${iconBg} group-hover:scale-105 transition-transform`}
-                  >
-                    <Icon size={18} strokeWidth={2.2} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs lg:text-sm font-bold text-slate-800 group-hover:text-[#1E3A5F] transition-colors truncate">{label}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{desc}</p>
-                  </div>
-                  <ArrowRight size={14} className="text-slate-300 group-hover:text-[#1E3A5F] group-hover:translate-x-0.5 transition-all shrink-0" />
-                </button>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {quickLinks.map(({ label, icon: Icon, path, desc, gradient, light, color }) => (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: 'white', border: '1.5px solid #F1F5F9', borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 150ms', boxSizing: 'border-box' }}
+                onMouseEnter={e => { e.currentTarget.style.background = light; e.currentTarget.style.borderColor = `${color}33`; e.currentTarget.style.transform = 'translateX(3px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#F1F5F9'; e.currentTarget.style.transform = 'translateX(0)'; }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '11px', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 3px 10px ${color}30` }}>
+                  <Icon size={18} strokeWidth={2.2} style={{ color: 'white' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1E293B', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+                  <p style={{ fontSize: '0.6875rem', color: '#94A3B8', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</p>
+                </div>
+                <ArrowRight size={14} style={{ color: '#CBD5E1', flexShrink: 0 }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Recent Activity + System Status ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+
+        {/* Recent Activity */}
+        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', padding: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg,#6366F1,#4338CA)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(99,102,241,0.3)' }}>
+                <Activity size={17} style={{ color: 'white' }} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#1E3A5F', margin: '0 0 2px', letterSpacing: '-0.01em' }}>Recent Activity</h2>
+                <p style={{ fontSize: '0.6875rem', color: '#94A3B8', margin: 0 }}>System event log</p>
+              </div>
             </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '20px', fontSize: '0.6875rem', fontWeight: 700, background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', animation: 'pulse 2s ease infinite' }} />
+              Live Feed
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {activities.map((act, idx) => {
+              const ActIcon = act.icon;
+              return (
+                <div
+                  key={idx}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', background: '#F8FAFC', borderRadius: '14px', border: '1px solid #F1F5F9', transition: 'background 150ms' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F1F5F9'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#F8FAFC'}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '11px', background: act.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 3px 10px ${act.color}33` }}>
+                    <ActIcon size={16} style={{ color: 'white' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '3px' }}>
+                      <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1E293B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{act.title}</p>
+                      <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94A3B8', flexShrink: 0 }}>{act.time}</span>
+                    </div>
+                    <p style={{ fontSize: '0.6875rem', color: '#64748B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{act.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* System Status */}
+        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', padding: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg,#10B981,#047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(16,185,129,0.3)' }}>
+                <ShieldCheck size={17} style={{ color: 'white' }} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#1E3A5F', margin: '0 0 2px', letterSpacing: '-0.01em' }}>System Status</h2>
+                <p style={{ fontSize: '0.6875rem', color: '#94A3B8', margin: 0 }}>Infrastructure health monitor</p>
+              </div>
+            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '20px', fontSize: '0.6875rem', fontWeight: 700, background: '#DCFCE7', color: '#065F46', border: '1px solid #A7F3D0' }}>
+              <CheckCircle2 size={11} />
+              100% Operational
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {systemServices.map(({ label, sub, icon: SvcIcon, status, gradient, bg, border, statusBg, statusColor }) => (
+              <div
+                key={label}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 16px', background: bg, borderRadius: '14px', border: `1px solid ${border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '11px', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 3px 8px rgba(0,0,0,0.12)' }}>
+                    <SvcIcon size={17} style={{ color: 'white' }} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1E293B', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+                    <p style={{ fontSize: '0.6875rem', color: statusColor, margin: 0, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</p>
+                  </div>
+                </div>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '20px', fontSize: '0.6875rem', fontWeight: 700, background: statusBg, color: statusColor, border: `1px solid ${border}`, flexShrink: 0 }}>
+                  <CheckCircle2 size={11} />
+                  {status}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
       </div>
 
-      {/* ── Bottom Section: Recent Activity + System Status ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-        
-        {/* Recent Activity Box */}
-        <div 
-          className="bg-white p-5 lg:p-6 flex flex-col justify-between w-full min-w-0"
-          style={{
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div>
-            <div className="flex items-center justify-between mb-4 gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div 
-                  className="w-8 h-8 bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0"
-                  style={{ borderRadius: '8px' }}
-                >
-                  <Activity size={17} />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-base lg:text-lg font-bold text-slate-900 font-display truncate">Recent Activity</h2>
-                  <p className="text-xs text-slate-500 truncate">System event log</p>
-                </div>
-              </div>
-              <span 
-                className="px-2.5 py-0.5 text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 shrink-0"
-                style={{ borderRadius: '16px' }}
-              >
-                Live Feed
-              </span>
-            </div>
-
-            <div className="space-y-2.5 w-full">
-              {activities.map((act, idx) => {
-                const ActIcon = act.icon;
-                return (
-                  <div 
-                    key={idx} 
-                    className="flex items-start gap-3 p-3 bg-slate-50/50 hover:bg-slate-50 transition-colors w-full min-w-0"
-                    style={{
-                      borderRadius: '10px',
-                      border: '1px solid #F1F5F9',
-                    }}
-                  >
-                    <div 
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border mt-0.5 ${act.iconBg}`}
-                    >
-                      <ActIcon size={14} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold text-slate-800 truncate">{act.title}</p>
-                        <span className="text-[10px] font-semibold text-slate-400 shrink-0">{act.time}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5 truncate">{act.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* System Status Box */}
-        <div 
-          className="bg-white p-5 lg:p-6 flex flex-col justify-between w-full min-w-0"
-          style={{
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div>
-            <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div 
-                  className="w-8 h-8 bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0"
-                  style={{ borderRadius: '8px' }}
-                >
-                  <ShieldCheck size={17} />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-base lg:text-lg font-bold text-slate-900 font-display truncate">System Status</h2>
-                  <p className="text-xs text-slate-500 truncate">Infrastructure health monitor</p>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                100% Operational
-              </span>
-            </div>
-
-            <div className="space-y-2.5 w-full">
-              {/* Database */}
-              <div 
-                className="flex items-center justify-between p-3 bg-emerald-50/40 gap-3 w-full min-w-0"
-                style={{ borderRadius: '10px', border: '1px solid #A7F3D0' }}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div 
-                    className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-xs shrink-0"
-                  >
-                    <Database size={16} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">Database Engine</p>
-                    <p className="text-[11px] text-emerald-700 font-medium truncate">MongoDB • Connected</p>
-                  </div>
-                </div>
-                <span 
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 px-2 py-0.5 bg-emerald-100/70 shrink-0"
-                  style={{ borderRadius: '6px', border: '1px solid #A7F3D0' }}
-                >
-                  <CheckCircle2 size={12} className="text-emerald-600" />
-                  Connected
-                </span>
-              </div>
-
-              {/* AI Service */}
-              <div 
-                className="flex items-center justify-between p-3 bg-blue-50/40 gap-3 w-full min-w-0"
-                style={{ borderRadius: '10px', border: '1px solid #BFDBFE' }}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div 
-                    className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0"
-                  >
-                    <Cpu size={16} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">AI Evaluation Service</p>
-                    <p className="text-[11px] text-blue-700 font-medium truncate">FastAPI • Port 8000</p>
-                  </div>
-                </div>
-                <span 
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 px-2 py-0.5 bg-blue-100/70 shrink-0"
-                  style={{ borderRadius: '6px', border: '1px solid #BFDBFE' }}
-                >
-                  <CheckCircle2 size={12} className="text-blue-600" />
-                  Running
-                </span>
-              </div>
-
-              {/* Email Service */}
-              <div 
-                className="flex items-center justify-between p-3 bg-indigo-50/40 gap-3 w-full min-w-0"
-                style={{ borderRadius: '10px', border: '1px solid #C7D2FE' }}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div 
-                    className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0"
-                  >
-                    <Mail size={16} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">Email Gateway</p>
-                    <p className="text-[11px] text-indigo-700 font-medium truncate">SMTP • Configured</p>
-                  </div>
-                </div>
-                <span 
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 px-2 py-0.5 bg-indigo-100/70 shrink-0"
-                  style={{ borderRadius: '6px', border: '1px solid #C7D2FE' }}
-                >
-                  <CheckCircle2 size={12} className="text-indigo-600" />
-                  Configured
-                </span>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
-
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(1.6); opacity: 0; } }
+      `}</style>
     </div>
   );
 };

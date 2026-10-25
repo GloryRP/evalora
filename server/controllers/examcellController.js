@@ -17,6 +17,7 @@ const AnswerScript = require('../models/AnswerScript');
 const QuestionPaper = require('../models/QuestionPaper');
 const QuestionPaperPattern = require('../models/QuestionPaperPattern');
 const Department = require('../models/Department');
+const GradingScheme = require('../models/GradingScheme');
 const { sendNotification } = require('../services/notificationService');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
@@ -332,6 +333,17 @@ exports.runFullPipeline = async (req, res) => {
   try {
     const { semester, examCategory, component, startDate, constraints = {} } = req.body;
 
+    // F6: startDate is required — validate before hitting the DB or Python
+    if (!startDate || typeof startDate !== 'string' || !startDate.trim()) {
+      return res.status(400).json({ success: false, message: 'startDate is required and must be a valid date string (YYYY-MM-DD).' });
+    }
+    if (isNaN(Date.parse(startDate))) {
+      return res.status(400).json({ success: false, message: `startDate '${startDate}' is not a valid date. Expected format: YYYY-MM-DD.` });
+    }
+
+    // F8: Extract hallFillPercent (default 70 when absent)
+    const hallFillPercent = Math.min(100, Math.max(1, Number(constraints.hallFillPercent || constraints.fillPercentage || req.body.hallFillPercent || req.body.fillPercentage || 70)));
+
     // Fetch required data from database
     const subjects = await Subject.find({ semester: parseInt(semester) }).lean();
     const students = await Student.find().lean();
@@ -435,7 +447,9 @@ exports.runFullPipeline = async (req, res) => {
           ...constraints,
           startDate,
           examCategory,
-          component
+          component,
+          hallFillPercent,  // F8: forward fill percentage to Python
+          fillPercentage: hallFillPercent,
         },
       }, {
         timeout: 60000, // 60 second timeout
@@ -717,9 +731,18 @@ exports.runFullPipeline = async (req, res) => {
 
   } catch (error) {
     console.error('Error running pipeline:', error);
+    const isConnRefused = error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED') || error.message?.includes('connect ECONNREFUSED');
+    if (isConnRefused) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'AI Service is currently offline or unreachable (port 8000). Please start the Python AI service.', 
+        error: 'AI_SERVICE_UNAVAILABLE',
+        details: error.message 
+      });
+    }
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to run pipeline', 
+      message: error.response?.data?.message || 'Failed to run pipeline', 
       error: error.message,
       details: error.response?.data || null,
     });
@@ -1811,6 +1834,15 @@ exports.publishResults = async (req, res) => {
       });
     }
 
+    // Check if any scripts in this semester have isResultStale = true
+    const staleScripts = semesterScripts.filter(s => s.isResultStale === true);
+    if (staleScripts.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot publish results. There are ${staleScripts.length} answer script(s) in Semester ${semester} with stale/modified marks (isResultStale = true). Please re-run evaluation/results computation first.`
+      });
+    }
+
     // Get only evaluated scripts to publish
     const relevantScripts = semesterScripts.filter(s => s.status === 'evaluated');
 
@@ -2075,34 +2107,73 @@ exports.approveQuestionPaper = async (req, res) => {
  */
 exports.runEvaluationAgent = async (req, res) => {
   try {
+    // F9: Fetch active GradingScheme — do NOT hardcode 40; missing scheme returns 400
+    const activeScheme = await GradingScheme.findOne({ isActive: true });
+    if (!activeScheme) {
+      return res.status(400).json({
+        success: false,
+        message: 'No active grading scheme found. Configure an active grading scheme before running evaluation.'
+      });
+    }
+
     const totalScripts = await AnswerScript.countDocuments();
     const evaluatedScripts = await AnswerScript.countDocuments({ status: { $in: ['evaluated', 'published'] } });
     const pendingScripts = totalScripts - evaluatedScripts;
 
-    const scripts = await AnswerScript.find({ status: { $in: ['evaluated', 'published'] } });
-    
-    let averageMarks = 0;
-    let passCount = 0;
-    let failCount = 0;
+    const scripts = await AnswerScript.find({ status: { $in: ['evaluated', 'published'] } }).lean();
 
-    if (scripts.length > 0) {
-      const sum = scripts.reduce((acc, s) => acc + (s.marksObtained || 0), 0);
-      averageMarks = sum / scripts.length;
-      
-      scripts.forEach(s => {
-        if (s.marksObtained >= 40) passCount++;
-        else failCount++;
+    if (scripts.length === 0) {
+      const agentRun = await AgentRun.create({
+        agentType: 'evaluation',
+        status: 'completed',
+        inputData: { totalScripts, evaluatedScripts: 0, passMarkPercentage: activeScheme.passMarkPercentage },
+        triggeredBy: req.user?.username || 'examcell',
+        logs: `Evaluation run complete. Checked 0/${totalScripts} booklets. No evaluated scripts found.`,
+        completedAt: new Date(),
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          totalScripts,
+          evaluatedScripts: 0,
+          pendingScripts,
+          averageMarks: 0,
+          passCount: 0,
+          failCount: 0,
+          passRate: 0,
+          gradeDistribution: {},
+          flaggedScripts: [],
+          agentRun,
+        }
       });
     }
 
-    const passRate = scripts.length > 0 ? (passCount / scripts.length) * 100 : 0;
+    // Call Python Evaluation Agent endpoint (/agents/evaluate)
+    const maxMarks = Number(scripts[0]?.maxMarks || 100);
+    const passMarkPercentage = Number(activeScheme.passMarkPercentage != null ? activeScheme.passMarkPercentage : 40);
+
+    const payload = {
+      scripts: scripts.map(s => ({
+        scriptId: s._id.toString(),
+        studentId: s.studentId ? s.studentId.toString() : '',
+        evaluatorId: s.evaluatorId ? s.evaluatorId.toString() : '',
+        marksObtained: s.marksObtained != null ? Number(s.marksObtained) : 0,
+        questionMarks: s.questionMarks || [],
+      })),
+      maxMarks,
+      passMarkPercentage,
+    };
+
+    const aiRes = await axios.post(`${AI_SERVICE_URL}/agents/evaluate`, payload);
+    const agentResult = aiRes.data?.result || aiRes.data;
 
     const agentRun = await AgentRun.create({
       agentType: 'evaluation',
       status: 'completed',
-      inputData: {},
+      inputData: { totalScripts, evaluatedScripts, passMarkPercentage },
       triggeredBy: req.user?.username || 'examcell',
-      logs: `Evaluation run complete. Checked ${evaluatedScripts}/${totalScripts} booklets. Average: ${averageMarks.toFixed(2)} Marks. Pass Rate: ${passRate.toFixed(2)}%.`,
+      logs: `Evaluation run complete. Checked ${evaluatedScripts}/${totalScripts} booklets. Average: ${agentResult.average} Marks. Pass Rate: ${agentResult.passPercentage}%. Flagged: ${agentResult.flaggedCount ?? (agentResult.flaggedScripts ? agentResult.flaggedScripts.length : 0)} scripts.`,
       completedAt: new Date(),
     });
 
@@ -2112,15 +2183,26 @@ exports.runEvaluationAgent = async (req, res) => {
         totalScripts,
         evaluatedScripts,
         pendingScripts,
-        averageMarks: Math.round(averageMarks * 100) / 100,
-        passCount,
-        failCount,
-        passRate: Math.round(passRate * 100) / 100,
+        averageMarks: Math.round(agentResult.average * 100) / 100,
+        passCount: agentResult.passCount,
+        failCount: agentResult.failCount,
+        passRate: Math.round(agentResult.passPercentage * 100) / 100,
+        gradeDistribution: agentResult.gradeDistribution || {},
+        flaggedScripts: agentResult.flaggedScripts || [],
         agentRun,
       }
     });
   } catch (error) {
     console.error('Error running evaluation agent:', error);
+    const isAiServiceDown = error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED') || error.message?.includes('connect ECONNREFUSED');
+    if (isAiServiceDown) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI Service is unavailable. Please ensure the Python AI service is running on http://localhost:8000',
+        error: error.message,
+        code: 'AI_SERVICE_UNAVAILABLE'
+      });
+    }
     res.status(500).json({ success: false, message: 'Failed to run evaluation agent', error: error.message });
   }
 };
@@ -2135,6 +2217,9 @@ exports.generateTimetable = async (req, res) => {
 
     if (!semester || !examCategory || !component || !startDate) {
       return res.status(400).json({ success: false, message: 'Missing required parameters: semester, examCategory, component, startDate' });
+    }
+    if (isNaN(Date.parse(startDate))) {
+      return res.status(400).json({ success: false, message: `startDate '${startDate}' is not a valid date. Expected format: YYYY-MM-DD.` });
     }
 
     // Fetch subjects for this semester
@@ -2425,8 +2510,11 @@ exports.runHallAllocationAgentSeparate = async (req, res) => {
 
       res.json({
         success: true,
-        message: `Seating allocation completed successfully. Allocated ${allocationDocs.length} students.`,
+        message: result.warning || `Seating allocation completed successfully. Allocated ${allocationDocs.length} students.`,
         allocationsCount: allocationDocs.length,
+        unseatedCount: result.unseated_count || 0,
+        unseatedStudents: result.unseated_students || [],
+        warning: result.warning || null,
         agentRun,
       });
 
@@ -2441,7 +2529,16 @@ exports.runHallAllocationAgentSeparate = async (req, res) => {
 
   } catch (error) {
     console.error('Error running separate seating allocation:', error);
-    res.status(500).json({ success: false, message: 'Failed to run seating allocation', error: error.message });
+    const isConnRefused = error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED') || error.message?.includes('connect ECONNREFUSED');
+    if (isConnRefused) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'AI Service is currently offline or unreachable (port 8000). Please start the Python AI service.', 
+        error: 'AI_SERVICE_UNAVAILABLE',
+        details: error.message 
+      });
+    }
+    res.status(500).json({ success: false, message: error.response?.data?.message || 'Failed to run seating allocation', error: error.message });
   }
 };
 

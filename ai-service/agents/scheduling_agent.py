@@ -2,6 +2,11 @@
 Scheduling Agent
 Handles exam scheduling with sequential calendar days (skipping weekends) starting from a start date.
 Supports up to 2 sessions per day (Morning & Afternoon) to allow 2 exams per day.
+
+F5: Same-semester date constraint — no two exams of the same semester may be on dates
+    closer than minGapBetweenExams days apart (default 1, i.e., no same-date clashes).
+    Exams of different semesters may freely share a date in different sessions.
+F6: startDate is required — raises ValueError instead of silently falling back to today.
 """
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
@@ -22,7 +27,7 @@ class SchedulingAgent:
         
         Args:
             subjects: List of subject dictionaries
-            start_date: Start date string (YYYY-MM-DD)
+            start_date: Start date string (YYYY-MM-DD) — REQUIRED; raises ValueError if missing
             exam_category: "internal1", "internal2", "external"
             component: "theory", "lab", "both"
             constraints: Dict with custom settings
@@ -32,14 +37,18 @@ class SchedulingAgent:
         """
         if not subjects:
             return {"scheduled_exams": [], "message": "No subjects provided"}
-        if not start_date:
-            return {"scheduled_exams": [], "message": "No start date provided"}
+
+        # F6: startDate is required — no silent fallback
+        if not start_date or not start_date.strip():
+            raise ValueError("startDate is required and cannot be empty.")
             
         constraints = constraints or {}
         
         # Default constraints
-        min_gap = constraints.get("minGapBetweenExams", 1)
+        # F5: minGapBetweenExams = minimum calendar days between consecutive exams of the SAME semester
+        min_gap = int(constraints.get("minGapBetweenExams", 1))
         max_per_day = constraints.get("maxExamsPerDay", 3)
+        end_date_str = constraints.get("endDate")
         
         morning_start = constraints.get("theoryStartTime") or constraints.get("morningStartTime") or "09:00"
         afternoon_start = constraints.get("afternoonStartTime") or constraints.get("labStartTime") or "13:30"
@@ -48,13 +57,20 @@ class SchedulingAgent:
         external_duration = float(constraints.get("externalDuration", 3.0))
         lab_duration = float(constraints.get("labDuration", 3.0))
 
-        # Parse start date
+        # F6: Parse start date — raise ValueError on parse failure (no fallback)
         try:
             clean_str = start_date.split('T')[0]
             base_date = datetime.strptime(clean_str, "%Y-%m-%d").date()
         except Exception as e:
-            print(f"Error parsing date {start_date}: {e}")
-            base_date = datetime.now().date()
+            raise ValueError(f"Invalid startDate '{start_date}': {e}. Expected format: YYYY-MM-DD.")
+
+        # Parse optional endDate for conflict detection
+        end_date = None
+        if end_date_str:
+            try:
+                end_date = datetime.strptime(end_date_str.split('T')[0], "%Y-%m-%d").date()
+            except Exception:
+                pass  # endDate parse failure is non-fatal; conflict won't be detected
 
         def needs_theory_exam(sub, cat):
             config = sub.get("examConfig") or {}
@@ -81,6 +97,31 @@ class SchedulingAgent:
             if cat == "external":
                 return config.get("labExternal", False)
             return False
+
+        # Parse excluded dates / holidays if provided
+        excluded_dates_raw = constraints.get("excludedDates") or constraints.get("excluded_dates") or constraints.get("holidays") or []
+        excluded_dates = set()
+        for ed in excluded_dates_raw:
+            try:
+                if isinstance(ed, str):
+                    excluded_dates.add(datetime.strptime(ed.split('T')[0], "%Y-%m-%d").date())
+            except Exception:
+                pass
+
+        def is_valid_exam_date(d):
+            # Skip weekends (Saturday=5, Sunday=6)
+            if d.weekday() >= 5:
+                return False
+            # Skip user-specified excluded dates and holidays
+            if d in excluded_dates:
+                return False
+            return True
+
+        def next_valid_date(d):
+            """Skip weekends, Sundays, holidays, and excluded dates."""
+            while not is_valid_exam_date(d):
+                d += timedelta(days=1)
+            return d
 
         def add_hours_to_time(time_str, hours):
             try:
@@ -116,9 +157,16 @@ class SchedulingAgent:
         )
 
         scheduled_exams = []
-        semester_slot_pointer = {}
         scheduled_entity_keys = set()
-        
+
+        # F5: Enforce same-semester gap and no two exams of the same semester on the same date.
+        # Track last scheduled date per semester.
+        semester_last_date = {}
+        # Track sessions occupied per date across all semesters: date -> {"morning": sem, "afternoon": sem}
+        date_sessions = {}
+
+        effective_gap = max(1, min_gap)
+
         for entity in schedulable_entities:
             sub = entity["subject"]
             comp_type = entity["component_type"]
@@ -127,50 +175,71 @@ class SchedulingAgent:
             subject_id = str(sub.get("_id") or sub.get("id") or "")
 
             # Prevent duplicate scheduling of the exact same subject entity
-            entity_key = f"{subject_id}_{comp_type}"
+            entity_key = f"{subject_id or sub_code}_{comp_type}"
             if entity_key in scheduled_entity_keys:
                 print(f"[SCHEDULING AGENT] Skipping already scheduled entity: {sub_code} ({comp_type})")
                 continue
-            
-            if sem not in semester_slot_pointer:
-                semester_slot_pointer[sem] = {
-                    "date": base_date,
-                    "session": "morning"
-                }
-                
-            slot_info = semester_slot_pointer[sem]
-            curr_date = slot_info["date"]
-            session = slot_info["session"]
-            
-            # Find next available weekday if date is a weekend
-            while curr_date.weekday() >= 5:
-                curr_date += timedelta(days=1)
-                
-            # Assign start time and duration
-            if session == "morning":
+
+            # Earliest possible candidate date for this semester:
+            # - If this semester already has an exam, must be at least effective_gap days later
+            # - Otherwise starts from base_date
+            if sem in semester_last_date:
+                candidate_date = next_valid_date(semester_last_date[sem] + timedelta(days=effective_gap))
+            else:
+                candidate_date = next_valid_date(base_date)
+
+            # Find the earliest weekday and session available:
+            # Different semesters may share the same date in different sessions (morning / afternoon).
+            # Same semester never shares a date because candidate_date > semester_last_date[sem].
+            scheduled_date = None
+            assigned_session = None
+
+            while True:
+                candidate_date = next_valid_date(candidate_date)
+
+                # F5: Conflict detection — if endDate is given and candidate_date exceeds it, report conflict
+                if end_date and candidate_date > end_date:
+                    raise ValueError(
+                        f"Scheduling conflict: cannot fit subject '{sub_code}' (semester {sem}) "
+                        f"within the given date range (up to {end_date.isoformat()}). "
+                        f"Reduce the number of subjects, extend the end date, or reduce minGapBetweenExams."
+                    )
+
+                if candidate_date not in date_sessions:
+                    date_sessions[candidate_date] = {}
+
+                # Check morning session availability
+                if "morning" not in date_sessions[candidate_date]:
+                    scheduled_date = candidate_date
+                    assigned_session = "morning"
+                    date_sessions[candidate_date]["morning"] = sem
+                    break
+                # Check afternoon session availability (different semester sharing date)
+                elif "afternoon" not in date_sessions[candidate_date]:
+                    scheduled_date = candidate_date
+                    assigned_session = "afternoon"
+                    date_sessions[candidate_date]["afternoon"] = sem
+                    break
+                else:
+                    # Both morning and afternoon occupied on candidate_date; move to next day
+                    candidate_date = next_valid_date(candidate_date + timedelta(days=1))
+
+            if assigned_session == "morning":
                 start_time = morning_start
-                duration = internal_duration if exam_category.startswith("internal") else external_duration
-                if comp_type == "lab":
-                    duration = lab_duration
-                # Next session for this sem is afternoon on the SAME day
-                next_date = curr_date
-                next_session = "afternoon"
-            else:  # afternoon
+            else:
                 start_time = afternoon_start
-                duration = internal_duration if exam_category.startswith("internal") else external_duration
-                if comp_type == "lab":
-                    duration = lab_duration
-                # Next session for this sem is morning on the NEXT day
-                next_date = curr_date + timedelta(days=1)
-                next_session = "morning"
-                
+
+            duration = internal_duration if exam_category.startswith("internal") else external_duration
+            if comp_type == "lab":
+                duration = lab_duration
+
             end_time = add_hours_to_time(start_time, duration)
-            
+
             exam = {
                 "subjectId": subject_id,
                 "subjectCode": sub_code,
                 "subjectName": sub.get("subjectName", ""),
-                "examDate": curr_date.isoformat(),
+                "examDate": scheduled_date.isoformat(),
                 "startTime": start_time,
                 "endTime": end_time,
                 "semester": sem,
@@ -178,15 +247,10 @@ class SchedulingAgent:
                 "componentType": comp_type,
                 "department": sub.get("department", ""),
             }
-            
+
             scheduled_exams.append(exam)
             scheduled_entity_keys.add(entity_key)
-            
-            # Update state pointer
-            semester_slot_pointer[sem] = {
-                "date": next_date,
-                "session": next_session
-            }
+            semester_last_date[sem] = scheduled_date
 
         # Detailed logging before returning schedule
         print("\n=== SCHEDULING AGENT FINAL SCHEDULE OUTPUT ===")

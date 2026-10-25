@@ -3,7 +3,7 @@
  * Allows exam cell to select semester, exam category, component, start date, and constraints.
  */
 import { useState } from 'react';
-import { Play, CheckCircle, XCircle, Loader, ChevronRight, ChevronLeft, Sparkles, Settings, Calendar, Shield } from 'lucide-react';
+import { Play, CheckCircle, XCircle, Loader, ChevronRight, ChevronLeft, Sparkles, Settings, Calendar, Shield, AlertTriangle } from 'lucide-react';
 import api from '../../lib/api';
 import Button from '../../components/ui/Button';
 
@@ -293,9 +293,28 @@ const RunAgents = () => {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 text-[#B3413E] rounded-xl text-xs font-semibold">
-                <XCircle size={16} />
-                <span>{error}</span>
+              <div style={{
+                padding: '16px',
+                borderRadius: '12px',
+                fontSize: '0.825rem',
+                backgroundColor: error.includes('AI Service') || error.includes('8000') || error.includes('offline') ? '#FFFBEB' : '#FEF2F2',
+                border: error.includes('AI Service') || error.includes('8000') || error.includes('offline') ? '1.5px solid #FCD34D' : '1px solid #FECACA',
+                color: error.includes('AI Service') || error.includes('8000') || error.includes('offline') ? '#92400E' : '#B3413E'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', fontWeight: 700, fontSize: '0.9rem' }}>
+                  {error.includes('AI Service') || error.includes('8000') || error.includes('offline') ? (
+                    <AlertTriangle size={18} style={{ color: '#D97706' }} />
+                  ) : (
+                    <XCircle size={18} style={{ color: '#EF4444' }} />
+                  )}
+                  <span>{error.includes('AI Service') || error.includes('8000') || error.includes('offline') ? 'AI Service Offline' : 'Pipeline Execution Failed'}</span>
+                </div>
+                <p style={{ margin: '4px 0 0 26px', fontSize: '0.85rem', color: '#4B5563', lineHeight: 1.5 }}>{error}</p>
+                {(error.includes('AI Service') || error.includes('8000') || error.includes('offline')) && (
+                  <div style={{ margin: '10px 0 0 26px', padding: '8px 12px', backgroundColor: '#FEF3C7', borderRadius: '6px', fontSize: '0.75rem', fontFamily: 'monospace', color: '#78350F' }}>
+                    <strong>Start AI Service:</strong> .\\venv\\Scripts\\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000
+                  </div>
+                )}
               </div>
             )}
 
@@ -341,6 +360,50 @@ const RunAgents = () => {
                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Invigilators Assigned</div>
               </div>
             </div>
+
+            {/* Unseated Students Warning (F8) */}
+            {(result.data?.result?.unseated_count > 0 || (result.data?.result?.unseated_students && result.data.result.unseated_students.length > 0)) && (
+              <div style={{
+                backgroundColor: '#FFFBEB',
+                border: '1.5px solid #FCD34D',
+                borderRadius: '12px',
+                padding: '20px',
+                marginTop: '16px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <AlertTriangle size={20} style={{ color: '#D97706' }} />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#92400E', margin: 0 }}>
+                    Seating Capacity Warning: {result.data.result.unseated_count} Student(s) Unseated
+                  </h3>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: '#B45309', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+                  {result.data.result.warning || `Total students exceed usable hall seats at ${constraints.fillPercentage}% fill limit. Consider adding more examination halls or increasing the hall fill percentage.`}
+                </p>
+                {result.data.result.unseated_students?.length > 0 && (
+                  <div style={{ maxHeight: '140px', overflowY: 'auto', border: '1px solid #FDE68A', borderRadius: '8px', backgroundColor: 'white' }}>
+                    <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
+                      <thead style={{ backgroundColor: '#FEF3C7' }}>
+                        <tr>
+                          <th style={{ padding: '6px 12px', textAlign: 'left', color: '#92400E' }}>USN</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'left', color: '#92400E' }}>Subject Code</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'left', color: '#92400E' }}>Exam Date / Slot</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.data.result.unseated_students.map((st, i) => (
+                          <tr key={i} style={{ borderTop: '1px solid #FEF3C7' }}>
+                            <td style={{ padding: '6px 12px', fontFamily: 'monospace', fontWeight: 600 }}>{st.usn || st.studentUSN || 'N/A'}</td>
+                            <td style={{ padding: '6px 12px' }}>{st.subjectCode || 'N/A'}</td>
+                            <td style={{ padding: '6px 12px', color: '#6B7280' }}>{st.examDate || ''} {st.slot || ''}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3 pt-6 border-t border-gray-100">
               <Button onClick={handleReset} variant="ghost" className="flex-1">Run New Pipeline</Button>

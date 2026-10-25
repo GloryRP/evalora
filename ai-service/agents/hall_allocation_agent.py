@@ -30,6 +30,11 @@ class HallAllocationAgent:
         """
         if not exams or not students or not halls:
             return {"hall_allocations": [], "message": "Missing required data"}
+
+        # F8: Hall fill percentage — usable seats = floor(capacity * fillPercent / 100)
+        # Default is 70 when not provided. Value is clamped to [1, 100].
+        fill_pct = float(constraints.get("hallFillPercent", 70) if constraints else 70)
+        fill_pct = max(1.0, min(100.0, fill_pct))
         
         # Group exams by date and time slot (representing unique exam sessions)
         sessions = {}
@@ -41,6 +46,7 @@ class HallAllocationAgent:
             sessions[key].append(exam)
             
         allocations = []
+        unseated_students = []
         halls_used_all_sessions = set()
         
         # Process each exam session independently
@@ -80,13 +86,17 @@ class HallAllocationAgent:
                 if total_left == 0:
                     break
                     
-                hall_capacity = hall.get("capacity", 40)
-                hall_id = hall.get("_id") or hall.get("id")
+                raw_capacity = hall.get("capacity", 40)
+                # F8: Compute usable capacity from fill percentage, never exceeding raw capacity
+                import math as _math
+                usable_capacity = min(raw_capacity, _math.floor(raw_capacity * fill_pct / 100.0))
+                hall_id = hall.get("_id") or hall.get("id") or hall.get("hallName")
                 hall_name = hall.get("hallName", "")
                 
-                # 2 students per bench
-                num_benches = hall_capacity // 2
+                # 2 students per bench (applied to usable_capacity)
+                num_benches = usable_capacity // 2
                 seat_number = 1
+
                 
                 for bench_num in range(1, num_benches + 1):
                     # Check remaining students
@@ -167,36 +177,30 @@ class HallAllocationAgent:
                         })
                         seat_number += 1
                 
-                # Check for odd capacity last seat
-                if hall_capacity % 2 == 1:
-                    total_left = sum(len(p["students"]) for p in student_pools)
-                    if total_left > 0:
-                        pools = sorted(
-                            [p for p in student_pools if p["students"]],
-                            key=lambda p: len(p["students"]),
-                            reverse=True
-                        )
-                        if pools:
-                            last_pool = pools[0]
-                            last_student = last_pool["students"].pop(0)
-                            last_student_id = last_student.get("_id") or last_student.get("id")
-                            
-                            allocations.append({
-                                "examId": last_pool["examId"],
-                                "hallId": hall_id,
-                                "studentId": last_student_id,
-                                "seatNumber": seat_number,
-                                "benchNumber": num_benches + 1,
-                                "seatPosition": "left",
-                                "hallName": hall_name,
-                                "studentUSN": last_student.get("usn", ""),
-                                "subjectCode": last_pool["subjectCode"]
-                            })
-                            halls_used_all_sessions.add(hall_id)
-                            seat_number += 1
-                            
-        return {
+            # Check for unseated students in this session after trying all available halls
+            for pool in student_pools:
+                for remaining_st in pool["students"]:
+                    unseated_students.append({
+                        "examId": pool["examId"],
+                        "studentId": remaining_st.get("_id") or remaining_st.get("id"),
+                        "studentUSN": remaining_st.get("usn", ""),
+                        "department": pool["department"],
+                        "subjectCode": pool["subjectCode"],
+                        "session": f"{session_date} ({session_start}-{session_end})"
+                    })
+
+        total_unseated = len(unseated_students)
+        response = {
             "hall_allocations": allocations,
             "total_allocations": len(allocations),
-            "halls_used": len(halls_used_all_sessions)
+            "halls_used": len(halls_used_all_sessions),
+            "unseated_students": unseated_students,
+            "unseated_count": total_unseated,
         }
+        if total_unseated > 0:
+            fill_label = int(fill_pct) if fill_pct.is_integer() else fill_pct
+            response["warning"] = (
+                f"{total_unseated} student(s) could not be seated at {fill_label}% "
+                f"hall fill percentage due to insufficient hall capacity. Please add additional halls or increase fill percentage."
+            )
+        return response

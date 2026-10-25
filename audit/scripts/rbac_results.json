@@ -2,37 +2,37 @@
   "logins": {
     "admin": {
       "status": "PASS",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1OWYiLCJ1c2VybmFtZSI6IkFETUlOMSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc5MTYxNDMzMiwiZXhwIjoxNzkxNjQzMTMyfQ.dniOSmtXrkQrn4jKByFL1rUe78RSlujEKeJB8Jn8yK4",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1OWYiLCJ1c2VybmFtZSI6IkFETUlOMSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc5MTYzNzg4MCwiZXhwIjoxNzkxNjY2NjgwfQ.LjmB_5y05pM7tqaHhGQ6OqAJv7aVKgD6xft5zf96kWY",
       "expHours": 8,
       "decodedRole": "admin"
     },
     "examcell": {
       "status": "PASS",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTAiLCJ1c2VybmFtZSI6IkVYQU1DRUxMMSIsInJvbGUiOiJleGFtY2VsbCIsImlhdCI6MTc5MTYxNDMzMiwiZXhwIjoxNzkxNjQzMTMyfQ.IJImEoKO8ZQz-cswQqVx-ulolV7hgTKZ1VCTsAM74nQ",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTAiLCJ1c2VybmFtZSI6IkVYQU1DRUxMMSIsInJvbGUiOiJleGFtY2VsbCIsImlhdCI6MTc5MTYzNzg4MCwiZXhwIjoxNzkxNjY2NjgwfQ.SyxpkxP7dpEC0vgwAQBWc4nIw_1aCCcObHaEulS6ow0",
       "expHours": 8,
       "decodedRole": "examcell"
     },
     "faculty": {
       "status": "PASS",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTEiLCJ1c2VybmFtZSI6IkZBQ1VMVFkxIiwicm9sZSI6ImZhY3VsdHkiLCJpYXQiOjE3OTE2MTQzMzIsImV4cCI6MTc5MTY0MzEzMn0.-Dp8bxpMsdp-qNqCqS_B2IO-gYhwqfg-JRKo1hR8YjI",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTEiLCJ1c2VybmFtZSI6IkZBQ1VMVFkxIiwicm9sZSI6ImZhY3VsdHkiLCJpYXQiOjE3OTE2Mzc4ODAsImV4cCI6MTc5MTY2NjY4MH0.RnQMZBRQv7CZX8BSeJ0p5ChChLSveYIKbYMCu8_bAfU",
       "expHours": 8,
       "decodedRole": "faculty"
     },
     "student": {
       "status": "PASS",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTIiLCJ1c2VybmFtZSI6IlNUVURFTlQxIiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3OTE2MTQzMzIsImV4cCI6MTc5MTY0MzEzMn0.syF5cbiG9pGQKoW79kFH9maMJ0g0lEx-zWsN6h7ptwg",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTIiLCJ1c2VybmFtZSI6IlNUVURFTlQxIiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3OTE2Mzc4ODAsImV4cCI6MTc5MTY2NjY4MH0.8vyXlN_C1MLGYpz7Vf8gjr56kJ5pbIz_2abPFkbsUxo",
       "expHours": 8,
       "decodedRole": "student"
     },
     "hod": {
       "status": "PASS",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTZhMzU4ZjcxY2MzYWU3ODcwYjg0MWYiLCJ1c2VybmFtZSI6IkhPRF9DU0UiLCJyb2xlIjoiaG9kIiwiaWF0IjoxNzkxNjE0MzMyLCJleHAiOjE3OTE2NDMxMzJ9.leaSUy6ZwQDcQVSIG3dhtaJYGr8qGAAQIkkJ4K8ixMU",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTZhMzU4ZjcxY2MzYWU3ODcwYjg0MWYiLCJ1c2VybmFtZSI6IkhPRF9DU0UiLCJyb2xlIjoiaG9kIiwiaWF0IjoxNzkxNjM3ODgwLCJleHAiOjE3OTE2NjY2ODB9.tKq-vHeu0y9ljMwgrZBr5JVFsEqkuR_-KbiMPHtUmCg",
       "expHours": 8,
       "decodedRole": "hod"
     },
     "principal": {
       "status": "PASS",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTQiLCJ1c2VybmFtZSI6IlBSSU5DSVBBTDEiLCJyb2xlIjoicHJpbmNpcGFsIiwiaWF0IjoxNzkxNjE0MzMyLCJleHAiOjE3OTE2NDMxMzJ9.a8zzfDPkSl4uCiDYuNbPTw75upIk-0ztbcmoj2y9YCY",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWM5ZDc0N2Y5ZjNhZDFhODdjZWI1YTQiLCJ1c2VybmFtZSI6IlBSSU5DSVBBTDEiLCJyb2xlIjoicHJpbmNpcGFsIiwiaWF0IjoxNzkxNjM3ODgwLCJleHAiOjE3OTE2NjY2ODB9.iOg9tmh68f8CmQFKaBdTY0gvs0q9HfgKv-4FWTVpq_0",
       "expHours": 8,
       "decodedRole": "principal"
     }
@@ -456,7 +456,7 @@
       "module": "Security Injection",
       "input": "Payload: {\"username\":{\"$gt\":\"\"},\"password\":{\"$gt\":\"\"}}",
       "expected": "Rejection (400 or 401)",
-      "actual": "Status 401",
+      "actual": "Status 400",
       "status": "PASS"
     },
     {
@@ -464,15 +464,15 @@
       "module": "Security Injection",
       "input": "Payload: {\"username\":\"ADMIN1\",\"password\":{\"$gt\":\"\"}}",
       "expected": "Rejection (400 or 401)",
-      "actual": "Status 500",
-      "status": "FAIL"
+      "actual": "Status 400",
+      "status": "PASS"
     },
     {
       "id": "SEC-NOSQL-3",
       "module": "Security Injection",
       "input": "Payload: {\"username\":{\"$ne\":null},\"password\":{\"$ne\":null}}",
       "expected": "Rejection (400 or 401)",
-      "actual": "Status 401",
+      "actual": "Status 400",
       "status": "PASS"
     }
   ]

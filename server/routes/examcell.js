@@ -194,13 +194,45 @@ router.get('/qp-templates/:examType', async (req, res) => {
   }
 });
 
-// POST / PUT - Save or update a global template for an exam type
-router.post('/qp-templates', async (req, res) => {
+// POST / PUT - Save or update a global template for an exam type (F4)
+const handleSaveOrUpdateQPTemplate = async (req, res) => {
   try {
-    const { examType, maxMarks, slots, questions, exceptions } = req.body;
+    const examType = req.params.examType || req.body.examType;
+    const { maxMarks, slots, questions, exceptions } = req.body;
     if (!examType) {
       return res.status(400).json({ success: false, message: 'examType is required' });
     }
+
+    // F4: Validate effective total from slots (if slots are supplied)
+    // Effective total = sum of compulsory questions + MAX within each OR-alternative group.
+    // A slot with slot.or defines an alternative pair: student answers EITHER slot OR slot.or.
+    // Effective contribution = max(slot.maxMarks, slot.or.maxMarks).
+    // A slot WITHOUT slot.or is compulsory: contributes slot.maxMarks always.
+    const slotsToValidate = slots || questions;
+    if (slotsToValidate && Array.isArray(slotsToValidate) && slotsToValidate.length > 0 && maxMarks !== undefined) {
+      let effectiveTotal = 0;
+      for (const slot of slotsToValidate) {
+        const slotMarks = Number(slot.maxMarks) || 0;
+        if (slot.or && slot.or.maxMarks !== undefined) {
+          // OR group: only one of the two questions will be answered
+          effectiveTotal += Math.max(slotMarks, Number(slot.or.maxMarks) || 0);
+        } else {
+          // Compulsory question
+          effectiveTotal += slotMarks;
+        }
+      }
+      const declaredMax = Number(maxMarks);
+      if (effectiveTotal !== declaredMax) {
+        return res.status(400).json({
+          success: false,
+          message: `Effective total (${effectiveTotal}) does not match maxMarks (${declaredMax}). ` +
+            `Effective total = compulsory questions + max marks within each OR-alternative group. ` +
+            `Disagreement: declared ${declaredMax}, computed ${effectiveTotal}.`,
+          details: { declaredMaxMarks: declaredMax, computedEffectiveTotal: effectiveTotal, difference: declaredMax - effectiveTotal }
+        });
+      }
+    }
+
     let template = await QPTemplate.findOne({ examType });
     if (template) {
       template.maxMarks = maxMarks;
@@ -217,7 +249,12 @@ router.post('/qp-templates', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to save template', error: err.message });
   }
-});
+};
+
+router.post('/qp-templates', handleSaveOrUpdateQPTemplate);
+router.put('/qp-templates', handleSaveOrUpdateQPTemplate);
+router.put('/qp-templates/:examType', handleSaveOrUpdateQPTemplate);
+
 
 
 // ============================================

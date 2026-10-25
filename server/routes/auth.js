@@ -9,14 +9,28 @@ const { verifyToken } = require('../middleware/auth');
  * @desc    Login user and get JWT token
  * @access  Public
  */
+const validateLoginTypes = (req, res, next) => {
+  const { username, password } = req.body || {};
+  if (username !== undefined && typeof username !== 'string') {
+    return res.status(400).json({ success: false, message: 'Username and password must be plain strings.' });
+  }
+  if (password !== undefined && typeof password !== 'string') {
+    return res.status(400).json({ success: false, message: 'Username and password must be plain strings.' });
+  }
+  next();
+};
+
 router.post(
   '/login',
+  validateLoginTypes,
   [
     body('username')
+      .isString()
       .trim()
       .notEmpty()
       .withMessage('Username is required'),
     body('password')
+      .isString()
       .notEmpty()
       .withMessage('Password is required'),
   ],
