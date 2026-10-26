@@ -21,18 +21,25 @@ const fileProxyRoutes = require('./routes/fileProxy');
 
 const app = express();
 
-// Middleware
 // F7: Allowlist-based CORS — reads CLIENT_URL from env (default http://localhost:5173)
 const ALLOWED_ORIGINS = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map(o => o.trim())
   .filter(Boolean);
 
+const DEFAULT_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://evalora-tan.vercel.app',
+];
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow same-origin / server-to-server calls (no Origin header)
     if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin) || DEFAULT_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
     // Unknown origin: respond without the ACAO header (browser blocks it)
     return callback(null, false);
   },
