@@ -12,6 +12,7 @@ const AnswerScript = require('../models/AnswerScript');
 const QuestionPaper = require('../models/QuestionPaper');
 const QPTemplate = require('../models/QPTemplate');
 const Exam = require('../models/Exam');
+const QuestionPaperSubmission = require('../models/QuestionPaperSubmission');
 
 /**
  * GET /api/v1/faculty/duties
@@ -198,20 +199,60 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
       return res.status(400).json({ success: false, message: 'questionMarks array is required and must not be empty.' });
     }
 
-    // Load the QuestionPaper for this exam
-    const paper = await QuestionPaper.findOne({ examId: script.examId });
-    if (!paper) {
-      return res.status(400).json({ success: false, message: 'No question paper pattern found for this exam. Cannot validate marks.' });
+    // Load the QuestionPaper for this exam, with fallback to QuestionPaperSubmission or QPTemplate
+    let paper = await QuestionPaper.findOne({ examId: script.examId });
+    const allowedQuestions = {};
+    let paperMaxMarks = script.maxMarks || 50;
+
+    if (paper) {
+      const patternSlots = paper.slots && paper.slots.length > 0 ? paper.slots : paper.questions;
+      for (const slot of patternSlots) {
+        const key = String(slot.questionNumber).trim();
+        allowedQuestions[key] = slot.maxMarks;
+        allowedQuestions[key.replace(/^q/i, '')] = slot.maxMarks;
+        if (slot.or) {
+          const orKey = String(slot.or.questionNumber).trim();
+          allowedQuestions[orKey] = slot.or.maxMarks;
+          allowedQuestions[orKey.replace(/^q/i, '')] = slot.or.maxMarks;
+        }
+      }
+      paperMaxMarks = paper.maxMarks;
+    } else {
+      // Fallback 1: Selected QuestionPaperSubmission for this subject
+      const exam = await Exam.findById(script.examId);
+      const sub = await QuestionPaperSubmission.findOne({
+        subjectId: exam?.subjectId || script.subjectId,
+        status: { $in: ['selected', 'submitted', 'assigned'] }
+      }).sort({ isSelected: -1, updatedAt: -1 });
+
+      if (sub && sub.patternRef && sub.patternRef.questions && sub.patternRef.questions.length > 0) {
+        for (const q of sub.patternRef.questions) {
+          const key = String(q.qNo).trim();
+          allowedQuestions[key] = q.maxMarks;
+          allowedQuestions[key.replace(/^q/i, '')] = q.maxMarks;
+        }
+        paperMaxMarks = sub.patternRef.totalMarks || paperMaxMarks;
+      } else {
+        // Fallback 2: QPTemplate for this examType
+        const template = await QPTemplate.findOne({ examType: exam?.examType || 'internal1' });
+        if (template && template.slots && template.slots.length > 0) {
+          for (const slot of template.slots) {
+            const key = String(slot.questionNumber).trim();
+            allowedQuestions[key] = slot.maxMarks;
+            allowedQuestions[key.replace(/^q/i, '')] = slot.maxMarks;
+            if (slot.or) {
+              const orKey = String(slot.or.questionNumber).trim();
+              allowedQuestions[orKey] = slot.or.maxMarks;
+              allowedQuestions[orKey.replace(/^q/i, '')] = slot.or.maxMarks;
+            }
+          }
+          paperMaxMarks = template.maxMarks || paperMaxMarks;
+        }
+      }
     }
 
-    // Build an allowed-question map: questionNumber → maxMarks (include OR alternatives)
-    const allowedQuestions = {};
-    const patternSlots = paper.slots && paper.slots.length > 0 ? paper.slots : paper.questions;
-    for (const slot of patternSlots) {
-      allowedQuestions[slot.questionNumber] = slot.maxMarks;
-      if (slot.or) {
-        allowedQuestions[slot.or.questionNumber] = slot.or.maxMarks;
-      }
+    if (Object.keys(allowedQuestions).length === 0) {
+      return res.status(400).json({ success: false, message: 'No question paper pattern found for this exam. Cannot validate marks.' });
     }
 
     // Per-question validation
@@ -219,16 +260,17 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
     const validatedMarks = [];
 
     for (const qm of questionMarks) {
-      const qNum = qm.questionNumber;
+      const qNumRaw = String(qm.questionNumber || '').trim();
+      const qNum = (qNumRaw in allowedQuestions) ? qNumRaw : qNumRaw.replace(/^q/i, '');
       const marks = parseFloat(qm.marksObtained);
 
-      if (!qNum || typeof qNum !== 'string') {
-        errors.push({ questionNumber: qNum, error: 'Question number must be a non-empty string.' });
+      if (!qNumRaw) {
+        errors.push({ questionNumber: qNumRaw, error: 'Question number must be specified.' });
         continue;
       }
 
       if (!(qNum in allowedQuestions)) {
-        errors.push({ questionNumber: qNum, error: `Question "${qNum}" does not exist in the approved question paper pattern.` });
+        errors.push({ questionNumber: qNumRaw, error: `Question "${qNumRaw}" does not exist in the approved question paper pattern.` });
         continue;
       }
 

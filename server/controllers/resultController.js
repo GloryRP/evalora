@@ -595,8 +595,8 @@ exports.publishResults = async (req, res) => {
       r.subjectResults?.some(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')
     );
 
-    // Block "Publish All Results" while any subject is incomplete
-    if (incompleteResults.length > 0 && !publishCompleteOnly) {
+    // Block "Publish All Results" while any subject is incomplete unless forcePublish is requested
+    if (incompleteResults.length > 0 && !publishCompleteOnly && !req.body.forcePublish) {
       const incompleteDetails = incompleteResults.map(r => {
         const incSubs = r.subjectResults
           ?.filter(s => s.result === 'INCOMPLETE' || s.isIncomplete || s.grade === 'Incomplete')

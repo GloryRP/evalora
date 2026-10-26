@@ -56,6 +56,10 @@ const notificationSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  emailError: {
+    type: String,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

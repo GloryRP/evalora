@@ -48,7 +48,7 @@ const testUsers = [
     role: 'faculty',
     name: 'Dr. John Doe',
     department: 'Computer Science',
-    email: 'faculty1@evalora.ac.in',
+    email: 'gloryrp58@gmail.com',
   },
   {
     username: 'STUDENT1',
@@ -56,7 +56,7 @@ const testUsers = [
     role: 'student',
     name: 'Jane Smith',
     department: 'Computer Science',
-    email: 'student1@evalora.ac.in',
+    email: 'gloryrp0605@gmail.com',
   },
   {
     username: 'HOD1',
@@ -92,8 +92,8 @@ const seedDatabase = async () => {
         { username: { $regex: /^FAC/ } }
       ]
     });
-    await Student.deleteMany({ usn: { $regex: /^TEST/ } });
-    await Faculty.deleteMany({ employeeId: { $regex: /^FAC/ } });
+    await Student.deleteMany({ $or: [{ usn: { $regex: /^TEST/ } }, { usn: 'STUDENT1' }] });
+    await Faculty.deleteMany({ $or: [{ employeeId: { $regex: /^FAC/ } }, { employeeId: 'FACULTY1' }] });
     await Hall.deleteMany({ hallName: { $regex: /^(Hall|Lab)/ } });
     console.log('✓ Cleared existing test data');
 
@@ -158,12 +158,14 @@ const seedDatabase = async () => {
         name: 'Jane Smith',
         department: 'Computer Science',
         semester: 5,
-        email: 'student1@student.test',
+        email: 'gloryrp0605@gmail.com',
         phone: '9876543210',
       });
       console.log('✓ Created student profile for STUDENT1');
     } else {
-      console.log('✓ Student profile already exists');
+      existingStudent.email = 'gloryrp0605@gmail.com';
+      await existingStudent.save();
+      console.log('✓ Student profile already exists, updated email');
     }
 
     // Create additional subjects for exams (Semester 5-6)
@@ -198,12 +200,13 @@ const seedDatabase = async () => {
         department: 'Computer Science',
         designation: 'Assistant Professor',
         subjectsAssigned: allCsSubjects.map(s => s._id),
-        email: 'faculty1@evalora.ac.in',
+        email: 'gloryrp58@gmail.com',
         phone: '9876543211',
       });
       console.log('✓ Created faculty profile for FACULTY1');
     } else {
       existingFaculty.subjectsAssigned = allCsSubjects.map(s => s._id);
+      existingFaculty.email = 'gloryrp58@gmail.com';
       await existingFaculty.save();
       console.log('✓ Updated faculty profile for FACULTY1 with assigned subjects');
     }
@@ -228,7 +231,7 @@ const seedDatabase = async () => {
     // Create additional students (10 test students)
     console.log('\nCreating additional test students...');
     const students = [
-      { usn: 'TEST001', name: 'Alice Kumar', department: 'Computer Science', semester: 5, email: 'test001@student.test', phone: '9876543220' },
+      { usn: 'TEST001', name: 'Alice Kumar', department: 'Computer Science', semester: 5, email: 'gloryrp0605@gmail.com', phone: '9876543220' },
       { usn: 'TEST002', name: 'Bob Sharma', department: 'Computer Science', semester: 5, email: 'test002@student.test', phone: '9876543221' },
       { usn: 'TEST003', name: 'Charlie Patel', department: 'Computer Science', semester: 5, email: 'test003@student.test', phone: '9876543222' },
       { usn: 'TEST004', name: 'Diana Singh', department: 'Computer Science', semester: 5, email: 'test004@student.test', phone: '9876543223' },

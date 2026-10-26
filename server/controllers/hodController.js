@@ -87,7 +87,15 @@ exports.getInsights = async (req, res) => {
       ]
     }).lean();
 
-    const aliases = deptDoc?.aliases?.length ? deptDoc.aliases : [department];
+    const aliases = Array.from(new Set([
+      department,
+      ...(deptDoc?.aliases || []),
+      deptDoc?.departmentName,
+      deptDoc?.departmentCode,
+      department.replace(/\s+and\s+Engineering/i, ''),
+      department.includes('Computer Science') ? 'Computer Science' : null,
+      department.includes('Electronics') ? 'Electronics' : null
+    ].filter(Boolean)));
 
     // Find all subjects belonging to this department
     const subjectFilter = { department: { $in: aliases } };

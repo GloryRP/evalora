@@ -484,6 +484,7 @@ exports.runFullPipeline = async (req, res) => {
 
       const examDocs = [];
       const subjectCodeToExamId = {}; // Map subjectCode → newly created exam _id
+      const subjectIdToExamId = {};   // Map subjectId → newly created exam _id
       
       for (const exam of result.scheduled_exams) {
         if (!exam.subjectCode || exam.subjectCode.trim() === '') {
@@ -513,8 +514,9 @@ exports.runFullPipeline = async (req, res) => {
         });
         
         examDocs.push(examDoc);
-        // Build mapping: subjectCode → examId for use in allocations/assignments
+        // Build mapping: subjectCode and subjectId → examId for use in allocations/assignments
         subjectCodeToExamId[exam.subjectCode] = examDoc._id;
+        subjectIdToExamId[subject._id.toString()] = examDoc._id;
         console.log(`✓ Created exam for ${exam.subjectCode} → Exam ID: ${examDoc._id}`);
       }
 
@@ -622,13 +624,23 @@ exports.runFullPipeline = async (req, res) => {
 
       const assignmentDocs = [];
       for (const assignment of result.invigilator_assignments) {
-        // Resolve examId from subjectCode using our mapping
-        let examId = assignment.examId;
-        const matchingSubject = Object.keys(subjectCodeToExamId).find(code => 
-          assignment.examId && (assignment.examId === code || assignment.examId.includes(code))
-        );
-        if (matchingSubject) {
-          examId = subjectCodeToExamId[matchingSubject];
+        // Resolve examId from subjectId or subjectCode using our mappings
+        let examId = null;
+        if (assignment.examId && subjectIdToExamId[assignment.examId.toString()]) {
+          examId = subjectIdToExamId[assignment.examId.toString()];
+        } else if (assignment.examId && subjectCodeToExamId[assignment.examId]) {
+          examId = subjectCodeToExamId[assignment.examId];
+        } else if (assignment.subjectCode && subjectCodeToExamId[assignment.subjectCode]) {
+          examId = subjectCodeToExamId[assignment.subjectCode];
+        } else {
+          const matchingSubject = Object.keys(subjectCodeToExamId).find(code => 
+            assignment.examId && (assignment.examId === code || assignment.examId.includes(code))
+          );
+          if (matchingSubject) {
+            examId = subjectCodeToExamId[matchingSubject];
+          } else {
+            examId = assignment.examId;
+          }
         }
         
         // Resolve hallId: Try multiple approaches
@@ -1137,9 +1149,13 @@ async function triggerPostPipelineNotifications(examDocs, allocationDocs, assign
         // Notify each HOD whose department is involved
         const hodUsers = await User.find({ role: 'hod' }).lean();
         for (const hod of hodUsers) {
-          const hodDept = hod.department || '';
-          // Send if HOD's dept is in involved depts, or if we couldn't resolve any depts (send to all)
-          const deptMatches = involvedDepartments.length === 0 || involvedDepartments.includes(hodDept);
+          const hodDept = (hod.department || '').trim();
+          // Send if HOD's dept matches any involved dept (with substring/case-insensitive matching)
+          const deptMatches = involvedDepartments.length === 0 || involvedDepartments.some(inv => {
+            const iLower = inv.toLowerCase();
+            const hLower = hodDept.toLowerCase();
+            return hLower === iLower || hLower.includes(iLower) || iLower.includes(hLower);
+          });
           if (!deptMatches) {
             console.log(`  → Skipping HOD ${hod.username} (dept "${hodDept}" not in exam departments)`);
             continue;
