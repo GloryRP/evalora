@@ -1127,6 +1127,259 @@ const bulkCreateSubjects = async (req, res) => {
   res.json({ success: true, data: { created, skipped, errors }, summary: { created, skipped, total: records.length, errors } });
 };
 
+// ==================== EXAM CELL MEMBERS CRUD ====================
+
+/**
+ * getExamCellMembers - List all Exam Cell users
+ * GET /api/v1/admin/examcell
+ */
+const getExamCellMembers = async (req, res) => {
+  try {
+    const members = await User.find({ role: 'examcell' })
+      .select('name username email phone designation isActive createdAt')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: members,
+    });
+  } catch (error) {
+    console.error('Get exam cell members error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch Exam Cell members' });
+  }
+};
+
+/**
+ * createExamCellMember - Create a new individual Exam Cell officer account
+ * POST /api/v1/admin/examcell
+ */
+const createExamCellMember = async (req, res) => {
+  try {
+    const { employeeId, name, email, phone, designation } = req.body;
+
+    if (!employeeId || !name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Employee ID, Name, and Email are required',
+      });
+    }
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    const username = employeeId.trim().toUpperCase();
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check duplicate username
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: `An account with Employee ID "${username}" already exists`,
+      });
+    }
+
+    // Check duplicate email
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: `An account with email "${cleanEmail}" already exists`,
+      });
+    }
+
+    // Default password = EMPLOYEEID@123
+    const defaultPassword = `${username}@123`;
+    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+    const newUser = await User.create({
+      username,
+      name: name.trim(),
+      email: cleanEmail,
+      phone: phone ? phone.trim() : undefined,
+      role: 'examcell',
+      department: 'Examination Cell',
+      designation: designation ? designation.trim() : 'Exam Cell Officer',
+      passwordHash,
+      isActive: true,
+      isFirstLogin: true,
+    });
+
+    const userObj = newUser.toObject();
+    delete userObj.passwordHash;
+
+    res.status(201).json({
+      success: true,
+      message: 'Exam Cell member created successfully',
+      data: userObj,
+    });
+  } catch (error) {
+    console.error('Create exam cell member error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create Exam Cell member',
+    });
+  }
+};
+
+/**
+ * updateExamCellMember - Update Exam Cell member details (name, email, phone, designation)
+ * PUT /api/v1/admin/examcell/:id
+ */
+const updateExamCellMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, designation } = req.body;
+
+    const user = await User.findOne({ _id: id, role: 'examcell' });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Exam Cell member not found',
+      });
+    }
+
+    if (email) {
+      const emailRegex = /^\S+@\S+\.\S+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid email address',
+        });
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail !== user.email) {
+        const existingEmail = await User.findOne({ email: cleanEmail, _id: { $ne: id } });
+        if (existingEmail) {
+          return res.status(400).json({
+            success: false,
+            message: `An account with email "${cleanEmail}" already exists`,
+          });
+        }
+        user.email = cleanEmail;
+      }
+    }
+
+    if (name) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone ? phone.trim() : '';
+    if (designation !== undefined) user.designation = designation ? designation.trim() : user.designation;
+
+    await user.save();
+
+    const userObj = user.toObject();
+    delete userObj.passwordHash;
+
+    res.json({
+      success: true,
+      message: 'Exam Cell member updated successfully',
+      data: userObj,
+    });
+  } catch (error) {
+    console.error('Update exam cell member error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update Exam Cell member',
+    });
+  }
+};
+
+/**
+ * toggleExamCellStatus - Activate or deactivate an Exam Cell member account
+ * PATCH /api/v1/admin/examcell/:id/status
+ */
+const toggleExamCellStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'isActive (boolean) is required',
+      });
+    }
+
+    const user = await User.findOne({ _id: id, role: 'examcell' });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Exam Cell member not found',
+      });
+    }
+
+    // Block deactivating the last remaining active Exam Cell account
+    if (!isActive && user.isActive) {
+      const activeCount = await User.countDocuments({ role: 'examcell', isActive: true });
+      if (activeCount <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot deactivate the last remaining active Exam Cell account.',
+        });
+      }
+    }
+
+    user.isActive = isActive;
+    await user.save();
+
+    const userObj = user.toObject();
+    delete userObj.passwordHash;
+
+    res.json({
+      success: true,
+      message: `Exam Cell member ${isActive ? 'activated' : 'deactivated'} successfully`,
+      data: userObj,
+    });
+  } catch (error) {
+    console.error('Toggle exam cell status error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update member status',
+    });
+  }
+};
+
+/**
+ * resetExamCellPassword - Reset Exam Cell member password to default (EMPLOYEEID@123)
+ * PATCH /api/v1/admin/examcell/:id/reset-password
+ */
+const resetExamCellPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findOne({ _id: id, role: 'examcell' });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Exam Cell member not found',
+      });
+    }
+
+    const defaultPassword = `${user.username}@123`;
+    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+    user.passwordHash = passwordHash;
+    user.isFirstLogin = true;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Password reset to ${defaultPassword}. The officer must change it on first login.`,
+    });
+  } catch (error) {
+    console.error('Reset exam cell password error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reset password',
+    });
+  }
+};
+
 module.exports = {
   // Stats
   getAdminStats,
@@ -1154,4 +1407,10 @@ module.exports = {
   updateDepartment,
   deleteDepartment,
   bulkCreateDepartments,
+  // Exam Cell Members CRUD
+  getExamCellMembers,
+  createExamCellMember,
+  updateExamCellMember,
+  toggleExamCellStatus,
+  resetExamCellPassword,
 };

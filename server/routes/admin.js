@@ -30,6 +30,12 @@ const {
   updateDepartment,
   deleteDepartment,
   bulkCreateDepartments,
+  // Exam Cell Members CRUD
+  getExamCellMembers,
+  createExamCellMember,
+  updateExamCellMember,
+  toggleExamCellStatus,
+  resetExamCellPassword,
 } = require('../controllers/adminController');
 
 // Apply verifyToken and authorize('admin') to all routes in this router
@@ -592,5 +598,42 @@ router.delete('/halls/:id', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to delete hall', error: error.message });
   }
 });
+
+// ==================== EXAM CELL MEMBER ROUTES ====================
+
+/**
+ * @route   GET /api/v1/admin/examcell
+ * @desc    Get all Exam Cell members
+ * @access  Private (Admin only)
+ */
+router.get('/examcell', getExamCellMembers);
+
+/**
+ * @route   POST /api/v1/admin/examcell
+ * @desc    Add a new Exam Cell member
+ * @access  Private (Admin only)
+ */
+router.post('/examcell', createExamCellMember);
+
+/**
+ * @route   PUT /api/v1/admin/examcell/:id
+ * @desc    Update an Exam Cell member
+ * @access  Private (Admin only)
+ */
+router.put('/examcell/:id', updateExamCellMember);
+
+/**
+ * @route   PATCH /api/v1/admin/examcell/:id/status
+ * @desc    Activate or deactivate an Exam Cell member
+ * @access  Private (Admin only)
+ */
+router.patch('/examcell/:id/status', toggleExamCellStatus);
+
+/**
+ * @route   PATCH /api/v1/admin/examcell/:id/reset-password
+ * @desc    Reset Exam Cell member password to default
+ * @access  Private (Admin only)
+ */
+router.patch('/examcell/:id/reset-password', resetExamCellPassword);
 
 module.exports = router;

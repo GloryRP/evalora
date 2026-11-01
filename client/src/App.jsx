@@ -27,6 +27,7 @@ import Subjects from './pages/admin/Subjects';
 import Departments from './pages/admin/Departments';
 import AdminHalls from './pages/admin/Halls';
 import InstitutionSettings from './pages/admin/InstitutionSettings';
+import ExamCellMembers from './pages/admin/ExamCellMembers';
 
 // ExamCell
 import ExamCellLayout from './layouts/ExamCellLayout';
@@ -113,6 +114,7 @@ function App() {
               <Route path="halls" element={<AdminHalls />} />
               <Route path="institution" element={<InstitutionSettings />} />
               <Route path="grading-scheme" element={<GradingScheme />} />
+              <Route path="exam-cell" element={<ExamCellMembers />} />
             </Route>
 
             {/* ExamCell Routes */}

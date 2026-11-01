@@ -16,6 +16,7 @@ import {
   X,
   Award,
   User,
+  ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -39,6 +40,7 @@ const AdminLayout = () => {
     { path: '/admin/halls', label: 'Halls', icon: Building2 },
     { path: '/admin/grading-scheme', label: 'Grading Scheme', icon: Award },
     { path: '/admin/institution', label: 'Institution Settings', icon: Building2 },
+    { path: '/admin/exam-cell', label: 'Exam Cell Members', icon: ShieldCheck },
     { path: '/profile', label: 'Profile', icon: User },
   ];
 

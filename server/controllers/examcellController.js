@@ -1879,7 +1879,7 @@ exports.publishResults = async (req, res) => {
     for (const script of relevantScripts) {
       await AnswerScript.updateOne(
         { _id: script._id },
-        { status: 'published', publishedAt: new Date() }
+        { status: 'published', publishedAt: new Date(), publishedBy: req.user?.userId || null }
       );
       publishedIds.push(script._id);
 

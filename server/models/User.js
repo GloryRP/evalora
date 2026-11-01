@@ -48,6 +48,11 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     trim: true,
   },
+  designation: {
+    type: String,
+    trim: true,
+    default: 'Exam Cell Officer',
+  },
   isActive: {
     type: Boolean,
     default: true,

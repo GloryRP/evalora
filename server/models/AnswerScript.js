@@ -64,6 +64,11 @@ const answerScriptSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  publishedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   // F3: Lock flag — set to true by Exam Cell / Admin on validation/publish; prevents further edits
   isLocked: {
     type: Boolean,
