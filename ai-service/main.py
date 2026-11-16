@@ -18,7 +18,12 @@ app = FastAPI(title="Exam Automation AI Service", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5000",
+        "https://evalora-tan.vercel.app",
+        "https://evalora-server.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
