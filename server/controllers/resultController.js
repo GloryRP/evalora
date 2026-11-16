@@ -403,7 +403,7 @@ exports.computeResults = async (req, res) => {
     }
 
     // Call Python agent
-    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    const aiServiceUrl = (process.env.AI_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '');
     const agentPayload = {
       students: studentsInput,
       gradingScheme: activeScheme.gradeTable.map(g => ({

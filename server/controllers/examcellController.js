@@ -21,7 +21,7 @@ const Department = require('../models/Department');
 const GradingScheme = require('../models/GradingScheme');
 const { sendNotification } = require('../services/notificationService');
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = (process.env.AI_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 /**
  * Helper to fetch eligible faculty for invigilation excluding HOD accounts
@@ -468,7 +468,7 @@ exports.runFullPipeline = async (req, res) => {
           fillPercentage: hallFillPercent,
         },
       }, {
-        timeout: 60000, // 60 second timeout
+        timeout: 120000, // 120 second timeout for Render free tier spin-up
       });
 
       const result = response.data.result;
@@ -778,6 +778,8 @@ exports.runFullPipeline = async (req, res) => {
         bestMessage = pythonDetail;
       } else if (pythonDetail.error) {
         bestMessage = pythonDetail.error;
+      } else if (Array.isArray(pythonDetail)) {
+        bestMessage = pythonDetail.map(d => d.msg || JSON.stringify(d)).join(', ');
       }
     }
     
@@ -788,7 +790,7 @@ exports.runFullPipeline = async (req, res) => {
     
     res.status(statusCode).json({ 
       success: false, 
-      message: bestMessage, 
+      message: bestMessage,
       error: error.message,
       details: error.response?.data || null,
     });
