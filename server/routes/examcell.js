@@ -161,6 +161,8 @@ router.post('/answer-scripts/bundle-distribute', examcellController.bundleDistri
 // Get evaluations for review
 router.get('/answer-scripts/review', examcellController.getEvaluationsForReview);
 
+// Preview results before publishing
+router.get('/answer-scripts/publish/preview', examcellController.getPublishPreview);
 
 // Publish results
 router.post('/answer-scripts/publish', examcellController.publishResults);

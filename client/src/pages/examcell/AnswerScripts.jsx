@@ -57,6 +57,10 @@ const AnswerScripts = () => {
 
   // Publish state
   const [publishSemester, setPublishSemester] = useState('5');
+  const [publishDepartment, setPublishDepartment] = useState('');
+  const [publishDepartments, setPublishDepartments] = useState([]);
+  const [publishPreviewData, setPublishPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showPublishPreview, setShowPublishPreview] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
@@ -101,17 +105,19 @@ const AnswerScripts = () => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [studentsRes, examsRes, facultyRes, scriptsRes] = await Promise.all([
+      const [studentsRes, examsRes, facultyRes, scriptsRes, deptsRes] = await Promise.all([
         api.get('/examcell/students'),
         api.get('/examcell/exams'),
         api.get('/examcell/faculty'),
         api.get('/examcell/answer-scripts/review'),
+        api.get('/examcell/departments'),
       ]);
 
       if (studentsRes.data?.success) setStudents(studentsRes.data.data);
       if (examsRes.data?.success) setExams(examsRes.data.data);
       if (facultyRes.data?.success) setFaculty(facultyRes.data.data);
       if (scriptsRes.data?.success) setScripts(scriptsRes.data.data);
+      if (deptsRes.data?.success) setPublishDepartments(deptsRes.data.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load dashboard data');
@@ -119,6 +125,12 @@ const AnswerScripts = () => {
       setLoading(false);
     }
   };
+
+  // Reset preview when filters change
+  useEffect(() => {
+    setPublishPreviewData(null);
+    setShowPublishPreview(false);
+  }, [publishSemester, publishDepartment]);
 
   const refreshScripts = async () => {
     try {
@@ -341,18 +353,18 @@ const AnswerScripts = () => {
       return;
     }
 
-    if (!confirm(`Are you sure you want to publish Semester ${publishSemester} results?`)) {
-      return;
-    }
-
     try {
       setPublishing(true);
       const response = await api.post('/examcell/answer-scripts/publish', {
         semester: parseInt(publishSemester),
+        department: publishDepartment || undefined,
+        academicYear: currentAcademicYear,
       });
 
       if (response.data?.success) {
         toast.success(response.data.message || 'Results published and notifications sent!');
+        setPublishPreviewData(null);
+        setShowPublishPreview(false);
         refreshScripts();
       }
     } catch (error) {
@@ -1161,6 +1173,8 @@ const AnswerScripts = () => {
                     Department
                   </label>
                   <select
+                    value={publishDepartment}
+                    onChange={(e) => setPublishDepartment(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -1176,17 +1190,36 @@ const AnswerScripts = () => {
                     onFocus={(e) => e.target.style.borderColor = 'var(--color-gold)'}
                     onBlur={(e) => e.target.style.borderColor = '#E0E0E0'}
                   >
-                    <option value="all">All Departments</option>
-                    <option value="cse">Computer Science</option>
-                    <option value="ece">Electronics</option>
-                    <option value="ds">Data Science</option>
+                    <option value="">All Departments</option>
+                    {publishDepartments.map(d => (
+                      <option key={d._id} value={d.departmentName}>{d.departmentName}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               {/* Preview Button */}
               <button
-                onClick={() => setShowPublishPreview(true)}
+                onClick={async () => {
+                  setPreviewLoading(true);
+                  setShowPublishPreview(false);
+                  setPublishPreviewData(null);
+                  try {
+                    const params = new URLSearchParams({ semester: publishSemester });
+                    if (publishDepartment) params.set('department', publishDepartment);
+                    if (currentAcademicYear) params.set('academicYear', currentAcademicYear);
+                    const res = await api.get(`/examcell/answer-scripts/publish/preview?${params}`);
+                    if (res.data?.success) {
+                      setPublishPreviewData(res.data.data);
+                      setShowPublishPreview(true);
+                    }
+                  } catch (err) {
+                    toast.error(err.response?.data?.message || 'Failed to load preview');
+                  } finally {
+                    setPreviewLoading(false);
+                  }
+                }}
+                disabled={previewLoading}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -1212,7 +1245,7 @@ const AnswerScripts = () => {
                   e.currentTarget.style.borderColor = 'var(--color-navy)';
                 }}
               >
-                Preview what will be published →
+                {previewLoading ? 'Loading preview...' : 'Preview what will be published →'}
               </button>
             </div>
 
@@ -1244,10 +1277,10 @@ const AnswerScripts = () => {
                     marginBottom: '20px'
                   }}>
                     {[
-                      { label: 'Students to Notify', value: 156, color: '#2563EB' },
-                      { label: 'Already Published', value: 12, color: '#059669' },
-                      { label: 'Pass', value: 140, color: '#059669' },
-                      { label: 'Fail', value: 16, color: '#DC2626' }
+                      { label: 'Students to Notify', value: publishPreviewData?.studentsToNotify ?? 0, color: '#2563EB' },
+                      { label: 'Already Published', value: publishPreviewData?.alreadyPublished ?? 0, color: '#059669' },
+                      { label: 'Pass', value: publishPreviewData?.pass ?? 0, color: '#059669' },
+                      { label: 'Fail', value: publishPreviewData?.fail ?? 0, color: '#DC2626' }
                     ].map((stat, i) => (
                       <div key={i} style={{
                         backgroundColor: '#F9FAFB',
@@ -1278,6 +1311,7 @@ const AnswerScripts = () => {
                   </div>
 
                   {/* Warning if failures */}
+                  {(publishPreviewData?.warning || publishPreviewData?.fail > 0) && (
                   <div style={{
                     backgroundColor: '#FEF2F2',
                     border: '1px solid #FECACA',
@@ -1291,8 +1325,9 @@ const AnswerScripts = () => {
                     alignItems: 'flex-start'
                   }}>
                     <span style={{ fontSize: '1.2rem', marginTop: '-2px' }}>⚠</span>
-                    <span>16 students have failed one or more subjects. Please verify results before publishing.</span>
+                    <span>{publishPreviewData?.warning || `${publishPreviewData?.fail} students have failed one or more subjects. Please verify results before publishing.`}</span>
                   </div>
+                  )}
 
                   {/* Results Table */}
                   <div style={{
@@ -1326,13 +1361,13 @@ const AnswerScripts = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {[
-                          { usn: '1SD21CS001', name: 'Alice Smith', dept: 'CSE', sem: 4, sgpa: 8.5, result: 'PASS', status: 'Will Publish' },
-                          { usn: '1SD21CS002', name: 'Bob Johnson', dept: 'CSE', sem: 4, sgpa: 7.2, result: 'PASS', status: 'Already Published' },
-                          { usn: '1SD21CS003', name: 'Charlie Brown', dept: 'CSE', sem: 4, sgpa: 4.2, result: 'FAIL', status: 'Will Publish' },
-                          { usn: '1SD21CS004', name: 'Diana Prince', dept: 'CSE', sem: 4, sgpa: 9.1, result: 'PASS', status: 'Will Publish' },
-                          { usn: '1SD21CS005', name: 'Eve Wilson', dept: 'CSE', sem: 4, sgpa: 6.8, result: 'PASS', status: 'Will Publish' }
-                        ].map((row, i) => (
+                        {(publishPreviewData?.rows || []).length === 0 ? (
+                          <tr>
+                            <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                              No student records found for the selected filters.
+                            </td>
+                          </tr>
+                        ) : (publishPreviewData?.rows || []).map((row, i) => (
                           <tr key={i} style={{
                             borderBottom: '1px solid #F5F5F5',
                             backgroundColor: i % 2 === 0 ? 'transparent' : '#F9FAFB'
@@ -1341,8 +1376,8 @@ const AnswerScripts = () => {
                             <td style={{ padding: '10px 12px' }}>{row.name}</td>
                             <td style={{ padding: '10px 12px' }}>{row.dept}</td>
                             <td style={{ padding: '10px 12px', textAlign: 'center' }}>{row.sem}</td>
-                            <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--color-navy)' }}>{row.sgpa}</td>
-                            <td style={{ padding: '10px 12px', fontWeight: 600, color: row.result === 'PASS' ? '#059669' : '#DC2626' }}>{row.result}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--color-navy)' }}>{row.sgpa ?? '—'}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: row.result === 'PASS' ? '#059669' : row.result === 'FAIL' ? '#DC2626' : '#6B7280' }}>{row.result ?? '—'}</td>
                             <td style={{ padding: '10px 12px' }}>
                               <span style={{
                                 display: 'inline-block',
@@ -1350,8 +1385,8 @@ const AnswerScripts = () => {
                                 borderRadius: '10px',
                                 fontSize: '0.7rem',
                                 fontWeight: 600,
-                                backgroundColor: row.status === 'Will Publish' ? '#DBEAFE' : '#DCFCE7',
-                                color: row.status === 'Will Publish' ? '#1E40AF' : '#065F46'
+                                backgroundColor: row.status === 'Will Publish' ? '#DBEAFE' : row.status === 'Already Published' ? '#DCFCE7' : '#F3F4F6',
+                                color: row.status === 'Will Publish' ? '#1E40AF' : row.status === 'Already Published' ? '#065F46' : '#374151'
                               }}>
                                 {row.status}
                               </span>
@@ -1434,7 +1469,7 @@ const AnswerScripts = () => {
                 marginBottom: '16px',
                 lineHeight: 1.6
               }}>
-                You are about to publish results for <strong>156 students</strong> in <strong>Semester 4</strong>.
+                You are about to publish results for <strong>{publishPreviewData?.studentsToNotify ?? 'all'} students</strong> in <strong>Semester {publishSemester}</strong>{publishDepartment ? ` (${publishDepartment})` : ''}.
               </p>
               <div style={{
                 backgroundColor: '#F9FAFB',

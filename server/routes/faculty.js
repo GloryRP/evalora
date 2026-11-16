@@ -194,18 +194,58 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
       });
     }
 
-    // ── F2: Validate questionMarks against the approved question paper ────────
-    if (!questionMarks || !Array.isArray(questionMarks) || questionMarks.length === 0) {
-      return res.status(400).json({ success: false, message: 'questionMarks array is required and must not be empty.' });
+    // Load or auto-create the QuestionPaper for this exam
+    let paper = await QuestionPaper.findOne({ examId: script.examId });
+    if (!paper) {
+      const exam = await Exam.findById(script.examId).populate('subjectId');
+      if (exam) {
+        const subId = exam.subjectId?._id || exam.subjectId || script.subjectId;
+        const maxM = script.maxMarks || 100;
+        let defaultSlots = [
+          { questionNumber: 'Q1', maxMarks: 40, text: '', or: null },
+          { questionNumber: 'Q2', maxMarks: 40, text: '', or: null },
+          { questionNumber: 'Q3', maxMarks: 20, text: '', or: null }
+        ];
+        if (maxM === 50) {
+          defaultSlots = [
+            { questionNumber: 'Q1', maxMarks: 20, text: '', or: { questionNumber: 'Q2', maxMarks: 20, text: '' } },
+            { questionNumber: 'Q3', maxMarks: 20, text: '', or: { questionNumber: 'Q4', maxMarks: 20, text: '' } },
+            { questionNumber: 'Q5', maxMarks: 10, text: '', or: null }
+          ];
+        }
+        paper = await QuestionPaper.create({
+          examId: script.examId,
+          subjectId: subId,
+          maxMarks: maxM,
+          slots: defaultSlots,
+          questions: defaultSlots.map(s => ({ questionNumber: s.questionNumber, maxMarks: s.maxMarks, text: '' })),
+          status: 'draft'
+        });
+      }
     }
 
-    // Load the QuestionPaper for this exam, with fallback to QuestionPaperSubmission or QPTemplate
-    let paper = await QuestionPaper.findOne({ examId: script.examId });
+    // ── F2: Validate questionMarks or fallback overall marks ────────
+    let incomingQuestionMarks = questionMarks;
+    const isSingleMarksFallback = (!incomingQuestionMarks || !Array.isArray(incomingQuestionMarks) || incomingQuestionMarks.length === 0) && req.body.marksObtained !== undefined;
+
+    if (isSingleMarksFallback) {
+      const parsedOverall = parseFloat(req.body.marksObtained);
+      if (isNaN(parsedOverall) || parsedOverall < 0 || parsedOverall > (script.maxMarks || 100)) {
+        return res.status(400).json({ success: false, message: `Marks must be between 0 and ${script.maxMarks || 100}` });
+      }
+      const firstSlot = (paper?.slots?.[0]?.questionNumber) || 'Q1';
+      incomingQuestionMarks = [{ questionNumber: firstSlot, marksObtained: parsedOverall }];
+    } else if (!incomingQuestionMarks || !Array.isArray(incomingQuestionMarks) || incomingQuestionMarks.length === 0) {
+      return res.status(400).json({ success: false, message: 'questionMarks array or marksObtained is required.' });
+    }
+
+    // Build an allowed-question map: questionNumber → maxMarks (include OR alternatives)
+    // Uses paper if available, then falls back to QuestionPaperSubmission, then QPTemplate
     const allowedQuestions = {};
     let paperMaxMarks = script.maxMarks || 50;
 
     if (paper) {
-      const patternSlots = paper.slots && paper.slots.length > 0 ? paper.slots : paper.questions;
+      const patternSlots = paper.slots && paper.slots.length > 0 ? paper.slots : (paper.questions || []);
       for (const slot of patternSlots) {
         const key = String(slot.questionNumber).trim();
         allowedQuestions[key] = slot.maxMarks;
@@ -219,9 +259,9 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
       paperMaxMarks = paper.maxMarks;
     } else {
       // Fallback 1: Selected QuestionPaperSubmission for this subject
-      const exam = await Exam.findById(script.examId);
+      const exam2 = await Exam.findById(script.examId);
       const sub = await QuestionPaperSubmission.findOne({
-        subjectId: exam?.subjectId || script.subjectId,
+        subjectId: exam2?.subjectId || script.subjectId,
         status: { $in: ['selected', 'submitted', 'assigned'] }
       }).sort({ isSelected: -1, updatedAt: -1 });
 
@@ -234,7 +274,7 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
         paperMaxMarks = sub.patternRef.totalMarks || paperMaxMarks;
       } else {
         // Fallback 2: QPTemplate for this examType
-        const template = await QPTemplate.findOne({ examType: exam?.examType || 'internal1' });
+        const template = await QPTemplate.findOne({ examType: exam2?.examType || 'internal1' });
         if (template && template.slots && template.slots.length > 0) {
           for (const slot of template.slots) {
             const key = String(slot.questionNumber).trim();
@@ -251,15 +291,11 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
       }
     }
 
-    if (Object.keys(allowedQuestions).length === 0) {
-      return res.status(400).json({ success: false, message: 'No question paper pattern found for this exam. Cannot validate marks.' });
-    }
-
     // Per-question validation
     const errors = [];
     const validatedMarks = [];
 
-    for (const qm of questionMarks) {
+    for (const qm of incomingQuestionMarks) {
       const qNumRaw = String(qm.questionNumber || '').trim();
       const qNum = (qNumRaw in allowedQuestions) ? qNumRaw : qNumRaw.replace(/^q/i, '');
       const marks = parseFloat(qm.marksObtained);
@@ -269,7 +305,7 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
         continue;
       }
 
-      if (!(qNum in allowedQuestions)) {
+      if (Object.keys(allowedQuestions).length > 0 && !(qNum in allowedQuestions) && !isSingleMarksFallback) {
         errors.push({ questionNumber: qNumRaw, error: `Question "${qNumRaw}" does not exist in the approved question paper pattern.` });
         continue;
       }
@@ -284,8 +320,8 @@ router.put('/evaluations/:scriptId', verifyToken, authorize('faculty'), async (r
         continue;
       }
 
-      const maxAllowed = allowedQuestions[qNum];
-      if (marks > maxAllowed) {
+      const maxAllowed = allowedQuestions[qNum] || script.maxMarks || 100;
+      if (marks > maxAllowed && !isSingleMarksFallback) {
         errors.push({ questionNumber: qNum, error: `Marks for "${qNum}" (${marks}) exceed maximum allowed (${maxAllowed}).` });
         continue;
       }

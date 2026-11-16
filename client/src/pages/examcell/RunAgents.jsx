@@ -55,7 +55,17 @@ const RunAgents = () => {
       setStep(3); // Move to results step
     } catch (error) {
       console.error('Error running pipeline:', error);
-      setError(error.response?.data?.message || 'Failed to run pipeline');
+      const serverMsg = error.response?.data?.message;
+      const detailMsg = error.response?.data?.details?.detail;
+      const fallback = 'Failed to run pipeline';
+      // Show the most specific error message available
+      let displayError = serverMsg || fallback;
+      if (detailMsg && typeof detailMsg === 'object' && detailMsg.error) {
+        displayError = detailMsg.error;
+      } else if (typeof detailMsg === 'string') {
+        displayError = detailMsg;
+      }
+      setError(displayError);
     } finally {
       setRunning(false);
     }

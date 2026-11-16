@@ -97,15 +97,42 @@ async function restore() {
   }
   console.log(`   ✓ ${coreLogins.length} core logins created`);
 
-  // 5. 6 Demo Subjects (3 in Sem 3, 3 in Sem 5)
-  console.log('\n4. Creating 6 demo subjects...');
+  // 5. Demo Subjects across all 8 Semesters
+  console.log('\n4. Creating demo subjects across semesters 1 to 8...');
   const subjectsData = [
+    // Sem 1
+    { subjectCode: 'MA101', subjectName: 'Engineering Mathematics I', department: 'Computer Science and Engineering', semester: 1, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'PH101', subjectName: 'Engineering Physics', department: 'Electronics and Communication Engineering', semester: 1, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'CS101', subjectName: 'Introduction to Programming', department: 'Computer Science and Engineering', semester: 1, credits: 4, subjectType: 'theory' },
+    // Sem 2
+    { subjectCode: 'MA201', subjectName: 'Engineering Mathematics II', department: 'Computer Science and Engineering', semester: 2, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'CY201', subjectName: 'Engineering Chemistry', department: 'Mechanical Engineering', semester: 2, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'EC201', subjectName: 'Basic Electronics', department: 'Electronics and Communication Engineering', semester: 2, credits: 4, subjectType: 'theory' },
+    // Sem 3
     { subjectCode: 'CS301', subjectName: 'Data Structures and Algorithms', department: 'Computer Science and Engineering', semester: 3, credits: 4, subjectType: 'theory' },
     { subjectCode: 'IS301', subjectName: 'Object Oriented Programming with Java', department: 'Information Science and Engineering', semester: 3, credits: 4, subjectType: 'theory' },
     { subjectCode: 'EC301', subjectName: 'Digital Electronic Circuits', department: 'Electronics and Communication Engineering', semester: 3, credits: 4, subjectType: 'theory' },
+    // Sem 4
+    { subjectCode: 'CS401', subjectName: 'Design and Analysis of Algorithms', department: 'Computer Science and Engineering', semester: 4, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'CS402', subjectName: 'Computer Organization & Architecture', department: 'Computer Science and Engineering', semester: 4, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'EC401', subjectName: 'Signals and Systems', department: 'Electronics and Communication Engineering', semester: 4, credits: 4, subjectType: 'theory' },
+    // Sem 5
     { subjectCode: 'CS501', subjectName: 'Database Management Systems', department: 'Computer Science and Engineering', semester: 5, credits: 4, subjectType: 'theory' },
     { subjectCode: 'CS502', subjectName: 'Operating Systems', department: 'Computer Science and Engineering', semester: 5, credits: 4, subjectType: 'theory' },
     { subjectCode: 'ME501', subjectName: 'Applied Thermodynamics', department: 'Mechanical Engineering', semester: 5, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'EC501', subjectName: 'Digital Signal Processing', department: 'Electronics and Communication Engineering', semester: 5, credits: 4, subjectType: 'theory' },
+    // Sem 6
+    { subjectCode: 'CS601', subjectName: 'Machine Learning', department: 'Computer Science and Engineering', semester: 6, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'CS602', subjectName: 'Web Technologies', department: 'Information Science and Engineering', semester: 6, credits: 3, subjectType: 'theory' },
+    { subjectCode: 'EC601', subjectName: 'VLSI Design', department: 'Electronics and Communication Engineering', semester: 6, credits: 4, subjectType: 'theory' },
+    // Sem 7
+    { subjectCode: 'CS701', subjectName: 'Artificial Intelligence', department: 'Computer Science and Engineering', semester: 7, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'CS702', subjectName: 'Cloud Computing', department: 'Computer Science and Engineering', semester: 7, credits: 3, subjectType: 'theory' },
+    { subjectCode: 'EC701', subjectName: 'Embedded Systems', department: 'Electronics and Communication Engineering', semester: 7, credits: 4, subjectType: 'theory' },
+    // Sem 8
+    { subjectCode: 'CS801', subjectName: 'Deep Learning', department: 'Computer Science and Engineering', semester: 8, credits: 4, subjectType: 'theory' },
+    { subjectCode: 'CS802', subjectName: 'Internet of Things', department: 'Information Science and Engineering', semester: 8, credits: 3, subjectType: 'theory' },
+    { subjectCode: 'ME801', subjectName: 'Industrial Engineering & Management', department: 'Mechanical Engineering', semester: 8, credits: 3, subjectType: 'theory' },
   ];
   const createdSubjects = await Subject.insertMany(subjectsData);
   console.log(`   ✓ ${createdSubjects.length} subjects created`);
@@ -228,7 +255,7 @@ async function restore() {
         usn,
         name: `Student ${code} ${i}`,
         department: dept,
-        semester: i <= 15 ? 3 : 5, // half in sem 3, half in sem 5
+        semester: ((i - 1) % 8) + 1, // distribute evenly across semesters 1 to 8
         email: `${usn.toLowerCase()}@pesitm.edu`,
         phone: `99000${String(totalStudentCount).padStart(5, '0')}`,
         batch: '2023-2027'

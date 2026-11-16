@@ -168,17 +168,71 @@ const seedDatabase = async () => {
       console.log('✓ Student profile already exists, updated email');
     }
 
-    // Create additional subjects for exams (Semester 5-6)
-    console.log('\nCreating additional subjects for exam automation...');
+    // Create subjects for ALL 8 semesters across departments
+    console.log('\nCreating subjects for all 8 semesters...');
     const additionalSubjects = [
+      // ── Semester 1 ──
+      { subjectCode: 'MA101', subjectName: 'Engineering Mathematics I', department: 'Computer Science', semester: 1, credits: 4 },
+      { subjectCode: 'PH101', subjectName: 'Engineering Physics', department: 'Computer Science', semester: 1, credits: 4 },
+      { subjectCode: 'CY101', subjectName: 'Engineering Chemistry', department: 'Computer Science', semester: 1, credits: 4 },
+      { subjectCode: 'ME101', subjectName: 'Elements of Mechanical Engineering', department: 'Mechanical', semester: 1, credits: 3 },
+      { subjectCode: 'EE101', subjectName: 'Basic Electrical Engineering', department: 'Electronics', semester: 1, credits: 3 },
+
+      // ── Semester 2 ──
+      { subjectCode: 'MA201', subjectName: 'Engineering Mathematics II', department: 'Computer Science', semester: 2, credits: 4 },
+      { subjectCode: 'CS201', subjectName: 'Introduction to C Programming', department: 'Computer Science', semester: 2, credits: 4 },
+      { subjectCode: 'CV201', subjectName: 'Elements of Civil Engineering', department: 'Computer Science', semester: 2, credits: 3 },
+      { subjectCode: 'ME201', subjectName: 'Engineering Graphics', department: 'Mechanical', semester: 2, credits: 3 },
+      { subjectCode: 'EC201', subjectName: 'Basic Electronics', department: 'Electronics', semester: 2, credits: 4 },
+
+      // ── Semester 3 ──
+      { subjectCode: 'MA301', subjectName: 'Engineering Mathematics III', department: 'Computer Science', semester: 3, credits: 4 },
+      { subjectCode: 'CS301', subjectName: 'Data Structures and Algorithms', department: 'Computer Science', semester: 3, credits: 4 },
+      { subjectCode: 'CS302', subjectName: 'Digital Logic Design', department: 'Computer Science', semester: 3, credits: 4 },
+      { subjectCode: 'CS303', subjectName: 'Discrete Mathematics', department: 'Computer Science', semester: 3, credits: 3 },
+      { subjectCode: 'EC301', subjectName: 'Electronic Circuits', department: 'Electronics', semester: 3, credits: 4 },
+      { subjectCode: 'ME301', subjectName: 'Thermodynamics', department: 'Mechanical', semester: 3, credits: 4 },
+
+      // ── Semester 4 ──
+      { subjectCode: 'MA401', subjectName: 'Engineering Mathematics IV', department: 'Computer Science', semester: 4, credits: 4 },
+      { subjectCode: 'CS401', subjectName: 'Design and Analysis of Algorithms', department: 'Computer Science', semester: 4, credits: 4 },
+      { subjectCode: 'CS402', subjectName: 'Object Oriented Programming with Java', department: 'Computer Science', semester: 4, credits: 4 },
+      { subjectCode: 'CS403', subjectName: 'Computer Organization', department: 'Computer Science', semester: 4, credits: 3 },
+      { subjectCode: 'CS404', subjectName: 'Microprocessors', department: 'Computer Science', semester: 4, credits: 3 },
+      { subjectCode: 'EC401', subjectName: 'Signals and Systems', department: 'Electronics', semester: 4, credits: 4 },
+      { subjectCode: 'ME401', subjectName: 'Fluid Mechanics', department: 'Mechanical', semester: 4, credits: 4 },
+
+      // ── Semester 5 ──
       { subjectCode: 'CS501', subjectName: 'Database Management Systems', department: 'Computer Science', semester: 5, credits: 4 },
       { subjectCode: 'CS502', subjectName: 'Operating Systems', department: 'Computer Science', semester: 5, credits: 4 },
       { subjectCode: 'CS503', subjectName: 'Computer Networks', department: 'Computer Science', semester: 5, credits: 3 },
       { subjectCode: 'CS504', subjectName: 'Software Engineering', department: 'Computer Science', semester: 5, credits: 3 },
-      { subjectCode: 'CS601', subjectName: 'Machine Learning', department: 'Computer Science', semester: 6, credits: 4 },
-      { subjectCode: 'CS602', subjectName: 'Web Technologies', department: 'Computer Science', semester: 6, credits: 3 },
+      { subjectCode: 'ME501', subjectName: 'Applied Thermodynamics', department: 'Mechanical', semester: 5, credits: 4 },
       { subjectCode: 'EC501', subjectName: 'Digital Signal Processing', department: 'Electronics', semester: 5, credits: 4 },
       { subjectCode: 'EC502', subjectName: 'Microcontrollers', department: 'Electronics', semester: 5, credits: 3 },
+
+      // ── Semester 6 ──
+      { subjectCode: 'CS601', subjectName: 'Machine Learning', department: 'Computer Science', semester: 6, credits: 4 },
+      { subjectCode: 'CS602', subjectName: 'Web Technologies', department: 'Computer Science', semester: 6, credits: 3 },
+      { subjectCode: 'CS603', subjectName: 'Compiler Design', department: 'Computer Science', semester: 6, credits: 4 },
+      { subjectCode: 'CS604', subjectName: 'System Software', department: 'Computer Science', semester: 6, credits: 3 },
+      { subjectCode: 'EC601', subjectName: 'VLSI Design', department: 'Electronics', semester: 6, credits: 4 },
+      { subjectCode: 'ME601', subjectName: 'Heat Transfer', department: 'Mechanical', semester: 6, credits: 4 },
+
+      // ── Semester 7 ──
+      { subjectCode: 'CS701', subjectName: 'Artificial Intelligence', department: 'Computer Science', semester: 7, credits: 4 },
+      { subjectCode: 'CS702', subjectName: 'Cloud Computing', department: 'Computer Science', semester: 7, credits: 3 },
+      { subjectCode: 'CS703', subjectName: 'Big Data Analytics', department: 'Computer Science', semester: 7, credits: 4 },
+      { subjectCode: 'CS704', subjectName: 'Information Security', department: 'Computer Science', semester: 7, credits: 3 },
+      { subjectCode: 'EC701', subjectName: 'Embedded Systems', department: 'Electronics', semester: 7, credits: 4 },
+      { subjectCode: 'ME701', subjectName: 'Robotics', department: 'Mechanical', semester: 7, credits: 3 },
+
+      // ── Semester 8 ──
+      { subjectCode: 'CS801', subjectName: 'Deep Learning', department: 'Computer Science', semester: 8, credits: 4 },
+      { subjectCode: 'CS802', subjectName: 'Internet of Things', department: 'Computer Science', semester: 8, credits: 3 },
+      { subjectCode: 'CS803', subjectName: 'Blockchain Technology', department: 'Computer Science', semester: 8, credits: 3 },
+      { subjectCode: 'EC801', subjectName: 'Wireless Communication', department: 'Electronics', semester: 8, credits: 4 },
+      { subjectCode: 'ME801', subjectName: 'Industrial Engineering', department: 'Mechanical', semester: 8, credits: 3 },
     ];
 
     for (const sub of additionalSubjects) {

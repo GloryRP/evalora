@@ -16,6 +16,7 @@ const User = require('../models/User');
 const AnswerScript = require('../models/AnswerScript');
 const QuestionPaper = require('../models/QuestionPaper');
 const QuestionPaperPattern = require('../models/QuestionPaperPattern');
+const QPTemplate = require('../models/QPTemplate');
 const Department = require('../models/Department');
 const GradingScheme = require('../models/GradingScheme');
 const { sendNotification } = require('../services/notificationService');
@@ -358,8 +359,23 @@ exports.runFullPipeline = async (req, res) => {
     });
 
     if (subjects.length === 0) {
-      return res.status(400).json({ success: false, message: 'No subjects selected' });
+      return res.status(400).json({ success: false, message: `No subjects found in the database for semester ${semester}. Please add subjects first.` });
     }
+
+    if (students.length === 0) {
+      return res.status(400).json({ success: false, message: 'No students found in the database. Please add students first.' });
+    }
+
+    if (faculty.length === 0) {
+      return res.status(400).json({ success: false, message: 'No eligible faculty found for invigilation. Please ensure faculty accounts exist and are not all HODs.' });
+    }
+
+    if (halls.length === 0) {
+      return res.status(400).json({ success: false, message: 'No examination halls found. Please add halls first.' });
+    }
+
+    console.log(`Pipeline: semester=${semester}, examCategory=${examCategory}, component=${component}, startDate=${startDate}`);
+    console.log(`Data counts: ${subjects.length} subjects, ${students.length} students, ${faculty.length} faculty, ${halls.length} halls`);
 
     // Convert MongoDB ObjectIds to strings for Python service
     // Python expects _id field (not subjectId, studentId, etc.)
@@ -752,9 +768,27 @@ exports.runFullPipeline = async (req, res) => {
         details: error.message 
       });
     }
-    res.status(500).json({ 
+    // Extract the best available error message from Python AI service or local error
+    const pythonDetail = error.response?.data?.detail;
+    let bestMessage = error.response?.data?.message || error.message || 'Failed to run pipeline';
+    
+    // FastAPI returns errors in "detail" field (not "message")
+    if (pythonDetail) {
+      if (typeof pythonDetail === 'string') {
+        bestMessage = pythonDetail;
+      } else if (pythonDetail.error) {
+        bestMessage = pythonDetail.error;
+      }
+    }
+    
+    // Preserve the upstream status code if it was a 4xx from the Python service
+    const statusCode = (error.response?.status >= 400 && error.response?.status < 500) 
+      ? error.response.status 
+      : 500;
+    
+    res.status(statusCode).json({ 
       success: false, 
-      message: error.response?.data?.message || 'Failed to run pipeline', 
+      message: bestMessage, 
       error: error.message,
       details: error.response?.data || null,
     });
@@ -1812,6 +1846,187 @@ exports.getEvaluationsForReview = async (req, res) => {
 };
 
 /**
+ * Preview Results Before Publishing
+ * GET /api/v1/examcell/answer-scripts/publish/preview
+ */
+exports.getPublishPreview = async (req, res) => {
+  try {
+    const { semester, department, academicYear } = req.query;
+    const sem = parseInt(semester) || 1;
+
+    // 1. Check Result model first
+    const Result = require('../models/Result');
+    const resultQuery = { semester: sem };
+    if (academicYear) resultQuery.academicYear = academicYear;
+    if (department && department !== 'all') {
+      resultQuery.$or = [
+        { department: department },
+        { department: { $regex: new RegExp(department, 'i') } }
+      ];
+    }
+
+    const results = await Result.find(resultQuery).populate('studentId', 'usn name department semester email');
+
+    if (results.length > 0) {
+      const willPublishCount = results.filter(r => !r.isPublished).length;
+      const alreadyPublishedCount = results.filter(r => r.isPublished).length;
+      const passCount = results.filter(r => r.overallResult === 'PASS' || (r.sgpa >= 4)).length;
+      const failCount = results.filter(r => r.overallResult === 'FAIL' || (r.sgpa < 4 && r.sgpa !== null)).length;
+
+      const previewRows = results.map(r => ({
+        _id: r._id,
+        usn: r.usn || r.studentId?.usn || 'N/A',
+        name: r.studentName || r.studentId?.name || 'N/A',
+        dept: r.department || r.studentId?.department || 'General',
+        sem: r.semester || sem,
+        sgpa: typeof r.sgpa === 'number' ? r.sgpa.toFixed(2) : (r.sgpa || '0.00'),
+        result: r.overallResult || (r.sgpa >= 4 ? 'PASS' : 'FAIL'),
+        status: r.isPublished ? 'Already Published' : 'Will Publish',
+      }));
+
+      return res.json({
+        success: true,
+        data: {
+          studentsToNotify: willPublishCount,
+          alreadyPublished: alreadyPublishedCount,
+          pass: passCount,
+          fail: failCount,
+          total: results.length,
+          warning: failCount > 0 ? `${failCount} student(s) have failed one or more subjects. Please verify results before publishing.` : null,
+          rows: previewRows,
+          source: 'results'
+        }
+      });
+    }
+
+    // 2. Fallback: inspect AnswerScript records for this semester
+    const allScripts = await AnswerScript.find()
+      .populate('studentId')
+      .populate({
+        path: 'examId',
+        populate: { path: 'subjectId' }
+      });
+
+    const semesterScripts = allScripts.filter(s => {
+      if (!s.examId || s.examId.semester !== sem) return false;
+      if (academicYear && s.examId.academicYear && s.examId.academicYear !== academicYear) return false;
+      if (department && department !== 'all') {
+        const studentDept = s.studentId?.department || '';
+        if (!studentDept.toLowerCase().includes(department.toLowerCase())) return false;
+      }
+      return true;
+    });
+
+    if (semesterScripts.length > 0) {
+      // Group by student
+      const studentMap = {};
+      for (const s of semesterScripts) {
+        const sId = s.studentId?._id?.toString() || s.studentId?.usn || s._id.toString();
+        if (!studentMap[sId]) {
+          studentMap[sId] = {
+            student: s.studentId,
+            scripts: []
+          };
+        }
+        studentMap[sId].scripts.push(s);
+      }
+
+      const rows = [];
+      let passCount = 0;
+      let failCount = 0;
+      let willPublishCount = 0;
+      let alreadyPublishedCount = 0;
+
+      for (const sId of Object.keys(studentMap)) {
+        const { student, scripts } = studentMap[sId];
+        const evaluatedScripts = scripts.filter(sc => sc.status === 'evaluated' || sc.status === 'published');
+        const anyFailed = evaluatedScripts.some(sc => sc.marksObtained !== null && sc.marksObtained < 40);
+        const allPublished = scripts.every(sc => sc.status === 'published');
+        
+        let avgMarks = 0;
+        if (evaluatedScripts.length > 0) {
+          const sum = evaluatedScripts.reduce((acc, curr) => acc + (curr.marksObtained || 0), 0);
+          avgMarks = (sum / evaluatedScripts.length / 10).toFixed(1);
+        }
+
+        const isPass = !anyFailed && evaluatedScripts.length > 0;
+        if (isPass) passCount++;
+        else if (anyFailed) failCount++;
+
+        if (allPublished) alreadyPublishedCount++;
+        else willPublishCount++;
+
+        rows.push({
+          _id: sId,
+          usn: student?.usn || 'N/A',
+          name: student?.name || 'N/A',
+          dept: student?.department || 'General',
+          sem: sem,
+          sgpa: avgMarks > 0 ? avgMarks : '-',
+          result: evaluatedScripts.length === 0 ? 'PENDING' : (isPass ? 'PASS' : 'FAIL'),
+          status: allPublished ? 'Already Published' : 'Will Publish'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          studentsToNotify: willPublishCount,
+          alreadyPublished: alreadyPublishedCount,
+          pass: passCount,
+          fail: failCount,
+          total: rows.length,
+          warning: failCount > 0 ? `${failCount} student(s) have failed one or more subjects.` : null,
+          rows,
+          source: 'scripts'
+        }
+      });
+    }
+
+    // 3. Fallback: inspect Student records for this semester
+    const studentQuery = { semester: sem };
+    if (department && department !== 'all') {
+      studentQuery.$or = [
+        { department: department },
+        { department: { $regex: new RegExp(department, 'i') } }
+      ];
+    }
+    const semStudents = await Student.find(studentQuery);
+
+    const rows = semStudents.map(st => ({
+      _id: st._id,
+      usn: st.usn,
+      name: st.name,
+      dept: st.department || 'General',
+      sem: st.semester,
+      sgpa: '-',
+      result: 'NOT COMPUTED',
+      status: 'No Results Yet'
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        studentsToNotify: 0,
+        alreadyPublished: 0,
+        pass: 0,
+        fail: 0,
+        total: rows.length,
+        warning: rows.length > 0
+          ? `Found ${rows.length} student(s) in Semester ${sem}, but no examination results have been computed yet. Go to Results -> Compute to calculate SGPA.`
+          : `No students found enrolled in Semester ${sem}.`,
+        rows,
+        source: 'students'
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching publish preview:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch publish preview', error: error.message });
+  }
+};
+
+/**
  * Publish results for a semester and/or department
  * POST /api/v1/examcell/answer-scripts/publish
  */
@@ -1831,10 +2046,14 @@ exports.publishResults = async (req, res) => {
         populate: { path: 'subjectId' }
       });
 
-    // Filter to get only scripts for the selected semester and optional academicYear (D-2 fix)
+    // Filter to get only scripts for the selected semester, optional academicYear, and optional department
     const semesterScripts = allScripts.filter(s => {
       if (!s.examId || s.examId.semester !== parseInt(semester)) return false;
       if (academicYear && s.examId.academicYear && s.examId.academicYear !== academicYear) return false;
+      if (department && department !== 'all') {
+        const studentDept = s.studentId?.department || '';
+        if (!studentDept.toLowerCase().includes(department.toLowerCase())) return false;
+      }
       return true;
     });
 
@@ -1909,6 +2128,21 @@ exports.publishResults = async (req, res) => {
         }).catch(err => console.error('Error sending result email:', err));
       }
     }
+
+    // Also update matching computed Result documents if any
+    const Result = require('../models/Result');
+    const resultUpdateFilter = { semester: parseInt(semester) };
+    if (academicYear) resultUpdateFilter.academicYear = academicYear;
+    if (department && department !== 'all') {
+      resultUpdateFilter.$or = [
+        { department: department },
+        { department: { $regex: new RegExp(department, 'i') } }
+      ];
+    }
+    await Result.updateMany(
+      resultUpdateFilter,
+      { isPublished: true, publishedAt: new Date(), publishedBy: req.user?.userId }
+    ).catch(err => console.error('Error updating Result records during publish:', err));
 
     res.json({
       success: true,
@@ -2029,12 +2263,17 @@ exports.getQuestionPaperByExam = async (req, res) => {
         { questionNumber: 'Q3', maxMarks: 20, text: '', or: null }
       ];
 
+      const subjectRealId = exam.subjectId?._id || exam.subjectId;
+      if (!subjectRealId) {
+        return res.status(400).json({ success: false, message: 'Exam has no associated subject' });
+      }
+
       // Try fetching template config
       const template = await QPTemplate.findOne({ examType: exam.examType });
       if (template) {
         // Check exceptions
         const exception = template.exceptions?.find(
-          ex => ex.subjectId.toString() === exam.subjectId._id.toString()
+          ex => ex.subjectId && ex.subjectId.toString() === subjectRealId.toString()
         );
         if (exception) {
           defaultMaxMarks = exception.maxMarks;
@@ -2075,7 +2314,7 @@ exports.getQuestionPaperByExam = async (req, res) => {
 
       qPaper = await QuestionPaper.create({
         examId,
-        subjectId: exam.subjectId._id,
+        subjectId: subjectRealId,
         maxMarks: defaultMaxMarks,
         slots: defaultSlots,
         questions: defaultSlots.map(s => ({ questionNumber: s.questionNumber, maxMarks: s.maxMarks, text: '' })), // backward compat
