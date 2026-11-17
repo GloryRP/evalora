@@ -29,8 +29,10 @@ const RunAgents = () => {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [cooldown, setCooldown] = useState(0); // seconds remaining before retry allowed
 
   const handleRunPipeline = async () => {
+    if (running || cooldown > 0) return;
     setRunning(true);
     setError(null);
     setResult(null);
@@ -55,6 +57,7 @@ const RunAgents = () => {
       setStep(3); // Move to results step
     } catch (error) {
       console.error('Error running pipeline:', error);
+      const status = error.response?.status;
       const serverMsg = error.response?.data?.message;
       const detailMsg = error.response?.data?.details?.detail;
       const fallback = 'Failed to run pipeline';
@@ -64,6 +67,17 @@ const RunAgents = () => {
         displayError = detailMsg.error;
       } else if (typeof detailMsg === 'string') {
         displayError = detailMsg;
+      }
+      if (status === 429) {
+        displayError = 'Too many requests — please wait 60 seconds before trying again.';
+        // start 60-second cooldown
+        let secs = 60;
+        setCooldown(secs);
+        const interval = setInterval(() => {
+          secs -= 1;
+          setCooldown(secs);
+          if (secs <= 0) clearInterval(interval);
+        }, 1000);
       }
       setError(displayError);
     } finally {
@@ -329,11 +343,15 @@ const RunAgents = () => {
             )}
 
             <div className="flex justify-between pt-6 border-t border-gray-100">
-              <Button variant="ghost" onClick={() => setStep(1)} disabled={running}>&lt; Back</Button>
-              <Button onClick={handleRunPipeline} disabled={running} variant="primary" className="flex items-center gap-1.5 font-bold">
+              <Button variant="ghost" onClick={() => setStep(1)} disabled={running || cooldown > 0}>&lt; Back</Button>
+              <Button onClick={handleRunPipeline} disabled={running || cooldown > 0} variant="primary" className="flex items-center gap-1.5 font-bold">
                 {running ? (
                   <>
                     <Loader size={16} className="animate-spin" /> Orchestrating Pipeline...
+                  </>
+                ) : cooldown > 0 ? (
+                  <>
+                    <Loader size={16} /> Wait {cooldown}s before retry...
                   </>
                 ) : (
                   <>

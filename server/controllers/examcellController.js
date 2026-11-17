@@ -453,6 +453,11 @@ exports.runFullPipeline = async (req, res) => {
     });
 
     try {
+      // Warm up the AI service (free-tier Render services sleep — a quick GET wakes them up)
+      try {
+        await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 30000 });
+      } catch (_) { /* ignore warm-up failures — proceed anyway */ }
+
       // Call Python AI service
       const response = await axios.post(`${AI_SERVICE_URL}/agents/run-pipeline`, {
         subjects: subjectsForPython,
@@ -2690,6 +2695,11 @@ exports.runHallAllocationAgentSeparate = async (req, res) => {
     });
 
     try {
+      // Warm up the AI service (free-tier Render services sleep — a quick GET wakes them up)
+      try {
+        await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 30000 });
+      } catch (_) { /* ignore warm-up failures — proceed anyway */ }
+
       // Call Python AI service
       const response = await axios.post(`${AI_SERVICE_URL}/agents/allocate-halls`, {
         exams: formattedExamsForPython,
@@ -2875,6 +2885,11 @@ exports.runInvigilatorAgentSeparate = async (req, res) => {
     });
 
     try {
+      // Warm up the AI service (free-tier Render services sleep — a quick GET wakes them up)
+      try {
+        await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 30000 });
+      } catch (_) { /* ignore warm-up failures — proceed anyway */ }
+
       // Call Python AI service
       const response = await axios.post(`${AI_SERVICE_URL}/agents/assign-invigilators`, {
         exams: formattedExamsForPython,
